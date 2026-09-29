@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: deokhugam
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/deokhugam}
+    username: ${SPRING_DATASOURCE_USERNAME:${POSTGRES_USER:deokhugam}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD}}
+  jpa:
+    open-in-view: false
+  docker:
+    compose:
+      file: docker-compose-logging-pipeline.yml   # 기본 이름(compose.yaml)이 아니라서 지정
+      lifecycle-management: start-only           # 앱 꺼져도 DB는 유지
+      skip:
+        in-tests: false
+
+logging:
+  file:
+    path: ${LOG_PATH:logs}

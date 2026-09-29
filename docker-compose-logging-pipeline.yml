@@ -1,0 +1,89 @@
+x-logging: &default-logging       # 도커 로그 크기 제한 (앵커로 재사용)
+  driver: json-file
+  options: { max-size: "10m", max-file: "3" }
+
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-deokhugam}
+      POSTGRES_USER: ${POSTGRES_USER:-deokhugam}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    ports:
+      - "127.0.0.1:5432:5432"     # 내 PC 5432 → 컨테이너 5432
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+
+  spring-app:
+    build: .
+    profiles: [ "full" ]
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-deokhugam}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-deokhugam}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+      TZ: Asia/Seoul
+    volumes:
+      - log-data:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    logging: *default-logging
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    profiles: [ "full" ]
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "127.0.0.1:9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fs 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' || exit 1" ]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+    logging: *default-logging
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    profiles: [ "full" ]
+    restart: unless-stopped
+    environment:
+      - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
+    volumes:
+      - log-data:/var/log/app:ro
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ls-data:/usr/share/logstash/data
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    logging: *default-logging
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    profiles: [ "full" ]
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    logging: *default-logging
+
+volumes:
+  log-data:
+  pg-data:
+  es-data:
+  ls-data:

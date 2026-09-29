@@ -1,0 +1,13 @@
+.git
+.gradle
+build
+out
+.idea
+*.iml
+logs
+.env
+.env.*
+.claude
+HELP.md
+docker-compose*.yml
+logstash.conf
