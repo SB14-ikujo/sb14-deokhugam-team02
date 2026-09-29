@@ -38,21 +38,34 @@ jobs:
           echo "OK: 모든 커밋 메시지가 규칙을 지켰습니다"
 
   issue-link:
-    name: issue-link                  # Ruleset 필수 체크 이름
+    name: issue-link
     runs-on: ubuntu-latest
     timeout-minutes: 2
+    permissions:
+      pull-requests: write            # PR 본문 수정 권한
     steps:
-      - name: 이슈 연결 검사
+      - name: 이슈 연결 검사 (없으면 브랜치 이름에서 자동 추가)
         env:
-          PR_BODY: ${{ github.event.pull_request.body }}     # 본문을 스크립트에 직접 넣지 않음 (인젝션 방지)
+          GH_TOKEN: ${{ github.token }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.head_ref }}
           BASE_REF: ${{ github.base_ref }}
+          REPO: ${{ github.repository }}
         run: |
           if [ "$BASE_REF" = "main" ]; then
-            echo "develop → main 릴리스 PR은 이슈 연결 검사를 건너뜁니다"; exit 0
+            echo "develop → main 릴리스 PR은 건너뜁니다"; exit 0
           fi
           if echo "$PR_BODY" | grep -Eiq '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+'; then
-            echo "OK: 이슈가 연결되어 있습니다"
-          else
-            echo "::error::PR 본문에 'Closes #이슈번호'를 적어주세요. 머지되면 이슈가 자동으로 닫힙니다."
+            echo "OK: 이슈가 이미 연결되어 있습니다"; exit 0
+          fi
+          # 브랜치 이름 "타입/번호-설명"에서 번호 추출
+          issue=$(echo "$HEAD_REF" | sed -nE 's#^[a-z]+/([0-9]+)-.*#\1#p')
+          if [ -z "$issue" ]; then
+            echo "::error::PR 본문에 'Closes #번호'를 적거나, 브랜치 이름을 '타입/이슈번호-설명'으로 지어주세요. 예) feat/12-review-api"
             exit 1
           fi
+          # 템플릿의 빈 "Closes #"는 지우고, 맨 위에 번호를 넣음
+          new_body=$(printf 'Closes #%s\n\n%s' "$issue" "$(echo "$PR_BODY" | sed -E '/^Closes #[[:space:]]*$/d')")
+          gh pr edit "$PR_NUMBER" --repo "$REPO" --body "$new_body"
+          echo "OK: 브랜치 이름에서 이슈 #$issue 를 찾아 PR 본문에 연결했습니다"
