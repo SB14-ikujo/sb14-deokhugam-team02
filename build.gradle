@@ -41,3 +41,8 @@ jar {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// Gradle이 실행될 때(IntelliJ 동기화 포함) git 훅 경로를 자동 설정
+if (file('.git').exists()) {
+    providers.exec { commandLine 'git', 'config', 'core.hooksPath', '.githooks' }.result.get()
+}

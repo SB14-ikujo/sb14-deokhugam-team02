@@ -1,0 +1,58 @@
+name: PR Convention
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]   # edited: PR 본문 수정 시 이슈 연결 재검사
+
+permissions:
+  contents: read
+
+jobs:
+  commit-lint:
+    name: commit-lint                 # Ruleset 필수 체크 이름
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0              # PR의 모든 커밋을 보려면 전체 기록 필요
+      - name: 커밋 메시지 검사
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          pattern='^(feat|fix|refactor|test|docs|chore|style|perf|ci|build)(\([a-z0-9-]+\))?: .+'
+          fail=0
+          while IFS= read -r line; do
+            sha="${line%% *}"; msg="${line#* }"
+            [[ "$msg" == Merge* ]] && continue          # develop을 당겨온 머지 커밋은 통과
+            if ! [[ "$msg" =~ $pattern ]]; then
+              echo "::error::규칙 위반 커밋 ${sha:0:7}: $msg"
+              fail=1
+            fi
+          done < <(git log --format='%H %s' "$BASE_SHA..$HEAD_SHA")
+          if [ "$fail" -ne 0 ]; then
+            echo "::error::커밋 메시지는 '타입: 설명' 형식이어야 합니다. 예) feat: 리뷰 등록 API 추가"
+            exit 1
+          fi
+          echo "OK: 모든 커밋 메시지가 규칙을 지켰습니다"
+
+  issue-link:
+    name: issue-link                  # Ruleset 필수 체크 이름
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: 이슈 연결 검사
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}     # 본문을 스크립트에 직접 넣지 않음 (인젝션 방지)
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          if [ "$BASE_REF" = "main" ]; then
+            echo "develop → main 릴리스 PR은 이슈 연결 검사를 건너뜁니다"; exit 0
+          fi
+          if echo "$PR_BODY" | grep -Eiq '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+'; then
+            echo "OK: 이슈가 연결되어 있습니다"
+          else
+            echo "::error::PR 본문에 'Closes #이슈번호'를 적어주세요. 머지되면 이슈가 자동으로 닫힙니다."
+            exit 1
+          fi

@@ -1,0 +1,20 @@
+#!/bin/sh
+# 커밋 메시지 첫 줄이 "타입: 설명" 형식인지 검사
+msg=$(head -n1 "$1")
+
+case "$msg" in
+  Merge*|Revert*) exit 0 ;;   # git이 자동으로 만드는 메시지는 통과
+esac
+
+if ! echo "$msg" | grep -Eq '^(feat|fix|refactor|test|docs|chore|style|perf|ci|build)(\([a-z0-9-]+\))?: .+'; then
+  echo "❌ 커밋 메시지 규칙 위반: $msg"
+  echo "   형식: 타입: 설명    예) feat: 리뷰 등록 API 추가"
+  echo "   타입: feat fix refactor test docs chore style perf ci build"
+  echo "사용 예시:"
+  echo "  feat: 지수 정보 생성 API 추가"
+  echo "  fix: 지수 데이터 중복 저장 오류 수정"
+  echo "  refactor: 동기화 서비스 로직 분리"
+  echo "  docs: README 실행 방법 추가"
+  echo "  chore: build.gradle 의존성 정리"
+  exit 1
+fi
