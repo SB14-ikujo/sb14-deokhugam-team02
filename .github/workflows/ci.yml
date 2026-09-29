@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]              # 머지 후 재검증 + 캐시 저장용
+  # ⚠️ paths-ignore 절대 금지: 필수 체크가 "대기 중"으로 남아 머지가 영원히 막힘
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}   # PR만 이전 빌드 취소, develop 머지 빌드는 취소 안 함
+
+jobs:
+  build:
+    name: build                      # Ruleset 필수 체크에 이 이름으로 등록
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      POSTGRES_PASSWORD: ci-dummy-password   # compose의 필수값 검사를 통과시키는 CI 전용 가짜 값 (진짜 비밀 아님)
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v6  # 캐시 + wrapper 바꿔치기 검사
+        with:
+          cache-provider: basic               # 오픈소스(MIT) 캐시
+          cache-read-only: ${{ github.ref != 'refs/heads/develop' }}   # develop에서만 캐시 저장
+
+      - name: gradlew 실행 권한 (방어용)
+        run: chmod +x gradlew
+
+      - name: 빌드 + 테스트
+        run: ./gradlew build              # 테스트 중 Spring이 compose로 postgres를 자동 기동
+
+      - name: 실패 시 postgres 로그
+        if: failure()
+        run: docker compose -f docker-compose-logging-pipeline.yml logs postgres || true
+
+      - name: 실패 시 테스트 리포트 업로드
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-reports
+          path: build/reports/tests/
+          retention-days: 7
+          if-no-files-found: ignore

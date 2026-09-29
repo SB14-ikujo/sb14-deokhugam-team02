@@ -1,0 +1,26 @@
+name: PR Target Guard
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, edited]   # edited: PR의 대상을 main으로 바꾼 경우도 검사
+
+permissions: {}
+
+jobs:
+  main-only-from-develop:
+    name: main-only-from-develop     # main Ruleset 필수 체크 이름
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: 소스 브랜치 검사
+        env:                         # 브랜치 이름을 스크립트에 직접 넣지 않음 (인젝션 방지)
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
+        run: |
+          if [ "$HEAD_REF" != "develop" ] || [ "$HEAD_REPO" != "$BASE_REPO" ]; then
+            echo "::error::main으로는 develop 브랜치에서만 PR할 수 있습니다 (현재: $HEAD_REPO:$HEAD_REF)"
+            exit 1
+          fi
+          echo "OK: develop → main"

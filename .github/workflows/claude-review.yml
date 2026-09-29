@@ -1,0 +1,71 @@
+name: Claude Review
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]     # push마다 돌지 않음. 재리뷰는 @claude로
+    branches: [develop]
+    paths-ignore:                         # 변경 파일이 "전부" 여기 해당할 때만 건너뜀
+      - 'src/main/resources/static/**'
+      - '**/*.md'
+      - 'gradle/wrapper/**'
+      - '**/*.png'
+      - '**/*.jpg'
+      - '**/*.gif'
+      - '**/*.svg'
+      - '**/*.ico'
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: |                                 # Draft 제외 · 포크 PR 제외(시크릿 없음) · 봇 제외
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.user.type != 'Bot'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write                     # Claude GitHub App 인증에 필수
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          # 팀 API 키를 받으면 위 줄 대신: anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            너는 "덕후감" 백엔드(Spring Boot 4.1 / Java 17 / JPA / PostgreSQL) 저장소의 코드 리뷰어다.
+            모든 출력은 한국어로만 쓴다. 클래스명·변수명 같은 코드 식별자는 원문 그대로 둔다.
+
+            1. `gh pr diff ${{ github.event.pull_request.number }}`로 변경분을 확인하고,
+               필요하면 저장소 파일을 읽어 맥락을 파악한다. 프로젝트 규칙은 루트 CLAUDE.md를 따른다.
+            2. 리뷰하지 않는 것: src/main/resources/static/(프론트 빌드 산출물), build/, logs/, gradle/wrapper/
+            3. 중점 항목:
+               - JPA N+1 (반복문 안 지연 로딩 접근, fetch join/@EntityGraph 누락)
+               - 트랜잭션 경계 (open-in-view=false 이므로 서비스 계층 @Transactional 누락, LazyInitializationException 위험)
+               - 엔티티를 API 응답으로 직접 노출
+               - 예외 처리 (예외 삼키기, 광범위한 catch)
+               - 민감정보 로깅 (비밀번호·토큰·이메일, 엔티티 전체 toString)
+               - logback-spring.xml 로그 패턴을 바꿨다면 logstash.conf의 grok도 같이 바꿨는지
+               - build.gradle의 jar 비활성화를 되돌리면 Dockerfile COPY가 깨짐
+               - compose에서 postgres에 profiles를 붙이면 테스트/CI가 깨짐
+               - 명백한 버그, 보안 문제, 테스트 누락
+               - PR에 .github/ 또는 CLAUDE.md 변경이 있으면 요약 맨 위에 "⚠️ 설정 파일 변경 포함" 표시
+            4. 구체적인 줄 문제는 mcp__github_inline_comment__create_inline_comment(confirmed: true)로 인라인 코멘트한다.
+               앞에 [필수]/[권장]/[참고]를 붙이고, 가능하면 수정 예시를 준다.
+            5. 마지막에 `gh pr comment ${{ github.event.pull_request.number }} --body "..."`로 요약 코멘트를 정확히 1개 남긴다.
+               지적할 것이 없으면 "✅ Claude 리뷰 완료 - 발견된 이슈 없음"만 남긴다.
+            6. 스타일 취향, 변경되지 않은 코드, 추측성 지적은 하지 않는다. 코드를 수정하거나 커밋하지 않는다.
+          claude_args: |
+            --max-turns 30
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+            --disallowedTools "Edit,Write,MultiEdit,NotebookEdit,mcp__github_file_ops__commit_files,mcp__github_file_ops__delete_files"
