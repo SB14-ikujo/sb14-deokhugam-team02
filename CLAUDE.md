@@ -26,7 +26,7 @@
 
 ## 브랜치 / 커밋 / PR
 - 작업 브랜치 → `develop` → `main` (main은 develop에서만 PR)
-- 커밋: `feat:`, `fix:`, `refactor:`, `docs:`, `chore:` + 설명 (세부 TODO)
+- 커밋: `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:` + 설명 (세부 TODO)
 
 ## 비밀값
 - 비밀번호·키는 `.env`로만. 코드·yml에 하드코딩 금지, 기본값도 두지 않음
