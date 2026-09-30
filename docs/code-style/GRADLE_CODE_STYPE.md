@@ -1,44 +1,5 @@
 # Gradle 코드 스타일 검사 연동
 
-`.editorconfig`([설명](EDITOR_CONFIG.md))는 IDE에서만 적용되고 강제력이 없어서, 규칙을 안 지킨 코드도 커밋·빌드가 그냥 통과할 수 있다. <br/>
-이를 막기 위해 `./gradlew build` / `./gradlew check` 실행 시 자동으로 `.editorconfig` 위반을 검사하도록 Gradle에 연동했다.
-
-## 사용 플러그인
-
-[editorconfig 제공 github](https://github.com/ec4j/editorconfig-gradle-plugin), [Gradle Plugin Portal (버전 확인용)](https://plugins.gradle.org/plugin/org.ec4j.editorconfig) <br/>
-`org.ec4j.editorconfig` (0.1.0) — `.editorconfig` 규칙을 실제 파일에 검사/적용해주는 Gradle 플러그인.
-
-```groovy
-plugins {
-    id 'org.ec4j.editorconfig' version '0.1.0'
-}
-```
-
-## 설정
-
-```groovy
-editorconfig {
-    includes = ['src/**']
-    excludes = ['src/main/resources/**']
-}
-
-check.dependsOn editorconfigCheck
-```
-
-- `check.dependsOn editorconfigCheck`: 표준 `check` 태스크(→ `build`가 의존)에 `editorconfigCheck`를 연결. <br/> 즉 `./gradlew build`
-  또는 `./gradlew check`를 돌리면 `editorconfigCheck`가 먼저 실행되고, <br/> `.editorconfig` 위반이 있으면 빌드가 실패한다.
-
-### `includes` / `excludes` 사용법
-
-- `includes`: 검사 **대상**을 지정하는 화이트리스트.
-- `excludes`: `includes`로 좁힌 대상 중에서 **추가로 빼는** 블랙리스트.
-
-## 태스크 사용법
-
-- `./gradlew editorconfigCheck`: 위반 사항만 검사 (빌드 없이 단독 실행 가능).
-- `./gradlew editorconfigFormat`: 위반 사항 자동 포맷.
-- `./gradlew build`: 검사 포함해서 전체 빌드.
-
 ## Checkstyle 연동
 
 [규칙별 설명 참고](CHECK_STYLE.md) <br/>

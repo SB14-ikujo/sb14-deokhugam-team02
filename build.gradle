@@ -2,7 +2,6 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
-    id 'org.ec4j.editorconfig' version '0.1.0'
     id 'checkstyle'
 }
 
@@ -40,11 +39,6 @@ jar {
     enabled = false
 }
 
-editorconfig {
-    includes = ['src/**']
-    excludes = ['src/main/resources/**']
-}
-
 checkstyle {
     maxWarnings = 0 // 규칙이 어긋나는 코드가 하나라도 있을 경우 빌드 fail을 내고 싶다면 이 선언을 추가한다.
     configFile = file("${rootDir}/rule-config/checkstyle-rules.xml")
@@ -60,6 +54,3 @@ tasks.named('test') {
 if (file('.git').exists()) {
     providers.exec { commandLine 'git', 'config', 'core.hooksPath', '.githooks' }.result.get()
 }
-
-
-check.dependsOn editorconfigCheck // .editorconfig 적용 (checkstyle이 설정 되어 있을 시, editorconfigCheck 후 checkstyle 진행)
