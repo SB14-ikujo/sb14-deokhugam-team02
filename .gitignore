@@ -5,6 +5,27 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
+### macOS ###
+.DS_Store
+._*
+
+### Windows ###
+Thumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+### Linux ###
+*~
+.directory
+.Trash-*
+.nfs*
+
 ### STS ###
 .apt_generated
 .classpath
@@ -36,6 +57,8 @@ out/
 ### VS Code ###
 .vscode/
 
+
+### Project ###
 .claude/
 logs/
 
