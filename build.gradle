@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.ec4j.editorconfig' version '0.1.0'
 }
 
 group = 'com.sprint'
@@ -38,6 +39,11 @@ jar {
     enabled = false
 }
 
+editorconfig {
+    includes = ['src/**']
+    excludes = ['src/main/resources/**']
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 }
@@ -46,3 +52,6 @@ tasks.named('test') {
 if (file('.git').exists()) {
     providers.exec { commandLine 'git', 'config', 'core.hooksPath', '.githooks' }.result.get()
 }
+
+
+check.dependsOn editorconfigCheck // .editorconfig 적용 (checkstyle이 설정 되어 있을 시, editorconfigCheck 후 checkstyle 진행)
