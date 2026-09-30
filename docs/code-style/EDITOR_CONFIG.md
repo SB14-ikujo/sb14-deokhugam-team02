@@ -47,5 +47,12 @@ end_of_line = crlf
 
 ## 적용 범위
 
-`.editorconfig`는 IDE에서 편집·포맷팅할 때만 적용되고, 실제로 규칙을 어겼을 때 빌드를 막는 강제력은 없다.<br/>
-빌드 단계에서 강제하는 방법은 [GRADLE_CODE_STYPE.md](GRADLE_CODE_STYPE.md) 참고.
+`.editorconfig`는 **IntelliJ에서 편집·포맷팅할 때 파일을 정리하는 용도로만** 사용한다.
+빌드 단계의 강제 검사는 하지 않는다.
+
+- 빌드에서 강제하려면 `org.ec4j.editorconfig` Gradle 플러그인을 연동해야 하지만,
+  빌드 시 **Gradle 10과 호환되지 않을 수 있다는 경고**가 발생해서 연동제거.
+- 대신 `.java` 파일의 기본 포맷 규칙은 **Checkstyle이 빌드 단계에서 검사**한다.
+  (`.editorconfig`와 겹치는 규칙: UTF-8 인코딩, LF 줄바꿈, 파일 끝 개행, 줄 끝 공백 금지, 탭 금지)
+
+Checkstyle 설정은 [GRADLE_CODE_STYPE.md](GRADLE_CODE_STYPE.md) 참고.
