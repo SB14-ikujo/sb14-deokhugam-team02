@@ -1,0 +1,14 @@
+#!/bin/sh
+# Checkstyle 위반이 있으면 커밋을 막는다.
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+echo "🔍 Checkstyle 검사 중... (./gradlew checkstyleMain checkstyleTest)"
+
+if ! ./gradlew checkstyleMain checkstyleTest -q; then
+  echo "❌ Checkstyle 규칙 위반으로 커밋이 취소되었습니다."
+  echo "   리포트: build/reports/checkstyle/main.html / build/reports/checkstyle/test.html"
+  exit 1
+fi
+
+echo "✅ Checkstyle 통과! 커밋을 진행합니다."
+exit 0
