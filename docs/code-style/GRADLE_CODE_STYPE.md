@@ -39,16 +39,16 @@ Formatter import부터 CheckStyle-IDEA 플러그인까지 —
 
 - `./gradlew checkstyleMain`: 운영 코드(`src/main`)만 검사.
 - `./gradlew checkstyleTest`: 테스트 코드(`src/test`)만 검사.
-- `./gradlew build`: `editorconfigCheck` + `checkstyleMain`/`checkstyleTest` 포함 전체 빌드.
+- `./gradlew build`: `checkstyleMain`/`checkstyleTest` 포함 전체 빌드.
 
 ## 코드 스타일 검사 흐름 정리
 
 코드 스타일은 로컬 두 시점 + 원격 한 시점, 총 세 군데에서 걸러진다.
 
-| 시점 | 트리거 | 실행 내용 | 실패하면 |
-|---|---|---|---|
-| 1. 개발 중 (로컬) | IntelliJ에서 코드 작성 | Formatter import + (선택) CheckStyle-IDEA 플러그인이 실시간으로 표시 | 에디터에 밑줄/경고만, 강제 아님 |
-| 2. `git commit` (로컬) | `.githooks/pre-commit` | `./gradlew checkstyleMain checkstyleTest` | **커밋 자체가 막힘** (`exit 1`) |
+| 시점                      | 트리거                                | 실행 내용                                                                            | 실패하면                               |
+|-------------------------|------------------------------------|----------------------------------------------------------------------------------|------------------------------------|
+| 1. 개발 중 (로컬)            | IntelliJ에서 코드 작성                   | Formatter import + (선택) CheckStyle-IDEA 플러그인이 실시간으로 표시                           | 에디터에 밑줄/경고만, 강제 아님                 |
+| 2. `git commit` (로컬)    | `.githooks/pre-commit`             | `./gradlew checkstyleMain checkstyleTest`                                        | **커밋 자체가 막힘** (`exit 1`)           |
 | 3. `git push` → PR (원격) | GitHub Actions `ci.yml`의 `build` 잡 | `./gradlew build` (→ `editorconfigCheck` + `checkstyleMain`/`checkstyleTest` 포함) | CI 실패, PR의 `build` 필수 체크 실패로 머지 불가 |
 
 ```
@@ -60,5 +60,6 @@ push/PR ──▶ GitHub Actions(ci.yml) ──▶ ./gradlew build 통과해야 
 
 - 1번(IntelliJ)은 참고용이라 어겨도 커밋/푸시가 가능하다. 실제 강제력은 2번(로컬 커밋 차단)과 3번(원격 머지 차단) 두 군데다.
 - 2번을 우회하고 싶으면(비상시) `git commit --no-verify`로 훅을 건너뛸 수 있지만, 그래도 3번(CI)에서 다시 걸린다 — 결국 PR을 머지하려면 반드시 통과해야 한다.
-- `.githooks/pre-commit`은 `core.hooksPath`가 `.githooks`로 설정돼 있어야 동작한다. `build.gradle`이 Gradle 실행 시 자동으로 이 설정을 해주지만(59~62번째 줄), 저장소를 새로 클론하고 `./gradlew`를 한 번도 안 돌린 상태에서 바로 커밋하면 첫 커밋에는 훅이 안 걸릴 수 있다.
+- `.githooks/pre-commit`은 `core.hooksPath`가 `.githooks`로 설정돼 있어야 동작한다. `build.gradle`이 Gradle 실행 시 자동으로 이 설정을 해주지만(59~
+  62번째 줄), 저장소를 새로 클론하고 `./gradlew`를 한 번도 안 돌린 상태에서 바로 커밋하면 첫 커밋에는 훅이 안 걸릴 수 있다.
 - `.githooks/commit-msg`는 커밋 **메시지 형식**(`feat:`/`fix:`/... 규칙)을 검사하는 별도 훅이라 위 표의 코드 스타일 검사와는 무관하다.
