@@ -1,6 +1,5 @@
 package com.sprint.deokhugam.common.exception;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
@@ -16,14 +15,16 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionController {
 
     @ExceptionHandler(DeokhugamException.class)
-    public ResponseEntity<ErrorResponse> handleDeokhugam(DeokhugamException e){
-        ErrorCode code = e.getErrorCode();
-        log.warn("[{}] {}", code.name(), e.getMessage());
+    public ResponseEntity<ErrorResponse> handleDeokhugam(DeokhugamException ex) {
+        ErrorCode code = ex.getErrorCode();
+        log.warn("[{}] {}", code.name(), ex.getMessage());
         return ResponseEntity
             .status(code.getStatus())
             .body(ErrorResponse.of(code));
@@ -37,16 +38,16 @@ public class GlobalExceptionController {
         MethodArgumentTypeMismatchException.class,      // enum 오타, UUID 형식 오류
         HttpMessageNotReadableException.class           // JSON 형식 오류
     })
-    public ResponseEntity<ErrorResponse> handleInvalidInput(Exception e) {
-        log.warn("[INVALID_INPUT] {}", e.getMessage());
+    public ResponseEntity<ErrorResponse> handleInvalidInput(Exception ex) {
+        log.warn("[INVALID_INPUT] {}", ex.getMessage());
         CommonErrorCode code = CommonErrorCode.INVALID_INPUT;
         return ResponseEntity
             .status(code.getStatus())
-            .body(ErrorResponse.of(code, fieldErrorOf(e)));
+            .body(ErrorResponse.of(code, fieldErrorOf(ex)));
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException e) {
+    public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException ex) {
         CommonErrorCode code = CommonErrorCode.RESOURCE_NOT_FOUND;
         return ResponseEntity
             .status(code.getStatus())
@@ -54,8 +55,8 @@ public class GlobalExceptionController {
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<ErrorResponse> handleMethodNotAllowed(HttpRequestMethodNotSupportedException e) {
-        log.warn("[METHOD_NOT_ALLOWED] {}", e.getMessage());
+    public ResponseEntity<ErrorResponse> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
+        log.warn("[METHOD_NOT_ALLOWED] {}", ex.getMessage());
         CommonErrorCode code = CommonErrorCode.METHOD_NOT_ALLOWED;
         return ResponseEntity
             .status(code.getStatus())
@@ -63,8 +64,8 @@ public class GlobalExceptionController {
     }
 
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
-    public ResponseEntity<ErrorResponse> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException e) {
-        log.warn("[UNSUPPORTED_MEDIA_TYPE] {}", e.getMessage());
+    public ResponseEntity<ErrorResponse> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException ex) {
+        log.warn("[UNSUPPORTED_MEDIA_TYPE] {}", ex.getMessage());
         CommonErrorCode code = CommonErrorCode.UNSUPPORTED_MEDIA_TYPE;
         return ResponseEntity
             .status(code.getStatus())
@@ -72,8 +73,8 @@ public class GlobalExceptionController {
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
-    public ResponseEntity<ErrorResponse> handleFileSizeExceeded(MaxUploadSizeExceededException e) {
-        log.warn("[FILE_SIZE_EXCEEDED] {}", e.getMessage());
+    public ResponseEntity<ErrorResponse> handleFileSizeExceeded(MaxUploadSizeExceededException ex) {
+        log.warn("[FILE_SIZE_EXCEEDED] {}", ex.getMessage());
         CommonErrorCode code = CommonErrorCode.FILE_SIZE_EXCEEDED;
         return ResponseEntity
             .status(code.getStatus())
@@ -81,8 +82,8 @@ public class GlobalExceptionController {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleExceptionController(Exception e){
-        log.error("[심각]", e);
+    public ResponseEntity<ErrorResponse> handleExceptionController(Exception ex) {
+        log.error("[심각]", ex);
         return ResponseEntity
             .status(CommonErrorCode.INTERNAL_SERVER_ERROR.getStatus())
             .body(ErrorResponse.of(CommonErrorCode.INTERNAL_SERVER_ERROR));
@@ -90,9 +91,9 @@ public class GlobalExceptionController {
 
 
     // @Valid 실패면 "nickname: 2자 이상 20자 이하" 처럼 첫 번째 틀린 필드를 details에 담음
-    private String fieldErrorOf(Exception e) {
-        if (e instanceof MethodArgumentNotValidException ex) {
-            FieldError fieldError = ex.getBindingResult().getFieldError();
+    private String fieldErrorOf(Exception ex) {
+        if (ex instanceof MethodArgumentNotValidException exception) {
+            FieldError fieldError = exception.getBindingResult().getFieldError();
             if (fieldError != null) {
                 return fieldError.getField() + ": " + fieldError.getDefaultMessage();
             }
