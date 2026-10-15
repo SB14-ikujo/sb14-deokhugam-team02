@@ -1,9 +1,11 @@
 package com.sprint.deokhugam.notification.domain.exception;
 
-import com.sprint.deokhugam.common.exception.ErrorCode;
+import org.springframework.http.HttpStatus;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+
+import com.sprint.deokhugam.common.exception.ErrorCode;
 
 @Getter
 @RequiredArgsConstructor
