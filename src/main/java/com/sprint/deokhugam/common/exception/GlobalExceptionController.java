@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -11,6 +13,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
@@ -45,6 +48,33 @@ public class GlobalExceptionController {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNoResource(NoResourceFoundException e) {
         CommonErrorCode code = CommonErrorCode.RESOURCE_NOT_FOUND;
+        return ResponseEntity
+            .status(code.getStatus())
+            .body(ErrorResponse.of(code));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotAllowed(HttpRequestMethodNotSupportedException e) {
+        log.warn("[METHOD_NOT_ALLOWED] {}", e.getMessage());
+        CommonErrorCode code = CommonErrorCode.METHOD_NOT_ALLOWED;
+        return ResponseEntity
+            .status(code.getStatus())
+            .body(ErrorResponse.of(code));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException e) {
+        log.warn("[UNSUPPORTED_MEDIA_TYPE] {}", e.getMessage());
+        CommonErrorCode code = CommonErrorCode.UNSUPPORTED_MEDIA_TYPE;
+        return ResponseEntity
+            .status(code.getStatus())
+            .body(ErrorResponse.of(code));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorResponse> handleFileSizeExceeded(MaxUploadSizeExceededException e) {
+        log.warn("[FILE_SIZE_EXCEEDED] {}", e.getMessage());
+        CommonErrorCode code = CommonErrorCode.FILE_SIZE_EXCEEDED;
         return ResponseEntity
             .status(code.getStatus())
             .body(ErrorResponse.of(code));
