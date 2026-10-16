@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 
 import com.sprint.deokhugam.common.exception.ErrorCode;
 
-
 @Getter
 @RequiredArgsConstructor
 public enum CommentErrorCode implements ErrorCode {

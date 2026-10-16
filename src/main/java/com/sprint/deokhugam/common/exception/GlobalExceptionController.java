@@ -89,7 +89,6 @@ public class GlobalExceptionController {
             .body(ErrorResponse.of(CommonErrorCode.INTERNAL_SERVER_ERROR));
     }
 
-
     // @Valid 실패면 "nickname: 2자 이상 20자 이하" 처럼 첫 번째 틀린 필드를 details에 담음
     private String fieldErrorOf(Exception ex) {
         if (ex instanceof MethodArgumentNotValidException exception) {

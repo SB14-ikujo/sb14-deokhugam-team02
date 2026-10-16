@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-<!--    Spring 앱이 로그를 어떤 모양으로 어디에 남길지 정한다.-->
+    <!--    Spring 앱이 로그를 어떤 모양으로 어디에 남길지 정한다.-->
     <property name="LOG_PATTERN"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{requestedIp}] [%X{requestedUserId}] - %msg%n"/>
 
