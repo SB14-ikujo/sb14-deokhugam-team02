@@ -29,6 +29,8 @@ logging:
   file:
     path: ${LOG_PATH:logs}
   level:
+    root: info
+    com.sprint.deokhugam: debug
     org.hibernate.SQL: debug
 
 springdoc:
