@@ -13,4 +13,6 @@ import com.sprint.deokhugam.common.domain.BaseEntity;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Book extends BaseEntity {
+
+
 }
