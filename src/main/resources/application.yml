@@ -9,6 +9,11 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD}}
   jpa:
     open-in-view: false
+    hibernate:
+      ddl-auto: create
+    properties:
+      hibernate:
+        format_sql: true
   docker:
     compose:
       file: docker-compose-logging-pipeline.yml   # 기본 이름(compose.yaml)이 아니라서 지정
@@ -23,6 +28,8 @@ spring:
 logging:
   file:
     path: ${LOG_PATH:logs}
+  level:
+    org.hibernate.SQL: debug
 
 springdoc:
   swagger-ui:
