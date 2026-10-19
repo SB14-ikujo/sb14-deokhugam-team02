@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'checkstyle'
+    id 'jacoco'
 }
 
 group = 'com.sprint'
@@ -66,6 +67,23 @@ checkstyle {
 
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy 'jacocoTestReport'
+}
+
+// Jacoco 관련 설정
+jacoco {
+    toolVersion = '0.8.13'
+}
+
+
+// Jacoco - report 생성
+jacocoTestReport {
+    dependsOn test // 리포트 생성 전 테스트 실행
+    reports {
+        xml.required = false // XML 리포트 X
+        csv.required = false // csv 리포트 X
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml') // HTML은 build/jacocoHtml/ 생성
+    }
 }
 
 // Gradle이 실행될 때(IntelliJ 동기화 포함) git 훅 경로를 자동 설정
