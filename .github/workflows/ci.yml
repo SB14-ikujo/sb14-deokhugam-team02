@@ -44,7 +44,7 @@ jobs:
       - name: 커버리지 PR 코멘트 추가
         id: jacoco                        # 이 step의 출력값을 뒤 step에서 쓰기 위한 이름표
         if: github.event_name == 'pull_request'
-        uses: madrapps/jacoco-report@v1.7.1    # jacoco 결과를 추가해주는 라이브러리
+        uses: madrapps/jacoco-report@e51ce1f46f7f8b5331593f935e59cbaf44b84920  # jacoco 결과를 추가해주는 라이브러리(v1.8.0 )
         with:
           paths: ${{ github.workspace }}/build/reports/jacoco/test/jacocoTestReport.xml # 테스트 결과 파일 경로
           token: ${{ secrets.GITHUB_TOKEN }}   # 개인 토큰 자동 사용
