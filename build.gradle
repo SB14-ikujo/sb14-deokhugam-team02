@@ -75,12 +75,23 @@ jacoco {
     toolVersion = '0.8.13'
 }
 
+def jacocoExcludes = [
+    '**/*Application*',
+    '**/*Exception*',
+    '**/*ErrorCode*',
+    '**/*Request*',
+    '**/*Response*',
+    '**/*Dto*',
+    '**/common/**',
+    '**/domain/Q*.class',
+    '**/*MapperImpl*'
+]
 
 // Jacoco - report 생성
 jacocoTestReport {
     dependsOn test // 리포트 생성 전 테스트 실행
     reports {
-        xml.required = false // XML 리포트 X
+        xml.required = true // XML 리포트 - actions에서 사용을 위해
         csv.required = false // csv 리포트 X
         html.outputLocation = layout.buildDirectory.dir('jacocoHtml') // HTML은 build/jacocoHtml/ 생성
     }
@@ -88,22 +99,11 @@ jacocoTestReport {
         // JaCoCo 커버리지 리포트에 포함될 클래스 파일 디렉토리 설정
         classDirectories.setFrom(files(classDirectories.files.collect {
             fileTree(dir: it,
-                exclude: [  // 커버리지에서 제외할 파일 패턴 설정
-                            '**/*Application*',   // Application 이름이 포함된 파일 제외
-                            '**/*Exception*',     // Exception 이름이 포함된 파일 제외
-                            '**/*ErrorCode*',     // ErrorCode Enum 제외
-                            '**/*Request*',       // Request 이름이 포함된 파일 제외
-                            '**/*Response*',      // Response 이름이 포함된 파일 제외
-                            '**/*Dto*',           // DTO 이름이 포함된 파일 제외
-                            '**/common/**',       // common 디렉토리 하위 모든 파일 제외
-                            '**/domain/Q*.class', // QueryDSL 자동생성 클래스 제외
-                            '**/*MapperImpl*'     // MapStruct 자동생성 클래스 제외
-                ]
+                exclude: jacocoExcludes
             )
         }))
     }
 }
-
 
 // 테스트 커버리지 기준 검증
 jacocoTestCoverageVerification {
@@ -123,6 +123,12 @@ jacocoTestCoverageVerification {
                 minimum = 0.80          // 커버리지 값의 최소 허용 값 : 80% 만족(지정한 커버리지가 충족되지 않으면 빌드 실패)
             }
         }
+
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: jacocoExcludes)
+        }))
     }
 }
 
