@@ -2,13 +2,14 @@ name: CI
 
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [ develop, main ]
   push:
-    branches: [develop]              # 머지 후 재검증 + 캐시 저장용
+    branches: [ develop ]              # 머지 후 재검증 + 캐시 저장용
   # ⚠️ paths-ignore 절대 금지: 필수 체크가 "대기 중"으로 남아 머지가 영원히 막힘
 
 permissions:
-  contents: read
+  contents: read       # 코드 체크아웃용
+  pull-requests: write # PR 코멘트 작성용
 
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.ref }}
@@ -40,9 +41,27 @@ jobs:
       - name: 빌드 + 테스트
         run: ./gradlew build              # 테스트 중 Spring이 compose로 postgres를 자동 기동
 
+      - name: 커버리지 PR 코멘트 추가
+        id: jacoco                        # 이 step의 출력값을 뒤 step에서 쓰기 위한 이름표
+        if: github.event_name == 'pull_request'
+        uses: madrapps/jacoco-report@v1.7.1    # jacoco 결과를 추가해주는 라이브러리
+        with:
+          paths: ${{ github.workspace }}/build/reports/jacoco/test/jacocoTestReport.xml # 테스트 결과 파일 경로
+          token: ${{ secrets.GITHUB_TOKEN }}   # 개인 토큰 자동 사용
+          min-coverage-changed-files: 80       # 변경 파일 기준 최소 테스트커버리지
+          title: 테스트 커버리지 측정
+          update-comment: true
+
+      #      - name: 변경 파일 커버리지 80% 검사
+      #        if: github.event_name == 'pull_request' && steps.jacoco.outputs.coverage-changed-files < 80
+      #        run: |
+      #          echo "변경 파일 커버리지: ${{ steps.jacoco.outputs.coverage-changed-files }}%"
+      #          exit 1
+
       - name: 실패 시 postgres 로그
         if: failure()
         run: docker compose -f docker-compose-logging-pipeline.yml logs postgres || true
+
 
       - name: 실패 시 테스트 리포트 업로드
         if: failure()
@@ -52,5 +71,6 @@ jobs:
           path: |
             build/reports/tests/
             build/reports/checkstyle/
+            build/jacocoHtml/
           retention-days: 7
           if-no-files-found: ignore
