@@ -104,6 +104,28 @@ jacocoTestReport {
     }
 }
 
+
+// 테스트 커버리지 기준 검증
+jacocoTestCoverageVerification {
+    violationRules {
+        /**
+         * 프로젝트 전체 운영 코드를 줄 단위로 세어,
+         * 테스트 실행 시 지나간 줄의 비율이 80% 이상이여야 빌드 성공
+         */
+        rule {
+            // 검증 대상 설정
+            element = "BUNDLE"  // 프로젝트 전체 기준
+
+            // 커버리지 기준 설정
+            limit {
+                counter = 'LINE'        // 커버리지 측정 단위 : 운영 코드의 줄(line) 기준
+                value = 'COVEREDRATIO'  // 비교할 값 : 운영 코드 중 테스트 실행 시 지나간 줄의 비율
+                minimum = 0.80          // 커버리지 값의 최소 허용 값 : 80% 만족(지정한 커버리지가 충족되지 않으면 빌드 실패)
+            }
+        }
+    }
+}
+
 // Gradle이 실행될 때(IntelliJ 동기화 포함) git 훅 경로를 자동 설정
 if (file('.git').exists()) {
     providers.exec { commandLine 'git', 'config', 'core.hooksPath', '.githooks' }.result.get()
