@@ -3,6 +3,7 @@ package com.sprint.deokhugam.notification.application.port.in;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import com.sprint.deokhugam.notification.application.port.out.NotificationRepositoryPort;
 import com.sprint.deokhugam.notification.domain.Notification;
@@ -10,6 +11,7 @@ import com.sprint.deokhugam.notification.domain.NotificationMessageTemplate;
 import com.sprint.deokhugam.notification.domain.NotificationType;
 import com.sprint.deokhugam.review.domain.Review;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationService implements NotificationUseCase {
@@ -26,6 +28,17 @@ public class NotificationService implements NotificationUseCase {
     }
 
     private Notification createNotification(Review review, String actorNickname, NotificationType type) {
+
+        if (review == null) {
+            log.warn("알림 생성 생략: 리뷰 정보가 없습니다. actorNickname={}", actorNickname);
+            return null;
+        }
+
+        if (actorNickname == null || actorNickname.isBlank()) {
+            log.warn("알림 생성 생략: 알림 발생자 닉네임이 유효하지 않습니다. reviewId={}, actorNickname={}", review.getId(), actorNickname);
+            return null;
+        }
+
         String message = NotificationMessageTemplate.LIKE.createMessageTemplate(actorNickname);
         if (type == NotificationType.COMMENT) {
             message = NotificationMessageTemplate.COMMENT.createMessageTemplate(actorNickname);
