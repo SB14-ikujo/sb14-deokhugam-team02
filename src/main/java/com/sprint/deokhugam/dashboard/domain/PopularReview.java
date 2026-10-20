@@ -1,5 +1,7 @@
 package com.sprint.deokhugam.dashboard.domain;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -30,24 +32,35 @@ public class PopularReview extends BaseEntity {
     private PeriodType period;
 
     @Column(nullable = false)
-    private long rank;
+    private Long rank;
 
     @Column(nullable = false)
     private double score;
 
     @Column(nullable = false)
-    private long likeCount;
+    private Long likeCount;
 
     @Column(nullable = false)
-    private long commentCount;
+    private Long commentCount;
 
-    public PopularReview(Review review, PeriodType period, long rank, double score,
-        long likeCount, long commentCount) {
+    @Column(name = "snapshot_date", nullable = false)
+    private LocalDate snapshotDate;
+
+    private PopularReview(Review review, PeriodType period, Long rank, double score,
+        Long likeCount, Long commentCount, LocalDate snapshotDate) {
         this.review = review;
         this.period = period;
         this.rank = rank;
         this.score = score;
         this.likeCount = likeCount;
         this.commentCount = commentCount;
+        this.snapshotDate = snapshotDate;
     }
+
+    public static PopularReview create(Review review, PeriodType period, Long rank, double score,
+        Long likeCount, Long commentCount, LocalDate snapshotDate) {
+
+        return new PopularReview(review, period, rank, score, likeCount, commentCount, snapshotDate);
+    }
+
 }

@@ -1,5 +1,7 @@
 package com.sprint.deokhugam.dashboard.domain;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -44,8 +46,11 @@ public class PowerUser extends BaseEntity {
     @Column(nullable = false)
     private Long commentCount;
 
+    @Column(name = "snapshot_date", nullable = false)
+    private LocalDate snapshotDate;
+
     private PowerUser(User user, PeriodType period, Long rank, double score,
-        double reviewScoreSum, Long likeCount, Long commentCount) {
+        double reviewScoreSum, Long likeCount, Long commentCount, LocalDate snapshotDate) {
         this.user = user;
         this.period = period;
         this.rank = rank;
@@ -53,11 +58,12 @@ public class PowerUser extends BaseEntity {
         this.reviewScoreSum = reviewScoreSum;
         this.likeCount = likeCount;
         this.commentCount = commentCount;
+        this.snapshotDate = snapshotDate;
     }
 
     public static PowerUser create(User user, PeriodType period, Long rank, double score,
-        double reviewScoreSum, Long likeCount, Long commentCount) {
+        double reviewScoreSum, Long likeCount, Long commentCount, LocalDate snapshotDate) {
 
-        return new PowerUser(user, period, rank, score, reviewScoreSum, likeCount, commentCount);
+        return new PowerUser(user, period, rank, score, reviewScoreSum, likeCount, commentCount, snapshotDate);
     }
 }
