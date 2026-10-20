@@ -44,6 +44,7 @@ public class Review extends BaseEntity {
     @Column(nullable = false)
     private int commentCount;
 
+    @ColumnDefault("false")
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted;
 

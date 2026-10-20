@@ -27,6 +27,7 @@ public class User extends BaseEntity {
     private String password;
 
     @ColumnDefault("false")
+    @Column(nullable = false)
     private boolean isDeleted;
 
     private User(String email, String nickname, String password) {
