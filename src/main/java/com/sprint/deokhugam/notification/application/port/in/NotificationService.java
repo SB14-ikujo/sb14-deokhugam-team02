@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 
 import com.sprint.deokhugam.notification.application.port.out.NotificationRepositoryPort;
 import com.sprint.deokhugam.notification.domain.Notification;
-import com.sprint.deokhugam.notification.domain.NotificationType;
+import com.sprint.deokhugam.notification.domain.NotificationMessageTemplate;
 import com.sprint.deokhugam.review.domain.Review;
 
 @Service
@@ -15,7 +15,7 @@ public class NotificationService implements NotificationUseCase {
     private final NotificationRepositoryPort notificationRepository;
 
     @Override
-    public Notification createNotification(Review review, String actorNickname, NotificationType type) {
+    public Notification createNotification(Review review, String actorNickname, NotificationMessageTemplate type) {
         String message = type.createMessageTemplate(actorNickname);
         Notification createdNotification = Notification.create(review, message);
 
