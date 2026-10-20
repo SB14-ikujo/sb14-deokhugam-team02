@@ -38,13 +38,14 @@ public class MdcLoggingInterceptor implements HandlerInterceptor {
     ) {
         String authHeader = request.getHeader(USER_ID_HEADER);
         MDC.put(REQUEST_IP, request.getRemoteAddr());
-        MDC.put(REQUEST_ID, authHeader);
         MDC.put(REQUEST_METHOD, request.getMethod());
         MDC.put(REQUEST_URL, request.getRequestURI());
 
         if (authHeader != null && !authHeader.isBlank()) {
             try {
-                UserContextHolder.setUserId(UUID.fromString(authHeader));
+                UUID userId = UUID.fromString(authHeader);
+                UserContextHolder.setUserId(userId);
+                MDC.put(REQUEST_ID, userId.toString());
             } catch (IllegalArgumentException e) {
                 MDC.clear();
                 throw new UserException(UserErrorCode.USER_INVALID_HEADER);
