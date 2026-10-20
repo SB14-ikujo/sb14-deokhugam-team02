@@ -2,6 +2,7 @@ package com.sprint.deokhugam.common.exception;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -32,6 +33,7 @@ public class GlobalExceptionController {
 
     @ExceptionHandler({
         MethodArgumentNotValidException.class,          // @Valid 검증 실패
+        BindException.class,
         HandlerMethodValidationException.class,         // @RequestParam 등 파라미터 검증 실패
         MissingRequestHeaderException.class,            // Deokhugam-Request-User-ID 헤더 누락
         MissingServletRequestParameterException.class,  // 필수 쿼리 누락
