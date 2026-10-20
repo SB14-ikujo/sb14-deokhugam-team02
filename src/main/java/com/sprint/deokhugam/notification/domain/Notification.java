@@ -13,6 +13,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import com.sprint.deokhugam.common.domain.BaseEntity;
+import com.sprint.deokhugam.notification.domain.exception.NotificationErrorCode;
+import com.sprint.deokhugam.notification.domain.exception.NotificationException;
 import com.sprint.deokhugam.review.domain.Review;
 import com.sprint.deokhugam.user.domain.User;
 
@@ -43,8 +45,16 @@ public class Notification extends BaseEntity {
         this.message = message;
     }
 
-    public static Notification create(User user, Review review, String message) {
-        return new Notification(user, review, message);
+    public static Notification create(Review review, String message) {
+        if (review == null) {
+            throw new NotificationException(NotificationErrorCode.NOTIFICATION_REVIEW_NOT_FOUND);
+        }
+
+        if (message == null || message.isBlank()) {
+            throw new NotificationException(NotificationErrorCode.NOTIFICATION_MESSAGE_REQUIRED);
+        }
+
+        return new Notification(review.getUser(), review, message);
     }
 
     public void markAsRead() {
