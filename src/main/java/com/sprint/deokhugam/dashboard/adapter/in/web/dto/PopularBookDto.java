@@ -12,9 +12,9 @@ public record PopularBookDto(
     String author,
     String thumbnailUrl,
     PeriodType period,
-    long rank,
+    Long rank,
     double score,
-    long reviewCount,
+    Long reviewCount,
     double rating,
     Instant createdAt
 ) {
