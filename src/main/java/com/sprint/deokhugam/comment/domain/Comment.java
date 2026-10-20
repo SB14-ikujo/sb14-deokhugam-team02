@@ -30,7 +30,7 @@ public class Comment extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String content;
 
     @ColumnDefault("false")
@@ -45,5 +45,13 @@ public class Comment extends BaseEntity {
 
     public static Comment create(Review review, User user, String content) {
         return new Comment(review, user, content);
+    }
+
+    public void updateContent(String content) {
+        this.content = content;
+    }
+
+    public void delete() {
+        this.isDeleted = true;
     }
 }
