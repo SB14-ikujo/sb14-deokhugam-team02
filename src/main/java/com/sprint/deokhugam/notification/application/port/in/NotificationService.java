@@ -39,13 +39,16 @@ public class NotificationService implements NotificationUseCase {
             return null;
         }
 
-        String message = NotificationMessageTemplate.LIKE.createMessageTemplate(actorNickname);
-        if (type == NotificationType.COMMENT) {
-            message = NotificationMessageTemplate.COMMENT.createMessageTemplate(actorNickname);
-        }
-
+        String message = this.getNotificationMessageTemplate(type).createMessageTemplate(actorNickname);
         Notification createdNotification = Notification.create(review, message);
 
         return notificationRepository.save(createdNotification);
+    }
+
+    private NotificationMessageTemplate getNotificationMessageTemplate(NotificationType type) {
+        return switch (type) {
+            case LIKE -> NotificationMessageTemplate.LIKE;
+            case COMMENT -> NotificationMessageTemplate.COMMENT;
+        };
     }
 }
