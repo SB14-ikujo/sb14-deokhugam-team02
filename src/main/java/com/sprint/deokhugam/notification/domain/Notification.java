@@ -46,4 +46,8 @@ public class Notification extends BaseEntity {
     public static Notification create(User user, Review review, String message) {
         return new Notification(user, review, message);
     }
+
+    public void markAsRead() {
+        this.confirmed = true;
+    }
 }
