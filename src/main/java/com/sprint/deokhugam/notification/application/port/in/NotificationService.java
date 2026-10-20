@@ -18,31 +18,30 @@ public class NotificationService implements NotificationUseCase {
     private final NotificationRepositoryPort notificationRepository;
 
     @Override
-    public Notification createLikeNotification(Review review, String actorNickname) {
-        return this.createNotification(review, actorNickname, NotificationType.LIKE);
+    public void createLikeNotification(Review review, String actorNickname) {
+        this.createNotification(review, actorNickname, NotificationType.LIKE);
     }
 
     @Override
-    public Notification createCommentNotification(Review review, String actorNickname) {
-        return this.createNotification(review, actorNickname, NotificationType.COMMENT);
+    public void createCommentNotification(Review review, String actorNickname) {
+        this.createNotification(review, actorNickname, NotificationType.COMMENT);
     }
 
-    private Notification createNotification(Review review, String actorNickname, NotificationType type) {
+    private void createNotification(Review review, String actorNickname, NotificationType type) {
 
         if (review == null) {
             log.warn("알림 생성 생략: 리뷰 정보가 없습니다. actorNickname={}", actorNickname);
-            return null;
+            return;
         }
 
         if (actorNickname == null || actorNickname.isBlank()) {
             log.warn("알림 생성 생략: 알림 발생자 닉네임이 유효하지 않습니다. reviewId={}, actorNickname={}", review.getId(), actorNickname);
-            return null;
+            return;
         }
 
         String message = this.getNotificationMessageTemplate(type).createMessageTemplate(actorNickname);
         Notification createdNotification = Notification.create(review, message);
-
-        return notificationRepository.save(createdNotification);
+        notificationRepository.save(createdNotification);
     }
 
     private NotificationMessageTemplate getNotificationMessageTemplate(NotificationType type) {
