@@ -10,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import com.sprint.deokhugam.common.domain.BaseEntity;
+import com.sprint.deokhugam.user.domain.exception.UserErrorCode;
+import com.sprint.deokhugam.user.domain.exception.UserException;
 
 @Getter
 @Entity
@@ -37,6 +39,9 @@ public class User extends BaseEntity {
     }
 
     public static User create(String email, String nickname, String password) {
+        if (nickname == null || nickname.isBlank() || nickname.length() < 2 || nickname.length() > 20) {
+            throw new UserException(UserErrorCode.USER_NICKNAME_INVALID);
+        }
         return new User(email, nickname, password);
     }
 
