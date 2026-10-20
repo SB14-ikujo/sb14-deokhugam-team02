@@ -2,6 +2,7 @@ package com.sprint.deokhugam.comment;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -10,14 +11,19 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.comment.application.port.out.CommentRepositoryPort;
 import com.sprint.deokhugam.comment.domain.Comment;
+import com.sprint.deokhugam.common.config.JpaConfig;
 import com.sprint.deokhugam.review.domain.Review;
 import com.sprint.deokhugam.user.domain.User;
 
 @DataJpaTest
+@Import(JpaConfig.class)
 class CommentRepositoryPortTest {
 
     @Autowired
@@ -31,18 +37,14 @@ class CommentRepositoryPortTest {
 
     @BeforeEach
     void setUp() {
-        user = em.persist(createUser());
-        review = em.persist(createReview());
-    }
+        user = em.persist(User.create("test@test.com", "덕후", "password1!"));
 
-    private User createUser() {
-        // TODO: 프로젝트의 User 생성 방식에 맞게 작성
-        throw new UnsupportedOperationException("User 생성 로직을 작성하세요");
-    }
+        Book book = Book.create("제목", "저자", "설명", "출판사",
+            LocalDate.of(2024, 1, 1), "9781234567890", null);
+        ReflectionTestUtils.setField(book, "user", user); // Book.create가 user를 안 받아서 우회
+        em.persist(book);
 
-    private Review createReview() {
-        // TODO: 프로젝트의 Review 생성 방식에 맞게 작성
-        throw new UnsupportedOperationException("Review 생성 로직을 작성하세요");
+        review = em.persist(Review.create(user, book, "리뷰 내용", 5));
     }
 
     private Comment saveComment(String content) throws InterruptedException {
@@ -89,8 +91,8 @@ class CommentRepositoryPortTest {
     @Test
     @DisplayName("다음 페이지는 after 이전에 생성된 댓글만 조회한다")
     void findNextPage() throws InterruptedException {
-        Comment c1 = saveComment("1");
-        Comment c2 = saveComment("2");
+        saveComment("1");
+        saveComment("2");
         Comment c3 = saveComment("3");
         em.clear();
 
