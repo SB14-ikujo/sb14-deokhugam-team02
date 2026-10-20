@@ -4,7 +4,6 @@ import static org.assertj.core.api.AssertionsForClassTypes.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
@@ -18,16 +17,10 @@ class NotificationTypeTest {
 
     @ParameterizedTest
     @NullAndEmptySource
-    @ValueSource(strings = {"Label"})
+    @ValueSource(strings = {"Label", " ", "\t"})
     @DisplayName("유효하지 않은 알림 타입이면 예외가 발생한다.")
     void from_invalidNotificationType(String type) {
         assertThrows(NotificationException.class, () -> NotificationType.from(type));
-    }
-
-    @Test
-    @DisplayName("유효하지 않은 알림 타입이면 예외가 발생한다.")
-    void from_invalidNotificationType() {
-        assertThrows(NotificationException.class, () -> NotificationType.from("Label"));
     }
 
     @ParameterizedTest
