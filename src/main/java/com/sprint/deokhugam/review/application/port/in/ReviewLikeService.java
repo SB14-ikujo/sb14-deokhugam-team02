@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewLikeDto;
+import com.sprint.deokhugam.review.adapter.in.web.mapper.ReviewLikeMapper;
 import com.sprint.deokhugam.review.application.port.out.ReviewLikeRepositoryPort;
 import com.sprint.deokhugam.review.application.port.out.ReviewRepositoryPort;
 import com.sprint.deokhugam.review.domain.Review;
@@ -47,8 +48,8 @@ public class ReviewLikeService implements ReviewLikeUseCase {
         // '리뷰 좋아요' 테이블에서 옵셔널 형태로 데이터를 가져옴
         Optional<ReviewLike> alreadyLike = reviewLikeRepositoryPort.findByReviewAndUser(review, requestUser);
 
-        //  기록 O -> '좋아요' 취소
-        //  기록 x -> 원래 만들었던 '좋아요' 추가
+        //  기록 O -> '좋아요' 취소 (if)
+        //  기록 x -> 원래 만들었던 '좋아요' 추가 (else)
         if (alreadyLike.isPresent()) {
             review.decreaseLikeCount();
             reviewRepositoryPort.save(review);
@@ -60,7 +61,7 @@ public class ReviewLikeService implements ReviewLikeUseCase {
             // ** + 알림서비스 호출해야됨 + **
             ReviewLike reviewLike = ReviewLike.create(review, requestUser);
             reviewLikeRepositoryPort.save(reviewLike);
-            return new ReviewLikeDto(review.getId(), requestUser.getId(), true);
+            return ReviewLikeMapper.toResponseDto(reviewLike, true);
         }
     }
 }
