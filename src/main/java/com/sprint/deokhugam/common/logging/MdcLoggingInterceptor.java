@@ -1,5 +1,7 @@
 package com.sprint.deokhugam.common.logging;
 
+import java.util.UUID;
+
 import org.jspecify.annotations.NonNull;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Component;
@@ -8,6 +10,10 @@ import org.springframework.web.servlet.HandlerInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+
+import com.sprint.deokhugam.common.context.UserContextHolder;
+import com.sprint.deokhugam.user.domain.exception.UserErrorCode;
+import com.sprint.deokhugam.user.domain.exception.UserException;
 
 /**
  * HandlerInterceptor : 컨트롤러로 들어오는 요청에 대한 전/후 처리를 가능하게 해주는 인터페이스
@@ -30,23 +36,32 @@ public class MdcLoggingInterceptor implements HandlerInterceptor {
         @NonNull HttpServletResponse response,
         @NonNull Object handler
     ) {
-
+        String authHeader = request.getHeader(USER_ID_HEADER);
         MDC.put(REQUEST_IP, request.getRemoteAddr());
-        MDC.put(REQUEST_ID, request.getHeader(USER_ID_HEADER));
+        MDC.put(REQUEST_ID, authHeader);
         MDC.put(REQUEST_METHOD, request.getMethod());
         MDC.put(REQUEST_URL, request.getRequestURI());
+
+        if (authHeader != null && !authHeader.isBlank()) {
+            try {
+                UserContextHolder.setUserId(UUID.fromString(authHeader));
+            } catch (IllegalArgumentException e) {
+                MDC.clear();
+                throw new UserException(UserErrorCode.USER_INVALID_HEADER);
+            }
+        }
 
         return true;
     }
 
     @Override
-    public void afterCompletion(
+    public void afterCompletion( // 스레드 오염방지를 위한 값 정리
         @NonNull HttpServletRequest request,
         @NonNull HttpServletResponse response,
         @NonNull Object handler,
         Exception ex
     ) {
-        // 스레드 재사용 시 이전 요청의 값이 남지 않도록 정리
         MDC.clear();
+        UserContextHolder.clear();
     }
 }
