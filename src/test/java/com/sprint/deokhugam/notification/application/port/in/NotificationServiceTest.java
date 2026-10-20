@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -32,17 +33,19 @@ class NotificationServiceTest {
     @DisplayName("좋아요 알림 생성 시 메시지, 리뷰 정보 및 저장 호출을 검증한다.")
     void createLikeNotification_success() {
         // given
+        String actorNickname = "코코";
         given(notificationRepository.save(any(Notification.class)))
             .willAnswer(invocation -> invocation.getArgument(0));   // 넘긴 객체 그대로 반환
+        ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
 
-        String actorNickname = "코코";
         // when
-        Notification notification = notificationService.createLikeNotification(review, actorNickname);
+        notificationService.createLikeNotification(review, actorNickname);
 
         // then
-        assertThat(notification.getMessage()).isEqualTo("[코코]님이 나의 리뷰를 좋아합니다.");
-        assertThat(notification.getReview()).isEqualTo(review);
-        verify(notificationRepository).save(any(Notification.class)); // save 한번 호출 되었는지
+        verify(notificationRepository).save(captor.capture());   // save 1번 호출 + 넘긴 인자 캡처
+        Notification saved = captor.getValue();                  // 캡처한 객체 꺼내기
+        assertThat(saved.getMessage()).isEqualTo("[코코]님이 나의 리뷰를 좋아합니다.");
+        assertThat(saved.getReview()).isEqualTo(review);
     }
 
     @Test
@@ -52,14 +55,17 @@ class NotificationServiceTest {
         given(notificationRepository.save(any(Notification.class)))
             .willAnswer(invocation -> invocation.getArgument(0));   // 넘긴 객체 그대로 반환
         String actorNickname = "코코";
+        ArgumentCaptor<Notification> captor = ArgumentCaptor.forClass(Notification.class);
 
         // when
-        Notification notification = notificationService.createCommentNotification(review, actorNickname);
+        notificationService.createCommentNotification(review, actorNickname);
 
         // then
-        assertThat(notification.getMessage()).isEqualTo("[코코]님이 나의 리뷰에 댓글을 남겼습니다.");
-        assertThat(notification.getReview()).isEqualTo(review);
-        verify(notificationRepository).save(any(Notification.class)); // save 한번 호출 되었는지
+        verify(notificationRepository).save(captor.capture());   // save 1번 호출 + 넘긴 인자 캡처
+        Notification saved = captor.getValue();                  // 캡처한 객체 꺼내기
+        assertThat(saved.getMessage()).isEqualTo("[코코]님이 나의 리뷰에 댓글을 남겼습니다.");
+        assertThat(saved.getReview()).isEqualTo(review);
+
     }
 
     @Test
@@ -69,10 +75,9 @@ class NotificationServiceTest {
         String actorNickname = "코코";
 
         // when
-        Notification notification = notificationService.createCommentNotification(null, actorNickname);
+        notificationService.createCommentNotification(null, actorNickname);
 
         // then
-        assertThat(notification).isNull();
         verify(notificationRepository, never()).save(any(Notification.class));
     }
 
@@ -82,10 +87,9 @@ class NotificationServiceTest {
     @DisplayName("알림 발생자 닉네임이 null 또는 빈 문자열이면 알림을 생성하지 않는다.")
     void createLikeNotification_nullOrEmptyActorNickname(String actorNickname) {
         // when
-        Notification notification = notificationService.createCommentNotification(review, actorNickname);
+        notificationService.createCommentNotification(review, actorNickname);
 
         // then
-        assertThat(notification).isNull();
         verify(notificationRepository, never()).save(any(Notification.class));
     }
 
