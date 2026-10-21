@@ -153,7 +153,6 @@ class NotificationServiceTest {
 
         // then
         verify(notificationRepository).findById(any());
-        verify(notificationRepository).save(any());
         verify(notificationMapper).toDto(any());
     }
 

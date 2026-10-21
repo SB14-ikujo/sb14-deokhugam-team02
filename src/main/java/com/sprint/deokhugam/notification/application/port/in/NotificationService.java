@@ -46,9 +46,8 @@ public class NotificationService implements NotificationUseCase {
         }
 
         notification.markAsRead();
-        Notification saved = notificationRepository.save(notification);   // 명시적 저장
 
-        return notificationMapper.toDto(saved);
+        return notificationMapper.toDto(notification);
     }
 
     private void createNotification(Review review, String actorNickname, NotificationType type) {
