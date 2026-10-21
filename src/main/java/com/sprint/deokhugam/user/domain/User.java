@@ -56,6 +56,8 @@ public class User extends BaseEntity {
     }
 
     public void changeNickname(String nickname) {
+        validateNickname(nickname);   // 검증 먼저
+        this.nickname = nickname;      // 통과했을 때만 대입
     }
 
 }
