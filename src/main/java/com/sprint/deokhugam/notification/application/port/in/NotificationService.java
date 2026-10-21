@@ -1,14 +1,21 @@
 package com.sprint.deokhugam.notification.application.port.in;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import com.sprint.deokhugam.notification.adapter.in.web.dto.NotificationDto;
+import com.sprint.deokhugam.notification.adapter.in.web.mapper.NotificationMapper;
 import com.sprint.deokhugam.notification.application.port.out.NotificationRepositoryPort;
 import com.sprint.deokhugam.notification.domain.Notification;
 import com.sprint.deokhugam.notification.domain.NotificationMessageTemplate;
 import com.sprint.deokhugam.notification.domain.NotificationType;
+import com.sprint.deokhugam.notification.domain.exception.NotificationErrorCode;
+import com.sprint.deokhugam.notification.domain.exception.NotificationException;
 import com.sprint.deokhugam.review.domain.Review;
 
 @Slf4j
@@ -16,6 +23,7 @@ import com.sprint.deokhugam.review.domain.Review;
 @RequiredArgsConstructor
 public class NotificationService implements NotificationUseCase {
     private final NotificationRepositoryPort notificationRepository;
+    private final NotificationMapper notificationMapper;
 
     @Override
     public void createLikeNotification(Review review, String actorNickname) {
@@ -25,6 +33,22 @@ public class NotificationService implements NotificationUseCase {
     @Override
     public void createCommentNotification(Review review, String actorNickname) {
         this.createNotification(review, actorNickname, NotificationType.COMMENT);
+    }
+
+    @Override
+    @Transactional
+    public NotificationDto markAsRead(UUID notificationId, UUID userId) {
+        Notification notification = notificationRepository.findById(notificationId)
+            .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
+
+        if (!notification.getUser().getId().equals(userId)) {
+            throw new NotificationException(NotificationErrorCode.NOTIFICATION_FORBIDDEN);
+        }
+
+        notification.markAsRead();
+        Notification saved = notificationRepository.save(notification);   // 명시적 저장
+
+        return notificationMapper.toDto(saved);
     }
 
     private void createNotification(Review review, String actorNickname, NotificationType type) {
