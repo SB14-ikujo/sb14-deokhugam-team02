@@ -56,11 +56,20 @@ public class User extends BaseEntity {
     }
 
     public void changeNickname(String nickname) {
+        validateNotDeleted();
         validateNickname(nickname);   // 검증 먼저
         this.nickname = nickname;      // 통과했을 때만 대입
     }
 
     public void delete() {
+        this.isDeleted = true;
+    }
+
+    private void validateNotDeleted() {
+        if (isDeleted) {
+            // 삭제된 사용자는 "없는 사용자"로 취급
+            throw new UserException(UserErrorCode.USER_NOT_FOUND);
+        }
     }
 
 }
