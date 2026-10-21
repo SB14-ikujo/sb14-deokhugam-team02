@@ -55,4 +55,7 @@ public class User extends BaseEntity {
         }
     }
 
+    public void changeNickname(String nickname) {
+    }
+
 }

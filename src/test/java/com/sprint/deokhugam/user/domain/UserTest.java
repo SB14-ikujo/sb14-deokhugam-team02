@@ -14,6 +14,11 @@ public class UserTest {
 
     private static final String EMAIL = "user@naver.com";
     private static final String ENCODED_PASSWORD = "password";
+    private static final String ORIGINAL_NICKNAME = "닉네임";
+
+    private User createUser() {
+        return User.create(EMAIL, ORIGINAL_NICKNAME, ENCODED_PASSWORD);
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {"ab", "abcdefghijklmnopqrst"})
@@ -48,4 +53,33 @@ public class UserTest {
             .isEqualTo(UserErrorCode.USER_NICKNAME_INVALID);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"ab", "abcdefghijabcdefghij"})
+    @DisplayName("2자 이상 20자 이하의 닉네임으로 변경할 수 있다.")
+    void changeNickname_withValidNickname(String newNickname) {
+        // given
+        User user = createUser();
+
+        // when
+        user.changeNickname(newNickname);
+
+        // then
+        assertThat(user.getNickname()).isEqualTo(newNickname);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"a", "abcdefghijabcdefghijk", "  ", "\t\t"})
+    @DisplayName("잘못된 닉네임으로 변경하면 실패하고 기존 닉네임이 유지된다.")
+    void changeNickname_withInvalidNickname(String newNickname) {
+        // given
+        User user = createUser();
+
+        // when, then
+        assertThatThrownBy(() -> user.changeNickname(newNickname))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_NICKNAME_INVALID);
+        assertThat(user.getNickname()).isEqualTo(ORIGINAL_NICKNAME);
+    }
 }
