@@ -60,4 +60,7 @@ public class User extends BaseEntity {
         this.nickname = nickname;      // 통과했을 때만 대입
     }
 
+    public void delete() {
+    }
+
 }
