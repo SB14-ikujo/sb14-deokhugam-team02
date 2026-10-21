@@ -50,19 +50,20 @@ public class Book extends BaseEntity {
 
     @ColumnDefault("0")
     @Column(nullable = false)
-    private int reviewCount;    // 리뷰 수
+    private int reviewCount = 0;    // 리뷰 수
 
     @ColumnDefault("0")
     @Column(nullable = false)
-    private double rating;  // 점수
+    private double rating = 0.0;  // 점수
 
     @ColumnDefault("false")
     @Column(name = "is_deleted", nullable = false)
-    private boolean isDeleted;
+    private boolean isDeleted = false;
 
-    private Book(String title, String author, String description, String publisher,
+    private Book(String title, User user, String author, String description, String publisher,
         LocalDate publishedDate, String isbn, String thumbnailUrl) {
         this.title = title;
+        this.user = user;
         this.author = author;
         this.description = description;
         this.publisher = publisher;
@@ -71,9 +72,9 @@ public class Book extends BaseEntity {
         this.thumbnailUrl = thumbnailUrl;
     }
 
-    public static Book create(String title, String author, String description, String publisher,
+    public static Book create(String title, User user, String author, String description, String publisher,
         LocalDate publishedDate, String isbn, String thumbnailUrl) {
-        return new Book(title, author, description, publisher, publishedDate, isbn, thumbnailUrl);
+        return new Book(title, user, author, description, publisher, publishedDate, isbn, thumbnailUrl);
     }
 
 }
