@@ -22,7 +22,7 @@ public interface CommentRepositoryPort extends JpaRepository<Comment, UUID> {
         join fetch c.user
         where c.review.id = :reviewId
           and c.isDeleted = false
-        order by c.createdAt desc
+        order by c.createdAt desc, c.id desc
         """)
     List<Comment> findFirstPage(
         @Param("reviewId") UUID reviewId,
@@ -37,7 +37,7 @@ public interface CommentRepositoryPort extends JpaRepository<Comment, UUID> {
           and c.isDeleted = false
           and (c.createdAt < :after
                or (c.createdAt = :after and c.id < :afterId))
-        order by c.createdAt desc, c.id desc
+                       order by c.createdAt desc, c.id desc
         """)
     List<Comment> findNextPage(
         @Param("reviewId") UUID reviewId,
