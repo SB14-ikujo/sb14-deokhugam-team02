@@ -19,10 +19,13 @@ import com.sprint.deokhugam.user.domain.exception.UserException;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseEntity {
 
+    private static final int NICKNAME_MIN_LENGTH = 2;
+    private static final int NICKNAME_MAX_LENGTH = 20;
+
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(nullable = false, unique = true, length = NICKNAME_MAX_LENGTH)
     private String nickname;
 
     @Column(nullable = false)
@@ -39,10 +42,17 @@ public class User extends BaseEntity {
     }
 
     public static User create(String email, String nickname, String password) {
-        if (nickname == null || nickname.isBlank() || nickname.length() < 2 || nickname.length() > 20) {
+        validateNickname(nickname);
+        return new User(email, nickname, password);
+    }
+
+    private static void validateNickname(String nickname) {
+        if (nickname == null || nickname.isBlank()) {
             throw new UserException(UserErrorCode.USER_NICKNAME_INVALID);
         }
-        return new User(email, nickname, password);
+        if (nickname.length() < NICKNAME_MIN_LENGTH || nickname.length() > NICKNAME_MAX_LENGTH) {
+            throw new UserException(UserErrorCode.USER_NICKNAME_INVALID);
+        }
     }
 
 }
