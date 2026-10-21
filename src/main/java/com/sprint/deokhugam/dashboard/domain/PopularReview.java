@@ -63,4 +63,6 @@ public class PopularReview extends BaseEntity {
         return new PopularReview(review, period, rank, score, likeCount, commentCount, snapshotDate);
     }
 
+
+
 }

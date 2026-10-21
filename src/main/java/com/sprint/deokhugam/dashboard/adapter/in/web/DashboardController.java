@@ -29,6 +29,7 @@ public class DashboardController {
     public ResponseEntity<CursorPageResponse<PopularBookDto>> getPopularBooks(
         @Valid @ParameterObject PopularBookRequest request
     ) {
+        // 커서로 감싼 Dto로 반환받음
         CursorPageResponse<PopularBookDto> popularBooks = dashboardUseCase.getPopularBooks(request);
 
         return ResponseEntity.ok(popularBooks);

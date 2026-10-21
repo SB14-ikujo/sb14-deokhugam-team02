@@ -22,7 +22,7 @@ import com.sprint.deokhugam.dashboard.domain.exception.DashboardException;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class DashboardService implements DashboardUseCase {
+public class DashboardApplicationService implements DashboardUseCase {
 
     private final DashboardMapper dashboardMapper;
     private final PopularBookRepositoryPort popularBookRepositoryPort;
@@ -30,6 +30,8 @@ public class DashboardService implements DashboardUseCase {
     @Override
     @Transactional(readOnly = true)
     public CursorPageResponse<PopularBookDto> getPopularBooks(PopularBookRequest request) {
+
+        // 디버깅 찍기
         log.debug("인기 도서 조회 요청: period={}, direction={}, cursor={}, limit={}",
             request.period(), request.direction(), request.cursor(), request.limit());
 
