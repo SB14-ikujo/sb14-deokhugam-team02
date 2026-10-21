@@ -3,6 +3,7 @@ package com.sprint.deokhugam.common.exception;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -93,11 +94,15 @@ public class GlobalExceptionController {
 
     // @Valid 실패면 "nickname: 2자 이상 20자 이하" 처럼 첫 번째 틀린 필드를 details에 담음
     private String fieldErrorOf(Exception ex) {
-        if (ex instanceof MethodArgumentNotValidException exception) {
-            FieldError fieldError = exception.getBindingResult().getFieldError();
-            if (fieldError != null) {
-                return fieldError.getField() + ": " + fieldError.getDefaultMessage();
-            }
+        BindingResult result = null;
+        if (ex instanceof MethodArgumentNotValidException e) {
+            result = e.getBindingResult();
+        } else if (ex instanceof BindException e) {
+            result = e.getBindingResult();
+        }
+        if (result != null && result.getFieldError() != null) {
+            FieldError fe = result.getFieldError();
+            return fe.getField() + ": " + fe.getDefaultMessage();
         }
         return null;
     }

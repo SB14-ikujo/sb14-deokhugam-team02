@@ -7,7 +7,7 @@
 
 ## 스택
 
-- Java 17, Spring Boot 4.1.1, Gradle 9.7.1(wrapper), Spring Data JPA, PostgreSQL 15, Lombok
+- Java 17, Spring Boot 4.1.1, Gradle 9.7.1 (wrapper), Spring Data JPA, PostgreSQL 15, Lombok
 - 패키지 루트: `com.sprint.deokhugam`
 
 ## 로컬 실행
@@ -16,7 +16,7 @@
 2. Docker Desktop 실행
 3. IntelliJ 실행 또는 `./gradlew bootRun` → postgres가 자동 기동됨
 
-- 전체(앱+ELK): `docker compose -f docker-compose-logging-pipeline.yml --profile full up -d --build`
+- 전체 (앱+ELK): `docker compose -f docker-compose-logging-pipeline.yml --profile full up -d --build`
 
 ## 빌드 / 테스트
 
@@ -24,7 +24,8 @@
 
 ## 패키지 / 레이어 규칙
 
-- TODO(팀 합의)
+- TODO (팀 합의)
+- 응답 DTO를 계층 공용 모델로 본다
 
 ## 코드 스타일
 
@@ -47,5 +48,5 @@
 
 ## AI 도구
 
-- PR이 열리면 Claude가 자동 리뷰(참고용, 머지 필수 조건 아님). 재리뷰는 PR 코멘트에 `@claude`
+- PR이 열리면 Claude가 자동 리뷰 (참고용, 머지 필수 조건 아님). 재리뷰는 PR 코멘트에 `@claude`
 - Claude의 모든 코멘트는 한국어로 작성
