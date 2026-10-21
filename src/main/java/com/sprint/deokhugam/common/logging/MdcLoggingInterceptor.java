@@ -11,7 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 
-import com.sprint.deokhugam.common.context.UserContextHolder;
+import com.sprint.deokhugam.common.context.user.UserContextHolder;
 import com.sprint.deokhugam.user.domain.exception.UserErrorCode;
 import com.sprint.deokhugam.user.domain.exception.UserException;
 
