@@ -1,4 +1,4 @@
-package com.sprint.deokhugam.common.context;
+package com.sprint.deokhugam.common.context.user;
 
 import java.util.UUID;
 
