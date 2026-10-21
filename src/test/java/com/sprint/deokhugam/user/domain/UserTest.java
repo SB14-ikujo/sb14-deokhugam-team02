@@ -3,6 +3,7 @@ package com.sprint.deokhugam.user.domain;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -80,6 +81,34 @@ public class UserTest {
             .isInstanceOf(UserException.class)
             .extracting("errorCode")
             .isEqualTo(UserErrorCode.USER_NICKNAME_INVALID);
+        assertThat(user.getNickname()).isEqualTo(ORIGINAL_NICKNAME);
+    }
+
+    @Test
+    @DisplayName("사용자를 논리 삭제하면 삭제 상태가 된다.")
+    void delete() {
+        // given
+        User user = createUser();
+
+        // when
+        user.delete();
+
+        // then
+        assertThat(user.isDeleted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("논리 삭제된 사용자는 닉네임을 변경할 수 없다.")
+    void changeNickname_afterDelete() {
+        // given
+        User user = createUser();
+        user.delete();
+
+        // when, then
+        assertThatThrownBy(() -> user.changeNickname("새닉네임"))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_NOT_FOUND);
         assertThat(user.getNickname()).isEqualTo(ORIGINAL_NICKNAME);
     }
 }
