@@ -2,7 +2,9 @@ package com.sprint.deokhugam.comment;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -97,9 +99,40 @@ class CommentRepositoryPortTest {
         em.clear();
 
         List<Comment> result = commentRepository.findNextPage(
-            review.getId(), c3.getCreatedAt(), PageRequest.of(0, 10));
+            review.getId(), c3.getCreatedAt(), c3.getId(), PageRequest.of(0, 10));
 
         assertThat(result).extracting(Comment::getContent).containsExactly("2", "1");
+    }
+
+    @Test
+    @DisplayName("createdAt이 같은 댓글이 페이지 경계에 걸려도 누락·중복 없이 조회된다")
+    void cursorPagination_sameCreatedAt() throws InterruptedException {
+        saveComment("1");
+        saveComment("2");
+        saveComment("3");
+        em.flush();
+
+        // 세 댓글의 createdAt을 동일하게 맞춤 (createdAt은 updatable=false라 native 쿼리 사용)
+        Instant sameTime = Instant.parse("2024-01-01T00:00:00Z");
+        em.getEntityManager()
+            .createNativeQuery("update comments set created_at = :t")
+            .setParameter("t", sameTime)
+            .executeUpdate();
+        em.clear();
+
+        // 첫 페이지(2개) → 마지막 요소를 커서로 다음 페이지 조회
+        List<Comment> firstPage = commentRepository.findFirstPage(review.getId(), PageRequest.of(0, 2));
+        Comment last = firstPage.get(firstPage.size() - 1);
+        List<Comment> nextPage = commentRepository.findNextPage(
+            review.getId(), last.getCreatedAt(), last.getId(), PageRequest.of(0, 10));
+
+        List<Comment> all = new ArrayList<>(firstPage);
+        all.addAll(nextPage);
+
+        assertThat(firstPage).hasSize(2);
+        assertThat(nextPage).hasSize(1);
+        assertThat(all).extracting(Comment::getId).doesNotHaveDuplicates();
+        assertThat(all).extracting(Comment::getContent).containsExactlyInAnyOrder("1", "2", "3");
     }
 
     @Test

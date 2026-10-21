@@ -14,7 +14,6 @@ import com.sprint.deokhugam.comment.domain.Comment;
 
 public interface CommentRepositoryPort extends JpaRepository<Comment, UUID> {
 
-    // 논리 삭제되지 않은 댓글 단건 조회 (수정/삭제 시 사용)
     Optional<Comment> findByIdAndIsDeletedFalse(UUID id);
 
     // 커서 페이지네이션: 첫 페이지 (최신순)
@@ -36,12 +35,14 @@ public interface CommentRepositoryPort extends JpaRepository<Comment, UUID> {
         join fetch c.user
         where c.review.id = :reviewId
           and c.isDeleted = false
-          and c.createdAt < :after
-        order by c.createdAt desc
+          and (c.createdAt < :after
+               or (c.createdAt = :after and c.id < :afterId))
+        order by c.createdAt desc, c.id desc
         """)
     List<Comment> findNextPage(
         @Param("reviewId") UUID reviewId,
         @Param("after") Instant after,
+        @Param("afterId") UUID afterId,
         Pageable pageable
     );
 
