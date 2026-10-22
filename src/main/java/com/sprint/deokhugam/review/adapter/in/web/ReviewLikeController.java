@@ -24,7 +24,7 @@ public class ReviewLikeController {
     public ResponseEntity<ReviewLikeDto> create(
         @PathVariable UUID reviewId,
         @RequestHeader("Deokhugam-Request-User-ID") UUID requestUserId) {
-        ReviewLikeDto responseDto = reviewLikeUseCase.toggleReviewLike(reviewId, requestUserId);
+        ReviewLikeDto responseDto = reviewLikeUseCase.reviewLikeToggle(reviewId, requestUserId);
         return ResponseEntity.ok(responseDto);
     }
 }

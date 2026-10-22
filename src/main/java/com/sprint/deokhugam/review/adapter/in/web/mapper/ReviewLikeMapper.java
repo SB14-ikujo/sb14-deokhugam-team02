@@ -8,10 +8,9 @@ import com.sprint.deokhugam.review.domain.ReviewLike;
 
 @Mapper(componentModel = "spring")
 public interface ReviewLikeMapper {
-    @Mapping(target = "reviewId", source = "review.id")
-    @Mapping(target = "userId", source = "user.id")
+    @Mapping(target = "reviewId", source = "reviewLike.review.id")
+    @Mapping(target = "userId", source = "reviewLike.user.id")
     @Mapping(target = "liked", source = "liked")
     ReviewLikeDto toDto(ReviewLike reviewLike, boolean liked);
-
 }
 

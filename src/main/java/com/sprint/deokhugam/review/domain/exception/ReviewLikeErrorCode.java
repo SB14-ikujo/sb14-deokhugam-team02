@@ -10,7 +10,7 @@ import com.sprint.deokhugam.common.exception.ErrorCode;
 @Getter
 @RequiredArgsConstructor
 public enum ReviewLikeErrorCode implements ErrorCode {
-    REVIEW_AND_USER_NOT_FOUNT(HttpStatus.NOT_FOUND, "좋아요 정보를 찾을 수 없습니다.");
+    REVIEW_LIKE_NOT_FOUNT(HttpStatus.NOT_FOUND, "해당 리뷰의 '좋아요' 정보를 찾을 수 없습니다.");
 
     private final HttpStatus status;
     private final String message;
