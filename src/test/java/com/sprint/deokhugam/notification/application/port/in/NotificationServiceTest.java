@@ -113,8 +113,7 @@ class NotificationServiceTest {
         given(notificationRepository.findById(any())).willReturn(Optional.empty());
 
         // when + then
-        assertThrows(NotificationException.class, () -> notificationService.markAsRead(notificationId, userId));
-
+        assertThrows(NotificationException.class, () -> notificationService.markAsRead(notificationId, userId, true));
     }
 
     @Test
@@ -131,7 +130,29 @@ class NotificationServiceTest {
         given(notificationRepository.findById(any())).willReturn(Optional.of(notification));
 
         // when + then
-        assertThrows(NotificationException.class, () -> notificationService.markAsRead(notificationId, userId));
+        assertThrows(NotificationException.class, () -> notificationService.markAsRead(notificationId, userId, true));
+    }
+
+    @Test
+    @DisplayName("읽음 상태가 false이면 기존 알림 상태를 유지한다.")
+    void markAsRead_readIsFalse() {
+        Notification notification = mock(Notification.class);
+        User user = mock(User.class);
+        UUID notificationId = UUID.randomUUID();
+        UUID userId = UUID.fromString("50000000-0000-0000-0000-000000000002");
+
+        // given
+        given(user.getId()).willReturn(UUID.fromString("50000000-0000-0000-0000-000000000002"));
+        given(notification.getUser()).willReturn(user);
+        given(notificationRepository.findById(any())).willReturn(Optional.of(notification));
+
+        // when
+        notificationService.markAsRead(notificationId, userId, false);
+
+        // then
+        verify(notification, never()).markAsRead();
+        verify(notificationRepository).findById(any());
+        verify(notificationMapper).toDto(any());
     }
 
     // 성공
@@ -149,7 +170,7 @@ class NotificationServiceTest {
         given(notificationRepository.findById(any())).willReturn(Optional.of(notification));
 
         // when
-        notificationService.markAsRead(notificationId, userId);
+        notificationService.markAsRead(notificationId, userId, true);
 
         // then
         verify(notificationRepository).findById(any());
