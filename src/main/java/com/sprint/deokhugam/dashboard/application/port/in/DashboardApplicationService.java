@@ -38,6 +38,7 @@ public class DashboardApplicationService implements DashboardUseCase {
         // 최신 스냅샷 날짜 찾기
         Optional<LocalDate> latestSnapshotDate = popularBookRepositoryPort.findLatestSnapshotDate(request.period());
 
+        // 만약 그 기간으 데이터가 아예 하나도 없으면 다 0이나null 보내기
         if (latestSnapshotDate.isEmpty()) {
             log.info("인기 도서 스냅샷 없음: period={}", request.period());
             return new CursorPageResponse<>(List.of(), null, null, 0, 0L, false);
@@ -59,13 +60,12 @@ public class DashboardApplicationService implements DashboardUseCase {
         // 응답 만들기
         long total = popularBookRepositoryPort.countByPeriodAndSnapshotDate(request.period(), snapshotDate);
 
+        log.debug("인기 도서 조회 완료: snapshotDate={}, size={}, total={}",
+            snapshotDate, content.size(), total);
         if (!hasNext) {
             return new CursorPageResponse<>(content, null, null, content.size(), total, false);
         }
         PopularBook last = page.get(page.size() - 1);
-
-        log.debug("인기 도서 조회 완료: snapshotDate={}, size={}, total={}",
-            snapshotDate, content.size(), total);
 
         return new CursorPageResponse<>(content, String.valueOf(last.getRank()), last.getCreatedAt(),
             content.size(), total, true);
