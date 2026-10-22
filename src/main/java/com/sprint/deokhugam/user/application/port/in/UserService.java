@@ -2,6 +2,7 @@ package com.sprint.deokhugam.user.application.port.in;
 
 import java.util.Locale;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +38,13 @@ public class UserService implements UserUseCase {
         }
 
         User user = User.create(email, request.nickname(), passwordHasher.hash(request.password()));
-        return userMapper.toDto(userRepository.save(user));
+        try {
+            return userMapper.toDto(userRepository.saveAndFlush(user));
+        } catch (DataIntegrityViolationException e) {
+            //동시 가입으로 existBy 검사를 통과한 뒤 데이터베이스의 유니크 제약에 걸린 경우.
+            throw new UserException(UserErrorCode.USER_DUPLICATE);
+        }
+
     }
 
     private String normalizeEmail(String email) {
