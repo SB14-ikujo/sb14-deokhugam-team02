@@ -23,6 +23,9 @@ import com.sprint.deokhugam.common.domain.BaseEntity;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PopularBook extends BaseEntity {
 
+    private static final double REVIEW_COUNT_WEIGHT = 0.4;
+    private static final double RATING_WEIGHT = 0.6;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "book_id", nullable = false)
     private Book book;
@@ -61,5 +64,21 @@ public class PopularBook extends BaseEntity {
         Long reviewCount, double rating, LocalDate snapshotDate) {
 
         return new PopularBook(book, period, rank, score, reviewCount, rating, snapshotDate);
+    }
+
+    public static PopularBook candidate(Book book, PeriodType period, Long reviewCount,
+        double rating, LocalDate snapshotDate) {
+        double score = reviewCount * REVIEW_COUNT_WEIGHT + rating * RATING_WEIGHT;
+        return new PopularBook(book, period, null, score, reviewCount, rating, snapshotDate);
+    }
+
+    public void assignRank(long rank) {
+        if (this.rank != null) {
+            throw new IllegalStateException("순위는 한 번만 배정할 수 있습니다.");
+        }
+        if (rank < 1) {
+            throw new IllegalArgumentException("순위는 1 이상이어야 합니다.");
+        }
+        this.rank = rank;
     }
 }

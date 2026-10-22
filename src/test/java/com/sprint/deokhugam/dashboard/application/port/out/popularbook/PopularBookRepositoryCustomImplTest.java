@@ -1,4 +1,4 @@
-package com.sprint.deokhugam.dashboard.application.port.out.book;
+package com.sprint.deokhugam.dashboard.application.port.out.popularbook;
 
 import static org.assertj.core.api.Assertions.*;
 
