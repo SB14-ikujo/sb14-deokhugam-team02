@@ -177,4 +177,31 @@ class NotificationServiceTest {
         verify(notificationMapper).toDto(any());
     }
 
+    @Test
+    @DisplayName("사용자의 알림이 존재하지 않으면 NotificationException이 발생한다.")
+    void markAllAsRead_failsWhenNotificationsEmpty() {
+        UUID userId = UUID.fromString("50000000-0000-0000-0000-000000000002");
+
+        // given
+        given(notificationRepository.existsByUserId(userId)).willReturn(false);
+
+        // when + then
+        assertThrows(NotificationException.class, () -> notificationService.markAllAsRead(userId));
+    }
+
+    @Test
+    @DisplayName("사용자의 알림이 존재하면 전체 읽음 처리에 성공한다.")
+    void markAllAsRead_succeedsWhenNotificationsExist() {
+        UUID userId = UUID.fromString("50000000-0000-0000-0000-000000000002");
+        // given
+        given(notificationRepository.existsByUserId(userId)).willReturn(true);
+
+        // when
+        notificationService.markAllAsRead(userId);
+
+        // then
+        verify(notificationRepository).markAllAsRead(userId);
+
+    }
+
 }
