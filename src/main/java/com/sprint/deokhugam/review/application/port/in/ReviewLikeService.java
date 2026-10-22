@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
+import com.sprint.deokhugam.common.context.user.UserContextHolder;
 import com.sprint.deokhugam.notification.application.port.in.NotificationUseCase;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewLikeDto;
 import com.sprint.deokhugam.review.adapter.in.web.mapper.ReviewLikeMapper;
@@ -21,6 +22,8 @@ import com.sprint.deokhugam.review.domain.exception.ReviewLikeErrorCode;
 import com.sprint.deokhugam.review.domain.exception.ReviewLikeException;
 import com.sprint.deokhugam.user.application.port.in.UserUseCase;
 import com.sprint.deokhugam.user.domain.User;
+import com.sprint.deokhugam.user.domain.exception.UserErrorCode;
+import com.sprint.deokhugam.user.domain.exception.UserException;
 
 @Service
 @RequiredArgsConstructor
@@ -36,7 +39,15 @@ public class ReviewLikeService implements ReviewLikeUseCase {
 
     // '좋아요' 토글
     @Transactional
-    public ReviewLikeDto reviewLikeToggle(UUID reviewId, UUID requestUserId) {
+    public ReviewLikeDto reviewLikeToggle(UUID reviewId) {
+        // 스레드 로컬에 저장된 유저 요청 가져옴
+        UUID requestUserId = UserContextHolder.getUserId();
+
+        // 요청한 유저의 Id 가 null일때 예외 처리
+        if (requestUserId == null) {
+            throw new UserException(UserErrorCode.USER_NOT_FOUND); // 프로젝트에 맞는 에러코드를 사용하세요
+        }
+
         // '좋아요' 요청한 유저, 리뷰를 조회
         User requestUser = userUseCase.findUserById(requestUserId);
 

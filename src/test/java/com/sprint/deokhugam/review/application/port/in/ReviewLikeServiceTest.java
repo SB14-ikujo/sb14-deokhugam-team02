@@ -51,9 +51,10 @@ public class ReviewLikeServiceTest {
 
     @BeforeEach
     void setUp() {
-        // 2. 가짜 객체를 만듦 (User, Book, Review)
+        // 가짜 유저(A) 객체 생성
         mockUser = User.create("test@naver.com", "강아지", "1234");
 
+        // A가 등록한 가짜 책 객체 생성
         mockBook = Book.create(
             "도서제목1",
             "작가1",
@@ -64,9 +65,9 @@ public class ReviewLikeServiceTest {
             "https://example.com"
         );
 
+        // A
         mockReview = Review.create(mockUser, mockBook, "리뷰 내용 테스트1", 5);
 
-        // 1. 요청할 떄 이미 존재하는 유저, 리뷰의 ID로 요청을 보내기 때문에 있어야함
         userId = mockUser.getId();
         reviewId = mockReview.getId();
     }
@@ -84,7 +85,7 @@ public class ReviewLikeServiceTest {
         given(reviewLikeMapper.toDto(any(), org.mockito.ArgumentMatchers.eq(true))).willReturn(expectDto);
 
         // when
-        ReviewLikeDto result = reviewLikeService.reviewLikeToggle(reviewId, userId);
+        ReviewLikeDto result = reviewLikeService.reviewLikeToggle(reviewId);
 
         // then
         verify(reviewCommandRepositoryPort).increaseLikeCount(userId);
@@ -107,7 +108,7 @@ public class ReviewLikeServiceTest {
         given(reviewLikeMapper.toDto(any(), org.mockito.ArgumentMatchers.eq(false))).willReturn(expectDto);
 
         // when
-        ReviewLikeDto result = reviewLikeService.reviewLikeToggle(reviewId, userId);
+        ReviewLikeDto result = reviewLikeService.reviewLikeToggle(reviewId);
 
         // then
         verify(reviewCommandRepositoryPort).decreaseLikeCount(userId);
@@ -119,16 +120,14 @@ public class ReviewLikeServiceTest {
     @Test
     @DisplayName("존재하지 않는 리뷰 ID로 좋아요를 요청하면 예외(ReviewException)가 발생한다.")
     void toggleLike_shouldThrowException_whenReviewNotFound() {
-        // given - 유저는 찾았지만, 리뷰 리포지토리에서 '없다(Optional.empty())'를 뱉도록 대본 작성
+        // given
         given(userUseCase.findUserById(userId)).willReturn(mockUser);
         given(reviewCommandRepositoryPort.findById(reviewId)).willReturn(Optional.empty());
 
-        // When & Then - assertThrows를 사용해 해당 서비스 로직이 예외를 진짜 터뜨리는지 검증
+        // When & Then
         assertThrows(ReviewException.class, () -> {
-            reviewLikeService.reviewLikeToggle(reviewId, userId);
+            reviewLikeService.reviewLikeToggle(reviewId);
         });
-
-        // 예외가 중간에 터졌으므로, 그 아래에 있는 좋아요 조회나 카운트 증감 로직은 절대 실행되면 안 됨!
         verify(reviewLikeRepositoryPort, never()).findByReviewAndUser(any(), any());
         verify(reviewCommandRepositoryPort, never()).increaseLikeCount(any());
     }
@@ -136,25 +135,20 @@ public class ReviewLikeServiceTest {
     @Test
     @DisplayName("존재하지 않는 사용자 ID로 좋아요를 요청하면 예외가 발생한다.")
     void toggleLike_shouldThrowException_whenUserNotFound() {
-        // given - 유저 서비스에서 예외를 던지거나 null을 뱉도록 대본 작성
-        // (보통 findUserById 내부에서 예외를 던지므로 런타임 예외 등으로 연출합니다)
+        // given
         given(userUseCase.findUserById(userId)).willThrow(new RuntimeException("유저를 찾을 수 없습니다."));
 
         // When & Then - 유저 단계에서 바로 예외가 터지는지 확인
         assertThrows(RuntimeException.class, () -> {
-            reviewLikeService.reviewLikeToggle(reviewId, userId);
+            reviewLikeService.reviewLikeToggle(reviewId);
         });
 
-        // 유저 조회 실패로 뒤쪽 로직(리뷰 찾기 등)은 아예 실행 안 됨을 검증
         verify(reviewCommandRepositoryPort, never()).findById(any());
     }
 
     @Test
     @DisplayName("자신이 작성한 리뷰에 좋아요를 요청하는 경우를 검증한다.")
     void toggleLike_shouldHandle_whenUserLikesOwnReview() {
-        // 💡 만약 현재 서비스 코드에 '본인 리뷰 좋아요 금지' 정책이 아직 없다면
-        // 이 테스트는 정상적으로 좋아요 등록(성공 케이스와 동일) 처리가 될 것입니다.
-        // 현재는 서비스 코드에 예외 처리가 없으므로, 정상 등록 흐름으로 검증문을 깔아둡니다.
 
         // given
         given(userUseCase.findUserById(userId)).willReturn(mockUser);
@@ -165,10 +159,9 @@ public class ReviewLikeServiceTest {
         given(reviewLikeMapper.toDto(any(), org.mockito.ArgumentMatchers.eq(true))).willReturn(expectDto);
 
         // when
-        ReviewLikeDto result = reviewLikeService.reviewLikeToggle(reviewId, userId);
+        ReviewLikeDto result = reviewLikeService.reviewLikeToggle(reviewId);
 
         // then
-        // 본인 리뷰여도 현재 코드상으로는 그대로 좋아요가 등록됨을 검증
         verify(reviewLikeRepositoryPort).save(any(ReviewLike.class));
     }
 }

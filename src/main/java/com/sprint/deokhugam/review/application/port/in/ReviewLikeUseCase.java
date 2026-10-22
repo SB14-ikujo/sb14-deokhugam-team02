@@ -6,5 +6,5 @@ import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewLikeDto;
 
 public interface ReviewLikeUseCase {
     // '좋아요' toggle
-    ReviewLikeDto reviewLikeToggle(UUID reviewId, UUID requestId);
+    ReviewLikeDto reviewLikeToggle(UUID reviewId);
 }
