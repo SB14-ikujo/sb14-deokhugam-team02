@@ -1,9 +1,10 @@
 package com.sprint.deokhugam.dashboard.adapter.in.web;
 
 import org.springdoc.core.annotations.ParameterObject;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -19,17 +20,17 @@ import com.sprint.deokhugam.dashboard.application.port.in.DashboardUseCase;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-public class DashboardController {
+public class DashboardController implements DashboardApi {
 
     private final DashboardUseCase dashboardUseCase;
 
+    @Override
+    @ResponseStatus(HttpStatus.OK)
     @GetMapping("/books/popular")
-    public ResponseEntity<CursorPageResponse<PopularBookDto>> getPopularBooks(
+    public CursorPageResponse<PopularBookDto> getPopularBooks(
         @Valid @ParameterObject PopularBookRequest request
     ) {
-        // 커서로 감싼 Dto로 반환받음
-        CursorPageResponse<PopularBookDto> popularBooks = dashboardUseCase.getPopularBooks(request);
 
-        return ResponseEntity.ok(popularBooks);
+        return dashboardUseCase.getPopularBooks(request);
     }
 }
