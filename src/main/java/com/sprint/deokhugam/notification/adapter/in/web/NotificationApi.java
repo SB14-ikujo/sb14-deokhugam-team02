@@ -52,4 +52,23 @@ public interface NotificationApi {
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     NotificationDto markAsRead(UUID notificationId, UUID userId, NotificationUpdateRequest updateRequest);
 
+    @Operation(
+        summary = "모든 알림 읽음 처리",
+        description = "사용자의 모든 알림을 읽음 상태로 처리합니다."
+    )
+    @Parameter(
+        name = "Deokhugam-Request-User-ID", description = "요청자 ID",
+        in = ParameterIn.HEADER, required = true,
+        example = "123e4567-e89b-12d3-a456-426614174000",
+        schema = @Schema(type = "string", format = "uuid")
+    )
+    @ApiResponse(responseCode = "204", description = "알림 읽음 처리 성공")
+    @ApiResponse(responseCode = "400", description = "잘못된 요청 (사용자 ID 누락)",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "알림 정보 없음",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    void markAllAsRead(UUID userId);
+
 }
