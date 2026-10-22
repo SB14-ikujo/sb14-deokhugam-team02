@@ -1,8 +1,8 @@
 package com.sprint.deokhugam.comment.application.port.in;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import com.sprint.deokhugam.comment.adapter.in.web.dto.CommentCreateRequest;
