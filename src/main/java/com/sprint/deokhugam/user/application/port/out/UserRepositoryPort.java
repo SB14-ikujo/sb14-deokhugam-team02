@@ -11,6 +11,8 @@ public interface UserRepositoryPort extends JpaRepository<User, UUID> {
 
     boolean existsByEmail(String email);
 
+    boolean existsByNickname(String nickname);
+
     Optional<User> findByEmailAndIsDeletedFalse(String email);
 
     Optional<User> findByIdAndIsDeletedFalse(UUID id);
