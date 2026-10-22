@@ -22,13 +22,12 @@ import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.comment.application.port.out.CommentRepositoryPort;
 import com.sprint.deokhugam.comment.domain.Comment;
 import com.sprint.deokhugam.common.config.JpaConfig;
-import com.sprint.deokhugam.common.config.QuerydslConfig;
 import com.sprint.deokhugam.review.domain.Review;
 import com.sprint.deokhugam.user.domain.User;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import({JpaConfig.class, QuerydslConfig.class})
+@Import(JpaConfig.class)
 class CommentRepositoryPortTest {
 
     @Autowired
