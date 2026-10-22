@@ -15,6 +15,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.sprint.deokhugam.book.domain.Book;
@@ -85,7 +86,8 @@ class CommentRepositoryPortTest {
         em.flush();
         em.clear();
 
-        List<Comment> result = commentRepository.findByCursor(review.getId(), null, null, 2);
+        List<Comment> result = commentRepository.findByCursor(
+            review.getId(), null, null, Sort.Direction.DESC, 2);
 
         assertThat(result).extracting(Comment::getContent).containsExactly("4", "3");
     }
@@ -99,7 +101,7 @@ class CommentRepositoryPortTest {
         em.clear();
 
         List<Comment> result = commentRepository.findByCursor(
-            review.getId(), c3.getCreatedAt(), c3.getId(), 10);
+            review.getId(), c3.getCreatedAt(), c3.getId(), Sort.Direction.DESC, 10);
 
         assertThat(result).extracting(Comment::getContent).containsExactly("2", "1");
     }
@@ -121,10 +123,11 @@ class CommentRepositoryPortTest {
         em.clear();
 
         // 첫 페이지(2개) → 마지막 요소를 커서로 다음 페이지 조회
-        List<Comment> firstPage = commentRepository.findByCursor(review.getId(), null, null, 2);
+        List<Comment> firstPage = commentRepository.findByCursor(
+            review.getId(), null, null, Sort.Direction.DESC, 2);
         Comment last = firstPage.get(firstPage.size() - 1);
         List<Comment> nextPage = commentRepository.findByCursor(
-            review.getId(), last.getCreatedAt(), last.getId(), 10);
+            review.getId(), last.getCreatedAt(), last.getId(), Sort.Direction.DESC, 10);
 
         List<Comment> all = new ArrayList<>(firstPage);
         all.addAll(nextPage);
