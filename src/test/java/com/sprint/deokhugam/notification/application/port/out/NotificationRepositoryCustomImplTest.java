@@ -13,7 +13,6 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.common.config.JpaConfig;
@@ -41,7 +40,6 @@ class NotificationRepositoryCustomImplTest {
 
         Book book = Book.create("테스트 도서", user, "저자", "설명", "출판사",
             LocalDate.of(2020, 1, 1), "9780000000001", null);
-        ReflectionTestUtils.setField(book, "user", user); // Book.create()는 user를 받지 않음
         entityManager.persist(book);
 
         Review review = entityManager.persist(Review.create(user, book, "테스트 리뷰", 5));
