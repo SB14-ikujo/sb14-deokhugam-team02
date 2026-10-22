@@ -13,4 +13,5 @@ public interface CommentRepositoryCustom {
     // after/afterId가 null이면 첫 페이지, 있으면 해당 커서 이후(더 오래된) 댓글을 조회
     List<Comment> findByCursor(UUID reviewId, Instant after, UUID afterId,
         Sort.Direction direction, int size);
+
 }

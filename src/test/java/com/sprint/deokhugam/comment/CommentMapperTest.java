@@ -7,17 +7,21 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 
 import com.sprint.deokhugam.comment.adapter.in.web.dto.CommentDto;
+import com.sprint.deokhugam.comment.adapter.in.web.mapper.CommentMapper;
 import com.sprint.deokhugam.comment.domain.Comment;
 import com.sprint.deokhugam.review.domain.Review;
 import com.sprint.deokhugam.user.domain.User;
 
-class CommentDtoTest {
+class CommentMapperTest {
+
+    private final CommentMapper commentMapper = Mappers.getMapper(CommentMapper.class);
 
     @Test
-    @DisplayName("Comment 엔티티를 CommentDto로 변환한다")
-    void from() {
+    @DisplayName("Comment를 CommentDto로 변환한다")
+    void toDto() {
         UUID reviewId = UUID.randomUUID();
         UUID userId = UUID.randomUUID();
         Review review = mock(Review.class);
@@ -25,10 +29,9 @@ class CommentDtoTest {
         when(review.getId()).thenReturn(reviewId);
         when(user.getId()).thenReturn(userId);
         when(user.getNickname()).thenReturn("덕후");
-
         Comment comment = Comment.create(review, user, "댓글 내용");
 
-        CommentDto dto = CommentDto.from(comment);
+        CommentDto dto = commentMapper.toDto(comment);
 
         assertThat(dto.reviewId()).isEqualTo(reviewId);
         assertThat(dto.userId()).isEqualTo(userId);
