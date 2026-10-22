@@ -38,4 +38,12 @@ public class NotificationController implements NotificationApi {
         return notificationUseCase.markAsRead(notificationId, userId, updateRequest.confirmed());
     }
 
+    @Override
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PatchMapping(value = "/read-all")
+    public void markAllAsRead(
+        @Parameter(hidden = true) @RequestUserId UUID userId
+    ) {
+        notificationUseCase.markAllAsRead(userId);
+    }
 }

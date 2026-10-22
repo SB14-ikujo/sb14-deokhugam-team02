@@ -1,5 +1,6 @@
 package com.sprint.deokhugam.notification.application.port.in;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -49,13 +50,24 @@ public class NotificationService implements NotificationUseCase {
         }
 
         if (!confirmed) {
-            log.debug("알람 읽음 처리 skip");
+            log.debug("confirmed false로 알람 읽음 처리 스킵");
             return notificationMapper.toDto(notification);
         }
 
         notification.markAsRead();
 
         return notificationMapper.toDto(notification);
+    }
+
+    @Override
+    public void markAllAsRead(UUID userId) {
+        List<Notification> notifications = notificationRepository.findByUserId(userId);
+
+        if (notifications.isEmpty()) {
+            throw new NotificationException(NotificationErrorCode.NOTIFICATION_USER_NOT_FOUND);
+        }
+
+        notifications.forEach(Notification::markAsRead);
     }
 
     private void createNotification(Review review, String actorNickname, NotificationType type) {
