@@ -41,10 +41,9 @@ public class UserService implements UserUseCase {
         try {
             return userMapper.toDto(userRepository.saveAndFlush(user));
         } catch (DataIntegrityViolationException e) {
-            //동시 가입으로 existBy 검사를 통과한 뒤 데이터베이스의 유니크 제약에 걸린 경우.
+            // 동시 가입으로 existsBy 검사를 통과한 뒤 데이터베이스의 유니크 제약에 걸린 경우.
             throw new UserException(UserErrorCode.USER_DUPLICATE);
         }
-
     }
 
     private String normalizeEmail(String email) {
