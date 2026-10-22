@@ -23,8 +23,8 @@ public class ReviewLikeController {
     @RequestMapping(method = RequestMethod.POST, value = "/api/review/{reviewId}/like")
     public ResponseEntity<ReviewLikeDto> create(
         @PathVariable UUID reviewId,
-        @RequestHeader("Deokhugam-Request-User-ID") UUID requestId) {
-        ReviewLikeDto responseDto = reviewLikeUseCase.toggleReviewLike(reviewId, requestId);
+        @RequestHeader("Deokhugam-Request-User-ID") UUID requestUserId) {
+        ReviewLikeDto responseDto = reviewLikeUseCase.toggleReviewLike(reviewId, requestUserId);
         return ResponseEntity.ok(responseDto);
     }
 }
