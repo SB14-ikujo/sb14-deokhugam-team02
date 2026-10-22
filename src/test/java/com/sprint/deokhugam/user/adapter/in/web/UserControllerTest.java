@@ -84,4 +84,19 @@ public class UserControllerTest {
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.message").value(UserErrorCode.USER_EMAIL_DUPLICATE.getMessage()));
     }
+
+    @Test
+    @DisplayName("이미 사용 중인 닉네임이면 409를 반환한다.")
+    void register_duplicateNickname() throws Exception {
+        // given
+        given(userUseCase.register(any(UserRegisterRequest.class)))
+            .willThrow(new UserException(UserErrorCode.USER_NICKNAME_DUPLICATE));
+
+        // when, then
+        mockMvc.perform(post("/api/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(VALID_BODY))
+            .andExpect(status().isConflict())
+            .andExpect(jsonPath("$.message").value(UserErrorCode.USER_NICKNAME_DUPLICATE.getMessage()));
+    }
 }
