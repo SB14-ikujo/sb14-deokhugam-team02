@@ -1,15 +1,21 @@
 package com.sprint.deokhugam.user.adapter.out.security;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
 import com.sprint.deokhugam.user.application.port.out.PasswordHasher;
 
 public class BCryptPasswordHasher implements PasswordHasher {
+
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     @Override
     public String hash(String rawPassword) {
-        return rawPassword;
+        return passwordEncoder.encode(rawPassword);
     }
 
     @Override
     public boolean matches(String rawPassword, String hashedPassword) {
-        return false;
+        return passwordEncoder.matches(rawPassword, hashedPassword);
     }
 }
