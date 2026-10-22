@@ -14,6 +14,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserDto;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserRegisterRequest;
@@ -53,7 +54,7 @@ class UserServiceTest {
         given(userRepository.existsByEmail(EMAIL)).willReturn(false);
         given(userRepository.existsByNickname(NICKNAME)).willReturn(false);
         given(passwordHasher.hash(RAW_PASSWORD)).willReturn(HASHED_PASSWORD);
-        given(userRepository.save(any(User.class))).willAnswer(returnsFirstArg());
+        given(userRepository.saveAndFlush(any(User.class))).willAnswer(returnsFirstArg());
         given(userMapper.toDto(any(User.class))).willReturn(expected);
 
         // when
@@ -61,7 +62,7 @@ class UserServiceTest {
 
         // then
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
-        then(userRepository).should().save(captor.capture());
+        then(userRepository).should().saveAndFlush(captor.capture());
         assertThat(captor.getValue().getPassword()).isEqualTo(HASHED_PASSWORD);
         assertThat(result).isEqualTo(expected);
     }
@@ -78,7 +79,7 @@ class UserServiceTest {
             .isInstanceOf(UserException.class)
             .extracting("errorCode")
             .isEqualTo(UserErrorCode.USER_EMAIL_DUPLICATE);
-        then(userRepository).should(never()).save(any(User.class));
+        then(userRepository).should(never()).saveAndFlush(any(User.class));
     }
 
     @Test
@@ -94,7 +95,7 @@ class UserServiceTest {
             .isInstanceOf(UserException.class)
             .extracting("errorCode")
             .isEqualTo(UserErrorCode.USER_NICKNAME_DUPLICATE);
-        then(userRepository).should(never()).save(any(User.class));
+        then(userRepository).should(never()).saveAndFlush(any(User.class));
     }
 
     @Test
@@ -105,14 +106,32 @@ class UserServiceTest {
         given(userRepository.existsByEmail(EMAIL)).willReturn(false);
         given(userRepository.existsByNickname(NICKNAME)).willReturn(false);
         given(passwordHasher.hash(RAW_PASSWORD)).willReturn(HASHED_PASSWORD);
-        given(userRepository.save(any(User.class))).willAnswer(returnsFirstArg());
+        given(userRepository.saveAndFlush(any(User.class))).willAnswer(returnsFirstArg());
 
         // when
         userService.register(request);
 
         // then
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
-        then(userRepository).should().save(captor.capture());
+        then(userRepository).should().saveAndFlush(captor.capture());
         assertThat(captor.getValue().getEmail()).isEqualTo(EMAIL);
+    }
+
+    @Test
+    @DisplayName("동시 가입으로 DB 유니크 제약에 걸리면 USER_DUPLICATE 예외를 반환")
+    void register_concurrentDuplicate() {
+        //given
+        UserRegisterRequest request = new UserRegisterRequest(EMAIL, NICKNAME, RAW_PASSWORD);
+        given(userRepository.existsByEmail(EMAIL)).willReturn(false);
+        given(userRepository.existsByNickname(NICKNAME)).willReturn(false);
+        given(passwordHasher.hash(RAW_PASSWORD)).willReturn(HASHED_PASSWORD);
+        given(userRepository.saveAndFlush(any(User.class)))
+            .willThrow(new DataIntegrityViolationException("duplicate key"));
+
+        //when, than
+        assertThatThrownBy(() -> userService.register(request))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_DUPLICATE);
     }
 }
