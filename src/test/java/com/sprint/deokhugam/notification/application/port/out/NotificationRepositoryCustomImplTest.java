@@ -39,7 +39,7 @@ class NotificationRepositoryCustomImplTest {
     void setUp() {
         user = entityManager.persist(User.create("repo-test1@test.com", "수신자", "password1!"));
 
-        Book book = Book.create("테스트 도서", "저자", "설명", "출판사",
+        Book book = Book.create("테스트 도서", user, "저자", "설명", "출판사",
             LocalDate.of(2020, 1, 1), "9780000000001", null);
         ReflectionTestUtils.setField(book, "user", user); // Book.create()는 user를 받지 않음
         entityManager.persist(book);
