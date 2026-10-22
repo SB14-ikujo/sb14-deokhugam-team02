@@ -2,7 +2,10 @@ package com.sprint.deokhugam.dashboard.application.port.out.popularbook;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +24,7 @@ import com.sprint.deokhugam.common.config.QuerydslConfig;
 import com.sprint.deokhugam.dashboard.domain.Direction;
 import com.sprint.deokhugam.dashboard.domain.PeriodType;
 import com.sprint.deokhugam.dashboard.domain.PopularBook;
+import com.sprint.deokhugam.review.domain.Review;
 import com.sprint.deokhugam.user.domain.User;
 
 @DataJpaTest
@@ -30,12 +34,15 @@ class PopularBookRepositoryCustomImplTest {
 
     private static final LocalDate YESTERDAY = LocalDate.of(2026, 10, 18);
     private static final LocalDate TODAY = LocalDate.of(2026, 10, 19);
+    private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");       // ← 추가
 
     @Autowired
     private PopularBookRepositoryPort popularBookRepositoryPort;
 
     @Autowired
     private TestEntityManager em;
+
+    private int reviewerSeq;
 
     @BeforeEach
     void setUp() {
@@ -100,12 +107,110 @@ class PopularBookRepositoryCustomImplTest {
             .isEqualTo(3L);
     }
 
+    @Test
+    @DisplayName("기간 안의 리뷰를 도서별로 모아 리뷰 수와 평점 평균을 낸다")
+    void findCandidatesAggregatesPerBook() {
+        Book bookX = saveBook("X", "9870000000011");
+        Book bookY = saveBook("Y", "9870000000012");
+        saveReview(bookX, 5, at(18, 10, 0), false);
+        saveReview(bookX, 3, at(18, 15, 0), false);
+        saveReview(bookY, 4, at(18, 20, 0), false);
+        em.clear();
+
+        List<PopularBook> result = popularBookRepositoryPort.findCandidates(PeriodType.DAILY, TODAY);
+
+        assertThat(result)
+            .extracting(candidate -> candidate.getBook().getTitle(), PopularBook::getReviewCount,
+                PopularBook::getRating)
+            .containsExactlyInAnyOrder(tuple("X", 2L, 4.0), tuple("Y", 1L, 4.0));
+        assertThat(result).allSatisfy(candidate -> {
+            assertThat(candidate.getRank()).isNull();
+            assertThat(candidate.getPeriod()).isEqualTo(PeriodType.DAILY);
+            assertThat(candidate.getSnapshotDate()).isEqualTo(TODAY);
+        });
+    }
+
+    @Test
+    @DisplayName("기간 시작 시각은 포함하고, 끝 시각과 그 이전 리뷰는 제외한다")
+    void findCandidatesIncludesStartExcludesEnd() {
+        Book book = saveBook("X", "9870000000011");
+        saveReview(book, 5, at(18, 0, 0), false);
+        saveReview(book, 1, at(17, 23, 59), false);
+        saveReview(book, 1, at(19, 0, 0), false);
+        em.clear();
+
+        List<PopularBook> result = popularBookRepositoryPort.findCandidates(PeriodType.DAILY, TODAY);
+
+        assertThat(result)
+            .extracting(PopularBook::getReviewCount, PopularBook::getRating)
+            .containsExactly(tuple(1L, 5.0));
+    }
+
+    @Test
+    @DisplayName("논리 삭제된 리뷰도 집계에 포함한다")
+    void findCandidatesIncludesDeletedReviews() {
+        Book book = saveBook("X", "9870000000011");
+        saveReview(book, 5, at(18, 10, 0), false);
+        saveReview(book, 1, at(18, 11, 0), true);
+        em.clear();
+
+        List<PopularBook> result = popularBookRepositoryPort.findCandidates(PeriodType.DAILY, TODAY);
+
+        assertThat(result)
+            .extracting(PopularBook::getReviewCount, PopularBook::getRating)
+            .containsExactly(tuple(2L, 3.0));
+    }
+
+    @Test
+    @DisplayName("역대 기간은 시작 시각 제한 없이 집계한다")
+    void findCandidatesAllTimeHasNoStart() {
+        Book book = saveBook("X", "9870000000011");
+        saveReview(book, 4, at(1, 9, 0), false);
+        em.clear();
+
+        assertThat(popularBookRepositoryPort.findCandidates(PeriodType.DAILY, TODAY)).isEmpty();
+        assertThat(popularBookRepositoryPort.findCandidates(PeriodType.ALL_TIME, TODAY)).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("지정한 날짜와 기간의 순위만 지운다")
+    void deleteByPeriodAndSnapshotDate() {
+        popularBookRepositoryPort.deleteByPeriodAndSnapshotDate(PeriodType.DAILY, TODAY);
+
+        assertThat(popularBookRepositoryPort.countByPeriodAndSnapshotDate(PeriodType.DAILY, TODAY)).isZero();
+        assertThat(popularBookRepositoryPort.countByPeriodAndSnapshotDate(PeriodType.DAILY, YESTERDAY))
+            .isEqualTo(1L);
+        assertThat(popularBookRepositoryPort.countByPeriodAndSnapshotDate(PeriodType.WEEKLY, TODAY))
+            .isEqualTo(1L);
+    }
+
     private Book saveBook(String title, String isbn) {
         User user = em.persist(User.create(isbn + "@test.com", "tester" + title, "password1!"));
         Book book = Book.create(title, user, "저자", "설명", "출판사",
             LocalDate.of(2020, 1, 1), isbn, null);
         ReflectionTestUtils.setField(book, "user", user);
         return em.persist(book);
+    }
+
+    private void saveReview(Book book, int rating, Instant createdAt, boolean deleted) {
+        reviewerSeq++;
+        User reviewer = em.persist(User.create("reviewer" + reviewerSeq + "@test.com", "reviewer" + reviewerSeq,
+            "password1!"));
+        Review review = Review.create(reviewer, book, "내용", rating);
+        ReflectionTestUtils.setField(review, "isDeleted", deleted);
+        em.persist(review);
+        em.flush();
+
+        // createdAt은 저장할 때 자동으로 채워지므로, 저장 후 SQL로 원하는 시각으로 바꾼다
+        em.getEntityManager()
+            .createNativeQuery("update reviews set created_at = :createdAt where id = :id")
+            .setParameter("createdAt", createdAt)
+            .setParameter("id", review.getId())
+            .executeUpdate();
+    }
+
+    private Instant at(int day, int hour, int minute) {
+        return LocalDateTime.of(2026, 10, day, hour, minute).atZone(ZONE).toInstant();
     }
 
 }
