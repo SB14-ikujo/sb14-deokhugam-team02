@@ -27,7 +27,7 @@ public class UserService implements UserUseCase {
     @Override
     @Transactional
     public UserDto register(UserRegisterRequest request) {
-        String email = request.email().trim().toLowerCase(Locale.ROOT);
+        String email = normalizeEmail(request.email());
 
         if (userRepository.existsByEmail(email)) {
             throw new UserException(UserErrorCode.USER_EMAIL_DUPLICATE);
@@ -38,5 +38,9 @@ public class UserService implements UserUseCase {
 
         User user = User.create(email, request.nickname(), passwordHasher.hash(request.password()));
         return userMapper.toDto(userRepository.save(user));
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }
