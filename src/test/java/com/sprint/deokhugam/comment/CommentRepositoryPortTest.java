@@ -67,7 +67,7 @@ class CommentRepositoryPortTest {
     @DisplayName("논리 삭제된 댓글은 id로 조회되지 않는다")
     void findByIdAndIsDeletedFalse_deleted() throws InterruptedException {
         Comment comment = saveComment("댓글");
-        comment.delete();
+        comment.softDelete();
         em.flush();
         em.clear();
 
@@ -81,7 +81,7 @@ class CommentRepositoryPortTest {
         Comment deleted = saveComment("2-삭제");
         saveComment("3");
         saveComment("4");
-        deleted.delete();
+        deleted.softDelete();
         em.flush();
         em.clear();
 
@@ -140,7 +140,7 @@ class CommentRepositoryPortTest {
     void countByReviewIdAndIsDeletedFalse() throws InterruptedException {
         saveComment("1");
         Comment deleted = saveComment("2");
-        deleted.delete();
+        deleted.softDelete();
         em.flush();
 
         assertThat(commentRepository.countByReviewIdAndIsDeletedFalse(review.getId())).isEqualTo(1L);

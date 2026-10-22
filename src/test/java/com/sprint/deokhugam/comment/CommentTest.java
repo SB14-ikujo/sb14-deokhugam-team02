@@ -41,7 +41,7 @@ class CommentTest {
     void delete() {
         Comment comment = Comment.create(review, user, "삭제될 댓글");
 
-        comment.delete();
+        comment.softDelete();
 
         assertThat(comment.isDeleted()).isTrue();
     }
