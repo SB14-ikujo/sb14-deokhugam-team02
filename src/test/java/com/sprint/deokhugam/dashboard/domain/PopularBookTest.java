@@ -19,7 +19,7 @@ class PopularBookTest {
 
     @BeforeEach
     void setUp() {
-        book = Book.create("제목", "저자", "설명", "출판사", LocalDate.of(2020, 1, 1), "9870000000001", null);
+        book = Book.create("제목", null, "저자", "설명", "출판사", LocalDate.of(2020, 1, 1), "9870000000001", null);
     }
 
     @ParameterizedTest(name = "리뷰 {0}개, 평점 {1} → 점수 {2}")

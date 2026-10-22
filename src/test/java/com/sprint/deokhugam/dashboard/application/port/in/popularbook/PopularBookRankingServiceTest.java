@@ -61,7 +61,7 @@ class PopularBookRankingServiceTest {
     }
 
     private PopularBook candidate(String title, long idNumber, double score) {
-        Book book = Book.create(title, "저자", "설명", "출판사", LocalDate.of(2020, 1, 1), "isbn-" + title, null);
+        Book book = Book.create(title, null, "저자", "설명", "출판사", LocalDate.of(2020, 1, 1), "isbn-" + title, null);
         ReflectionTestUtils.setField(book, "id", new UUID(0L, idNumber));
         return PopularBook.create(book, PeriodType.DAILY, null, score, 3L, 4.0, TODAY);
     }
