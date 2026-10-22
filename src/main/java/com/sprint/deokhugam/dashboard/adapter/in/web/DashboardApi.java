@@ -1,7 +1,5 @@
 package com.sprint.deokhugam.dashboard.adapter.in.web;
 
-import org.springframework.http.ResponseEntity;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,5 +22,5 @@ public interface DashboardApi {
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(responseCode = "500", description = "서버 내부 오류",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    ResponseEntity<CursorPageResponse<PopularBookDto>> getPopularBooks(PopularBookRequest request);
+    CursorPageResponse<PopularBookDto> getPopularBooks(PopularBookRequest request);
 }
