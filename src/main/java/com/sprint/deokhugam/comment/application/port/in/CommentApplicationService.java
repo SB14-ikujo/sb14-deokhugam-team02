@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 
 import com.sprint.deokhugam.comment.adapter.in.web.dto.CommentCreateRequest;
 import com.sprint.deokhugam.comment.adapter.in.web.dto.CommentDto;
+import com.sprint.deokhugam.comment.adapter.in.web.mapper.CommentMapper;
 import com.sprint.deokhugam.comment.application.port.out.CommentRepositoryPort;
 import com.sprint.deokhugam.comment.domain.Comment;
 import com.sprint.deokhugam.comment.domain.exception.CommentErrorCode;
@@ -18,11 +19,12 @@ import com.sprint.deokhugam.user.domain.User;
 
 @Service
 @RequiredArgsConstructor
-public class CommentService implements CommentUseCase {
+public class CommentApplicationService implements CommentUseCase {
 
     private final CommentRepositoryPort commentRepository;
     private final ReviewRepositoryPort reviewRepository;
     private final UserRepositoryPort userRepository;
+    private final CommentMapper commentMapper;
 
     @Override
     @Transactional
@@ -39,6 +41,6 @@ public class CommentService implements CommentUseCase {
 
         Comment comment = commentRepository.save(Comment.create(review, user, request.content()));
 
-        return CommentDto.from(comment);
+        return commentMapper.toDto(comment);
     }
 }

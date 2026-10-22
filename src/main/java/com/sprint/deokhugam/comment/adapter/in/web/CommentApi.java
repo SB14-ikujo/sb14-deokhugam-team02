@@ -1,7 +1,5 @@
 package com.sprint.deokhugam.comment.adapter.in.web;
 
-import org.springframework.http.ResponseEntity;
-
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -22,10 +20,10 @@ public interface CommentApi {
             content = @Content(schema = @Schema(implementation = CommentDto.class))),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (입력값 검증 실패)",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
-        @ApiResponse(responseCode = "404", description = "리뷰 정보 없음",
+        @ApiResponse(responseCode = "404", description = "리뷰 또는 사용자 정보 없음",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "500", description = "서버 내부 오류",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    ResponseEntity<CommentDto> create(CommentCreateRequest request);
+    CommentDto create(CommentCreateRequest request);
 }

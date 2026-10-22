@@ -46,10 +46,11 @@ public class CommentRepositoryCustomImpl implements CommentRepositoryCustom {
         if (after == null || afterId == null) {
             return null;
         }
-        return asc
-            ? comment.createdAt.gt(after)
-            .or(comment.createdAt.eq(after).and(comment.id.gt(afterId)))
-            : comment.createdAt.lt(after)
+        if (asc) {
+            return comment.createdAt.gt(after)
+                .or(comment.createdAt.eq(after).and(comment.id.gt(afterId)));
+        }
+        return comment.createdAt.lt(after)
             .or(comment.createdAt.eq(after).and(comment.id.lt(afterId)));
     }
 }

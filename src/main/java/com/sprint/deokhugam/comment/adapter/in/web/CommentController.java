@@ -1,10 +1,10 @@
 package com.sprint.deokhugam.comment.adapter.in.web;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
@@ -23,8 +23,8 @@ public class CommentController implements CommentApi {
 
     @Override
     @PostMapping
-    public ResponseEntity<CommentDto> create(@Valid @RequestBody CommentCreateRequest request) {
-        CommentDto response = commentUseCase.create(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    @ResponseStatus(HttpStatus.CREATED)
+    public CommentDto create(@Valid @RequestBody CommentCreateRequest request) {
+        return commentUseCase.create(request);
     }
 }
