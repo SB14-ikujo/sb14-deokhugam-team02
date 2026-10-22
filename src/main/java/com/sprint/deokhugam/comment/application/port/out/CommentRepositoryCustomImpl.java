@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Sort;
+
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
@@ -20,26 +22,34 @@ public class CommentRepositoryCustomImpl implements CommentRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public List<Comment> findByCursor(UUID reviewId, Instant after, UUID afterId, int size) {
+    public List<Comment> findByCursor(UUID reviewId, Instant after, UUID afterId,
+        Sort.Direction direction, int size) {
+        boolean asc = direction == Sort.Direction.ASC;
+
         return queryFactory
             .selectFrom(comment)
             .join(comment.user).fetchJoin()
             .where(
                 comment.review.id.eq(reviewId),
                 comment.isDeleted.isFalse(),
-                cursorCondition(after, afterId)
+                cursorCondition(after, afterId, asc)
             )
-            .orderBy(comment.createdAt.desc(), comment.id.desc())
+            .orderBy(
+                asc ? comment.createdAt.asc() : comment.createdAt.desc(),
+                asc ? comment.id.asc() : comment.id.desc()
+            )
             .limit(size)
             .fetch();
     }
 
-    // 커서가 없으면 null을 반환 → where()가 null 조건을 무시하므로 첫 페이지 조회가 됨
-    private BooleanExpression cursorCondition(Instant after, UUID afterId) {
+    private BooleanExpression cursorCondition(Instant after, UUID afterId, boolean asc) {
         if (after == null || afterId == null) {
             return null;
         }
-        return comment.createdAt.lt(after)
+        return asc
+            ? comment.createdAt.gt(after)
+            .or(comment.createdAt.eq(after).and(comment.id.gt(afterId)))
+            : comment.createdAt.lt(after)
             .or(comment.createdAt.eq(after).and(comment.id.lt(afterId)));
     }
 }
