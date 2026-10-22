@@ -120,7 +120,7 @@ class UserServiceTest {
     @Test
     @DisplayName("동시 가입으로 DB 유니크 제약에 걸리면 USER_DUPLICATE 예외를 반환")
     void register_concurrentDuplicate() {
-        //given
+        // given
         UserRegisterRequest request = new UserRegisterRequest(EMAIL, NICKNAME, RAW_PASSWORD);
         given(userRepository.existsByEmail(EMAIL)).willReturn(false);
         given(userRepository.existsByNickname(NICKNAME)).willReturn(false);
@@ -128,7 +128,7 @@ class UserServiceTest {
         given(userRepository.saveAndFlush(any(User.class)))
             .willThrow(new DataIntegrityViolationException("duplicate key"));
 
-        //when, than
+        // when & then
         assertThatThrownBy(() -> userService.register(request))
             .isInstanceOf(UserException.class)
             .extracting("errorCode")

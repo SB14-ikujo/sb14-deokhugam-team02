@@ -39,11 +39,11 @@ public class UserControllerTest {
     @Test
     @DisplayName("회원가입에 성공하면 201과 비밀번호가 없는 사용자 정보를 반환한다.")
     void register_success() throws Exception {
-        //given
+        // given
         UserDto response = new UserDto(UUID.randomUUID(), "user@naver.com", "푸우", Instant.now());
         given(userUseCase.register(any(UserRegisterRequest.class))).willReturn(response);
 
-        //when, then
+        // when & then
         mockMvc.perform(post("/api/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(VALID_BODY))
@@ -92,7 +92,7 @@ public class UserControllerTest {
         given(userUseCase.register(any(UserRegisterRequest.class)))
             .willThrow(new UserException(UserErrorCode.USER_NICKNAME_DUPLICATE));
 
-        // when, then
+        // when & then
         mockMvc.perform(post("/api/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(VALID_BODY))
