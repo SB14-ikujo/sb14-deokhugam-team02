@@ -10,13 +10,13 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.context.annotation.Import;
 
 import com.sprint.deokhugam.common.config.JpaConfig;
+import com.sprint.deokhugam.common.config.QuerydslConfig;
 import com.sprint.deokhugam.user.domain.User;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-@Import(JpaConfig.class)
+@Import({JpaConfig.class, QuerydslConfig.class})
 class UserRepositoryPortTest {
-
     @Autowired
     private UserRepositoryPort userRepository;
 
