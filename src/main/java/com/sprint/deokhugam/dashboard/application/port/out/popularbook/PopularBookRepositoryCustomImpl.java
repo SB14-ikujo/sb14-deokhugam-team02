@@ -2,12 +2,17 @@ package com.sprint.deokhugam.dashboard.application.port.out.popularbook;
 
 import static com.sprint.deokhugam.book.domain.QBook.*;
 import static com.sprint.deokhugam.dashboard.domain.QPopularBook.*;
+import static com.sprint.deokhugam.review.domain.QReview.*;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import lombok.RequiredArgsConstructor;
@@ -49,8 +54,24 @@ public class PopularBookRepositoryCustomImpl implements PopularBookRepositoryCus
 
     @Override
     public List<PopularBook> findCandidates(PeriodType period, LocalDate baseDate) {
-        // TODO: 리뷰 집계 쿼리로 구현 -> 곧 할거임
-        return List.of();
+        NumberExpression<Long> reviewCount = review.count();
+        NumberExpression<Double> ratingAvg = review.rating.avg();
+
+        List<Tuple> rows = jpaQueryFactory
+            .select(book, reviewCount, ratingAvg)
+            .from(review)
+            .join(review.book, book)
+            .where(
+                createdAtFrom(period.startOf(baseDate)),
+                review.createdAt.lt(PeriodType.endOf(baseDate))
+            )
+            .groupBy(book)
+            .fetch();
+
+        return rows.stream()
+            .map(row -> PopularBook.candidate(row.get(book), period, row.get(reviewCount),
+                Objects.requireNonNull(row.get(ratingAvg)), baseDate))
+            .toList();
     }
 
     private BooleanExpression rankAfter(Direction direction, Long cursorRank) {
@@ -61,5 +82,12 @@ public class PopularBookRepositoryCustomImpl implements PopularBookRepositoryCus
             return popularBook.rank.gt(cursorRank);
         }
         return popularBook.rank.lt(cursorRank);
+    }
+
+    private BooleanExpression createdAtFrom(Instant start) {
+        if (start == null) {
+            return null;
+        }
+        return review.createdAt.goe(start);
     }
 }
