@@ -7,6 +7,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.sprint.deokhugam.notification.domain.Notification;
 
-public interface NotificationRepositoryPort extends JpaRepository<Notification, UUID> {
+public interface NotificationRepositoryPort extends JpaRepository<Notification, UUID>, NotificationRepositoryCustom {
     List<Notification> findByUserId(UUID userId);
 }
