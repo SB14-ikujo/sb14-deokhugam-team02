@@ -102,7 +102,7 @@ class PopularBookRepositoryCustomImplTest {
 
     private Book saveBook(String title, String isbn) {
         User user = em.persist(User.create(isbn + "@test.com", "tester" + title, "password1!"));
-        Book book = Book.create(title, "저자", "설명", "출판사",
+        Book book = Book.create(title, user, "저자", "설명", "출판사",
             LocalDate.of(2020, 1, 1), isbn, null);
         ReflectionTestUtils.setField(book, "user", user);
         return em.persist(book);

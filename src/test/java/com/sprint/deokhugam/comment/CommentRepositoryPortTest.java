@@ -42,7 +42,7 @@ class CommentRepositoryPortTest {
     @BeforeEach
     void setUp() {
         user = em.persist(User.create("test@test.com", "덕후", "password1!"));
-        Book book = Book.create("제목", "저자", "설명", "출판사",
+        Book book = Book.create("제목", user, "저자", "설명", "출판사",
             LocalDate.of(2024, 1, 1), "9781234567890", null);
         ReflectionTestUtils.setField(book, "user", user); // Book.create가 user를 안 받아서 우회
         em.persist(book);
