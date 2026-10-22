@@ -11,5 +11,5 @@ public interface NotificationUseCase {
 
     void createCommentNotification(Review review, String actorNickname);
 
-    NotificationDto markAsRead(UUID notificationId, UUID userId, boolean updateRequest);
+    NotificationDto markAsRead(UUID notificationId, UUID userId, boolean confirmed);
 }
