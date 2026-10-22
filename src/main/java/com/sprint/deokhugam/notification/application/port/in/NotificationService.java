@@ -60,14 +60,17 @@ public class NotificationService implements NotificationUseCase {
     }
 
     @Override
+    @Transactional
     public void markAllAsRead(UUID userId) {
         List<Notification> notifications = notificationRepository.findByUserId(userId);
+        log.debug("조회된 알림 개수 : {}", notifications.size());
 
         if (notifications.isEmpty()) {
+            log.debug("요청한 유저 알림 존재하지 않음 userId : {}", userId);
             throw new NotificationException(NotificationErrorCode.NOTIFICATION_USER_NOT_FOUND);
         }
 
-        notifications.forEach(Notification::markAsRead);
+        notificationRepository.markAllAsRead(userId);
     }
 
     private void createNotification(Review review, String actorNickname, NotificationType type) {
