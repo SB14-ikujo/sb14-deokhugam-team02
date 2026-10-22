@@ -1,4 +1,4 @@
-package com.sprint.deokhugam.dashboard.application.port.out.book;
+package com.sprint.deokhugam.dashboard.application.port.out.popularbook;
 
 import static com.sprint.deokhugam.book.domain.QBook.*;
 import static com.sprint.deokhugam.dashboard.domain.QPopularBook.*;
@@ -45,6 +45,12 @@ public class PopularBookRepositoryCustomImpl implements PopularBookRepositoryCus
             .orderBy(direction == Direction.ASC ? popularBook.rank.asc() : popularBook.rank.desc())
             .limit(size)
             .fetch();
+    }
+
+    @Override
+    public List<PopularBook> findCandidates(PeriodType period, LocalDate baseDate) {
+        // TODO: 리뷰 집계 쿼리로 구현 -> 곧 할거임
+        return List.of();
     }
 
     private BooleanExpression rankAfter(Direction direction, Long cursorRank) {

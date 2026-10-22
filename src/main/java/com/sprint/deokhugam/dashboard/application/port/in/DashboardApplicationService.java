@@ -14,7 +14,7 @@ import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookDto;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookRequest;
 import com.sprint.deokhugam.dashboard.adapter.in.web.mapper.DashboardMapper;
-import com.sprint.deokhugam.dashboard.application.port.out.book.PopularBookRepositoryPort;
+import com.sprint.deokhugam.dashboard.application.port.out.popularbook.PopularBookRepositoryPort;
 import com.sprint.deokhugam.dashboard.domain.PopularBook;
 import com.sprint.deokhugam.dashboard.domain.exception.DashboardErrorCode;
 import com.sprint.deokhugam.dashboard.domain.exception.DashboardException;
