@@ -15,7 +15,6 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.sprint.deokhugam.book.domain.Book;
@@ -43,12 +42,10 @@ class CommentRepositoryPortTest {
     @BeforeEach
     void setUp() {
         user = em.persist(User.create("test@test.com", "덕후", "password1!"));
-
         Book book = Book.create("제목", "저자", "설명", "출판사",
             LocalDate.of(2024, 1, 1), "9781234567890", null);
         ReflectionTestUtils.setField(book, "user", user); // Book.create가 user를 안 받아서 우회
         em.persist(book);
-
         review = em.persist(Review.create(user, book, "리뷰 내용", 5));
     }
 
@@ -79,7 +76,7 @@ class CommentRepositoryPortTest {
 
     @Test
     @DisplayName("첫 페이지는 최신순이며 삭제된 댓글을 제외하고 size만큼 조회한다")
-    void findFirstPage() throws InterruptedException {
+    void findByCursor_firstPage() throws InterruptedException {
         saveComment("1");
         Comment deleted = saveComment("2-삭제");
         saveComment("3");
@@ -88,21 +85,21 @@ class CommentRepositoryPortTest {
         em.flush();
         em.clear();
 
-        List<Comment> result = commentRepository.findFirstPage(review.getId(), PageRequest.of(0, 2));
+        List<Comment> result = commentRepository.findByCursor(review.getId(), null, null, 2);
 
         assertThat(result).extracting(Comment::getContent).containsExactly("4", "3");
     }
 
     @Test
     @DisplayName("다음 페이지는 after 이전에 생성된 댓글만 조회한다")
-    void findNextPage() throws InterruptedException {
+    void findByCursor_nextPage() throws InterruptedException {
         saveComment("1");
         saveComment("2");
         Comment c3 = saveComment("3");
         em.clear();
 
-        List<Comment> result = commentRepository.findNextPage(
-            review.getId(), c3.getCreatedAt(), c3.getId(), PageRequest.of(0, 10));
+        List<Comment> result = commentRepository.findByCursor(
+            review.getId(), c3.getCreatedAt(), c3.getId(), 10);
 
         assertThat(result).extracting(Comment::getContent).containsExactly("2", "1");
     }
@@ -124,10 +121,10 @@ class CommentRepositoryPortTest {
         em.clear();
 
         // 첫 페이지(2개) → 마지막 요소를 커서로 다음 페이지 조회
-        List<Comment> firstPage = commentRepository.findFirstPage(review.getId(), PageRequest.of(0, 2));
+        List<Comment> firstPage = commentRepository.findByCursor(review.getId(), null, null, 2);
         Comment last = firstPage.get(firstPage.size() - 1);
-        List<Comment> nextPage = commentRepository.findNextPage(
-            review.getId(), last.getCreatedAt(), last.getId(), PageRequest.of(0, 10));
+        List<Comment> nextPage = commentRepository.findByCursor(
+            review.getId(), last.getCreatedAt(), last.getId(), 10);
 
         List<Comment> all = new ArrayList<>(firstPage);
         all.addAll(nextPage);
