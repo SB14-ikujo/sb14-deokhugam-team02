@@ -37,12 +37,20 @@ public class NotificationService implements NotificationUseCase {
 
     @Override
     @Transactional
-    public NotificationDto markAsRead(UUID notificationId, UUID userId) {
+    public NotificationDto markAsRead(UUID notificationId, UUID userId, boolean confirmed) {
+        log.debug("알람 읽음 요청 정보 : 알림 아이디 : {}, 요청자 아이디 : {}, confirmed :{}", notificationId, userId, confirmed);
+
         Notification notification = notificationRepository.findById(notificationId)
             .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND));
 
         if (!notification.getUser().getId().equals(userId)) {
+            log.debug("알람 읽음 요청 정보 불일치 : 알림(userId) : {}, 요청자 아이디 : {}", notification.getUser().getId(), userId);
             throw new NotificationException(NotificationErrorCode.NOTIFICATION_FORBIDDEN);
+        }
+
+        if (!confirmed) {
+            log.debug("알람 읽음 처리 skip");
+            return notificationMapper.toDto(notification);
         }
 
         notification.markAsRead();
@@ -61,6 +69,8 @@ public class NotificationService implements NotificationUseCase {
             log.warn("알림 생성 생략: 알림 발생자 닉네임이 유효하지 않습니다. reviewId={}, actorNickname={}", review.getId(), actorNickname);
             return;
         }
+
+        log.debug("알람 생성 요청 정보 : 리뷰 아이디 : {}, 알림 발생자 : {}", review.getId(), actorNickname);
 
         String message = this.getNotificationMessageTemplate(type).createMessageTemplate(actorNickname);
         Notification createdNotification = Notification.create(review, message);
