@@ -1,6 +1,5 @@
 package com.sprint.deokhugam.notification.application.port.in;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -62,15 +61,13 @@ public class NotificationService implements NotificationUseCase {
     @Override
     @Transactional
     public void markAllAsRead(UUID userId) {
-        List<Notification> notifications = notificationRepository.findByUserId(userId);
-        log.debug("조회된 알림 개수 : {}", notifications.size());
-
-        if (notifications.isEmpty()) {
+        if (!notificationRepository.existsByUserId(userId)) {
             log.debug("요청한 유저 알림 존재하지 않음 userId : {}", userId);
-            throw new NotificationException(NotificationErrorCode.NOTIFICATION_USER_NOT_FOUND);
+            throw new NotificationException(NotificationErrorCode.NOTIFICATION_NOT_FOUND);
         }
 
-        notificationRepository.markAllAsRead(userId);
+        long updatedCount = notificationRepository.markAllAsRead(userId);
+        log.info("user : {}의 알림 {}건 읽음 처리 완료", userId, updatedCount);
     }
 
     private void createNotification(Review review, String actorNickname, NotificationType type) {
