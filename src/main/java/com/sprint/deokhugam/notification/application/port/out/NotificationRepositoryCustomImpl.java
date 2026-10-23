@@ -67,7 +67,7 @@ public class NotificationRepositoryCustomImpl implements NotificationRepositoryC
 
     @Override
     public List<Notification> findAllByUserIdWithCursor(
-        UUID userId, Sort.Direction direction, String cursor,
+        UUID userId, Sort.Direction direction, Instant cursor,
         Instant after, Integer limit
     ) {
         QNotification notification = QNotification.notification;
@@ -86,15 +86,14 @@ public class NotificationRepositoryCustomImpl implements NotificationRepositoryC
     }
 
     // Where (Notification은 cursor와 after가 둘 다 createdAt이라 보조 조건 없이 createdAt만 비교)
-    private BooleanExpression cursorCondition(Sort.Direction direction, String cursor, Instant after) {
+    private BooleanExpression cursorCondition(Sort.Direction direction, Instant cursor, Instant after) {
         if (cursor == null) {
             return null;
         }
         QNotification notification = QNotification.notification;
-        Instant lastCreatedAt = Instant.parse(cursor);
         return direction.isDescending()
-            ? notification.createdAt.lt(lastCreatedAt)
-            : notification.createdAt.gt(lastCreatedAt);
+            ? notification.createdAt.lt(cursor)
+            : notification.createdAt.gt(cursor);
     }
 
     // OrderBy

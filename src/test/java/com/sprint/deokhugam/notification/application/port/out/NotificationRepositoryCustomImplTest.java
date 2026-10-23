@@ -115,7 +115,7 @@ class NotificationRepositoryCustomImplTest {
 
         // when
         List<Notification> result = notificationRepository
-            .findAllByUserIdWithCursor(user.getId(), Sort.Direction.DESC, time(4).toString(), null, 10);
+            .findAllByUserIdWithCursor(user.getId(), Sort.Direction.DESC, time(4), null, 10);
 
         // then
         assertThat(result).extracting(Notification::getCreatedAt)
@@ -130,7 +130,7 @@ class NotificationRepositoryCustomImplTest {
 
         // when
         List<Notification> result = notificationRepository
-            .findAllByUserIdWithCursor(user.getId(), Sort.Direction.ASC, time(2).toString(), null, 10);
+            .findAllByUserIdWithCursor(user.getId(), Sort.Direction.ASC, time(2), null, 10);
 
         // then
         assertThat(result).extracting(Notification::getCreatedAt)
