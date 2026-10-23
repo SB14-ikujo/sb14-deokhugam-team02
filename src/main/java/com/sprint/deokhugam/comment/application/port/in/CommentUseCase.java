@@ -11,4 +11,3 @@ public interface CommentUseCase {
 
     CursorPageResponse<CommentDto> getList(CommentListRequest request);
 }
-
