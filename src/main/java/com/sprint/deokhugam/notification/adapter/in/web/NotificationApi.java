@@ -13,6 +13,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 
 import com.sprint.deokhugam.common.exception.ErrorResponse;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
@@ -54,7 +56,7 @@ public interface NotificationApi {
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(responseCode = "500", description = "서버 내부 오류",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    NotificationDto markAsRead(UUID notificationId, UUID userId, NotificationUpdateRequest updateRequest);
+    NotificationDto markAsRead(UUID notificationId, UUID userId, @Valid NotificationUpdateRequest updateRequest);
 
     @Operation(
         summary = "모든 알림 읽음 처리",
@@ -110,6 +112,8 @@ public interface NotificationApi {
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     CursorPageResponse<NotificationDto> getNotifications(
         UUID userId, Sort.Direction direction,
-        Instant cursor, Instant after, Integer limit
+        Instant cursor, Instant after,
+        @Min(value = 1, message = "limit은 1 이상이어야 합니다.")
+        Integer limit
     );
 }
