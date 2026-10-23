@@ -19,9 +19,13 @@ public final class SliceUtils {
      * @param result limit + 1개로 조회한 결과
      * @param limit  한 페이지에 보여줄 개수
      * @return 데이터와 다음 페이지 여부가 담긴 Slice
-     * @param <T>    데이터 타입 (예: Notification, Review)
+     * @param <T>    데이터 타입 (예: NotificationDto, ReviewDto)
      */
     public static <T> Slice<T> toSlice(List<T> result, int limit) {
+        if (result.isEmpty()) {
+            return new SliceImpl<>(List.of(), Pageable.ofSize(limit), false);
+        }
+
         boolean hasNext = result.size() > limit;
         List<T> content = hasNext ? result.subList(0, limit) : result;
 

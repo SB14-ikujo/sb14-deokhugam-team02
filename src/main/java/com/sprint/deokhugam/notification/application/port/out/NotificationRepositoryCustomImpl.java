@@ -1,13 +1,21 @@
 package com.sprint.deokhugam.notification.application.port.out;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Sort;
+
+import com.querydsl.core.types.Order;
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.ComparableExpressionBase;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 
+import com.sprint.deokhugam.notification.domain.Notification;
 import com.sprint.deokhugam.notification.domain.QNotification;
 
 @RequiredArgsConstructor
@@ -43,4 +51,69 @@ public class NotificationRepositoryCustomImpl implements NotificationRepositoryC
 
         return updatedCount;
     }
+
+    @Override
+    public Long countByUserId(UUID userId) {
+        QNotification notification = QNotification.notification;
+
+        return queryFactory
+            .select(notification.count())
+            .from(notification)
+            .where(
+                notification.user.id.eq(userId)
+            )
+            .fetchOne();
+    }
+
+    @Override
+    public List<Notification> findAllByUserIdWithCursor(
+        UUID userId, Sort.Direction direction, String cursor,
+        Instant after, Integer limit
+    ) {
+        QNotification notification = QNotification.notification;
+
+        return queryFactory
+            .selectFrom(notification)
+            .where(
+                notification.user.id.eq(userId),
+                this.cursorCondition(direction, cursor, after)
+
+            )
+            .orderBy(this.orderSpecifiers(direction))
+            .limit(limit + 1)
+            .fetch();
+    }
+
+    // Where (Notification은 cursor와 after가 둘 다 createdAt이라 보조 조건 없이 createdAt만 비교)
+    private BooleanExpression cursorCondition(Sort.Direction direction, String cursor, Instant after) {
+        if (cursor == null) {
+            return null;
+        }
+        QNotification notification = QNotification.notification;
+        Instant lastCreatedAt = Instant.parse(cursor);
+        return direction.isDescending()
+            ? notification.createdAt.lt(lastCreatedAt)
+            : notification.createdAt.gt(lastCreatedAt);
+    }
+
+    // OrderBy
+    private OrderSpecifier<?>[] orderSpecifiers(Sort.Direction direction) {
+        QNotification notification = QNotification.notification;
+        ComparableExpressionBase<?> target = notification.createdAt; // 필요 시 하단 동적 가져오기 사용
+        Order currentDirection = "DESC".equalsIgnoreCase(direction.toString()) ? Order.DESC : Order.ASC;
+
+        return new OrderSpecifier<?>[] {
+            new OrderSpecifier<>(currentDirection, target),
+            new OrderSpecifier<>(currentDirection, notification.id)};
+    }
+
+    // 정렬 타겟 필드 동적 가져오기
+    // private ComparableExpressionBase<?> getSortTarget(String orderBy) {
+    // [Q.타입] [변수명] = [Q.].[테이블];
+    //     return switch (orderBy) {
+    //         case [orderBy-Value] -> [테이블].publishedDate;
+    //         default -> notification.id;
+    //     };
+    // }
+
 }
