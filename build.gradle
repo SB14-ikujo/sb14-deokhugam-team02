@@ -75,6 +75,11 @@ jacoco {
     toolVersion = '0.8.13'
 }
 
+def jacocoIncludes = [
+    '**/common/util/**',
+    '**/common/**/CursorPageResponse*'
+]
+
 def jacocoExcludes = [
     '**/*Application*',
     '**/*Exception*',
@@ -98,9 +103,7 @@ jacocoTestReport {
     afterEvaluate { // Gradle 빌드 평가가 끝난 후 실행되는 블록
         // JaCoCo 커버리지 리포트에 포함될 클래스 파일 디렉토리 설정
         classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it,
-                exclude: jacocoExcludes
-            )
+            fileTree(dir: it, exclude: jacocoExcludes) + fileTree(dir: it, include: jacocoIncludes)
         }))
     }
 }
@@ -127,7 +130,7 @@ jacocoTestCoverageVerification {
     }
     afterEvaluate {
         classDirectories.setFrom(files(classDirectories.files.collect {
-            fileTree(dir: it, exclude: jacocoExcludes)
+            fileTree(dir: it, exclude: jacocoExcludes) + fileTree(dir: it, include: jacocoIncludes)
         }))
     }
 }
