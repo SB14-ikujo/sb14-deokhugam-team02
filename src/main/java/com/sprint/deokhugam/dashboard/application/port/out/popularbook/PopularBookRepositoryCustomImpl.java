@@ -62,8 +62,8 @@ public class PopularBookRepositoryCustomImpl implements PopularBookRepositoryCus
             .from(review)
             .join(review.book, book)
             .where(
-                createdAtFrom(period.startOf(baseDate)),
-                review.createdAt.lt(PeriodType.endOf(baseDate))
+                createdAtFrom(period.startOf(baseDate)),    // 기준 시작 시각
+                review.createdAt.lt(PeriodType.endOf(baseDate)) // 기준일 0시 전까지
             )
             .groupBy(book)
             .fetch();
