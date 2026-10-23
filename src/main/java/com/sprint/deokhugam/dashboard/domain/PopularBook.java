@@ -10,6 +10,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,7 +19,17 @@ import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.common.domain.BaseEntity;
 
 @Entity
-@Table(name = "popular_books")
+@Table(name = "popular_books",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_popular_books_period_date_book",
+            columnNames = {"period", "snapshot_date", "book_id"}
+        ),
+        @UniqueConstraint(
+            name = "uk_popular_books_period_date_rank",
+            columnNames = {"period", "snapshot_date", "rank"}
+        )
+    })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PopularBook extends BaseEntity {
