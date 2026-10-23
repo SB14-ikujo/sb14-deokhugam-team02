@@ -1,8 +1,10 @@
 package com.sprint.deokhugam.notification.application.port.out;
 
-import static org.assertj.core.api.AssertionsForClassTypes.*;
+import static org.assertj.core.api.Assertions.*;
 
+import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -13,6 +15,7 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.jpa.test.autoconfigure.TestEntityManager;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Sort;
 
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.common.config.JpaConfig;
@@ -31,6 +34,8 @@ class NotificationRepositoryCustomImplTest {
 
     @Autowired
     private NotificationRepositoryCustomImpl notificationRepository;
+
+    private static final Instant BASE = Instant.parse("2026-01-01T00:00:00Z");
 
     private User user;
 
@@ -75,5 +80,79 @@ class NotificationRepositoryCustomImplTest {
 
         // then
         assertThat(updatedCount).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("사용자의 알림 개수를 반환한다.")
+    void countByUserId_returnsCount() {
+        // when
+        Long count = notificationRepository.countByUserId(user.getId());
+
+        // then
+        assertThat(count).isEqualTo(5L);
+    }
+
+    @Test
+    @DisplayName("커서가 없으면 DESC 정렬로 limit + 1개를 반환한다.")
+    void findAllByUserIdWithCursor_withoutCursorDesc() {
+        // given
+        fixCreatedAtByMessageOrder();
+
+        // when
+        List<Notification> result = notificationRepository
+            .findAllByUserIdWithCursor(user.getId(), Sort.Direction.DESC, null, null, 2);
+
+        // then
+        assertThat(result).extracting(Notification::getCreatedAt)
+            .containsExactly(time(5), time(4), time(3));
+    }
+
+    @Test
+    @DisplayName("DESC 커서가 있으면 커서보다 이전 알림만 반환하고 커서 항목은 제외한다.")
+    void findAllByUserIdWithCursor_withCursorDesc() {
+        // given
+        fixCreatedAtByMessageOrder();
+
+        // when
+        List<Notification> result = notificationRepository
+            .findAllByUserIdWithCursor(user.getId(), Sort.Direction.DESC, time(4).toString(), null, 10);
+
+        // then
+        assertThat(result).extracting(Notification::getCreatedAt)
+            .containsExactly(time(3), time(2), time(1));
+    }
+
+    @Test
+    @DisplayName("ASC 커서가 있으면 커서보다 이후 알림만 오름차순으로 반환하고 커서 항목은 제외한다.")
+    void findAllByUserIdWithCursor_withCursorAsc() {
+        // given
+        fixCreatedAtByMessageOrder();
+
+        // when
+        List<Notification> result = notificationRepository
+            .findAllByUserIdWithCursor(user.getId(), Sort.Direction.ASC, time(2).toString(), null, 10);
+
+        // then
+        assertThat(result).extracting(Notification::getCreatedAt)
+            .containsExactly(time(3), time(4), time(5));
+    }
+
+    private Instant time(int index) {
+        return BASE.plusSeconds(index);
+    }
+
+    /**
+     * Auditing으로 createdAt이 거의 같은 시각에 찍히므로, 메시지 번호(덕후1~5) 순서대로 createdAt을 고정한다.
+     * createdAt은 updatable = false라 네이티브 쿼리로 직접 변경한다.
+     */
+    private void fixCreatedAtByMessageOrder() {
+        for (int i = 1; i <= 5; i++) {
+            entityManager.getEntityManager()
+                .createNativeQuery("update notifications set created_at = :createdAt where message like :message")
+                .setParameter("createdAt", time(i))
+                .setParameter("message", "[덕후" + i + "]%")
+                .executeUpdate();
+        }
+        entityManager.clear();
     }
 }
