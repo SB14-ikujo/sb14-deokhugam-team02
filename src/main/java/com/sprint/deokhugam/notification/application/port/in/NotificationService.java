@@ -1,13 +1,19 @@
 package com.sprint.deokhugam.notification.application.port.in;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import com.sprint.deokhugam.common.pagination.CursorPageResponse;
+import com.sprint.deokhugam.common.util.SliceUtils;
 import com.sprint.deokhugam.notification.adapter.in.web.dto.NotificationDto;
 import com.sprint.deokhugam.notification.adapter.in.web.mapper.NotificationMapper;
 import com.sprint.deokhugam.notification.application.port.out.NotificationRepositoryPort;
@@ -17,11 +23,13 @@ import com.sprint.deokhugam.notification.domain.NotificationType;
 import com.sprint.deokhugam.notification.domain.exception.NotificationErrorCode;
 import com.sprint.deokhugam.notification.domain.exception.NotificationException;
 import com.sprint.deokhugam.review.domain.Review;
+import com.sprint.deokhugam.user.application.port.out.UserRepositoryPort;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class NotificationService implements NotificationUseCase {
+    private final UserRepositoryPort userRepository;
     private final NotificationRepositoryPort notificationRepository;
     private final NotificationMapper notificationMapper;
 
@@ -68,6 +76,39 @@ public class NotificationService implements NotificationUseCase {
 
         long updatedCount = notificationRepository.markAllAsRead(userId);
         log.info("user : {}의 알림 {}건 읽음 처리 완료", userId, updatedCount);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CursorPageResponse<NotificationDto> getNotifications(
+        UUID userId, Sort.Direction direction, String cursor,
+        Instant after, Integer limit
+    ) {
+        log.debug("user : {} 알림 목록 조회 ", userId);
+        log.debug("페이지네이션 정보 [cursor: {}, direction: {}, after: {}, limit: {}]", cursor, direction, after, limit);
+        userRepository.findById(userId)
+            .orElseThrow(() -> new NotificationException(NotificationErrorCode.NOTIFICATION_USER_NOT_FOUND));
+
+        long notificationTotalCount = notificationRepository.countByUserId(userId);
+
+        List<NotificationDto> notifications = notificationRepository
+            .findAllByUserIdWithCursor(userId, direction, cursor, after, limit)
+            .stream().map(notificationMapper::toDto)
+            .toList();
+
+        Slice<NotificationDto> slice = SliceUtils.toSlice(notifications, limit);
+
+        log.debug("총 데이터 : {}", notificationTotalCount);
+        log.info(
+            "최종 데이터 정보 [content_size: {}, limit: {}, hasNext : {}]",
+            slice.getNumberOfElements(), slice.getSize(), slice.hasNext()
+        );
+
+        return CursorPageResponse.of(
+            slice, notificationTotalCount,
+            dto -> dto.createdAt().toString(),
+            NotificationDto::createdAt
+        );
     }
 
     private void createNotification(Review review, String actorNickname, NotificationType type) {

@@ -41,7 +41,7 @@ public record CursorPageResponse<T>(
             content,
             last != null ? cursorExtractor.apply(last) : null,
             last != null ? afterExtractor.apply(last) : null,
-            content.size(),
+            slice.getSize(),
             totalElements,
             slice.hasNext()
         );
