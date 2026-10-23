@@ -123,4 +123,50 @@ class NotificationControllerTest {
         verifyNoInteractions(notificationUseCase);
     }
 
+    @Test
+    @DisplayName("잘못된 요청 파라미터가 전달되면 400을 반환한다.")
+    void getNotifications_returns400WhenInvalidParameters() throws Exception {
+        mockMvc.perform(get(basePath)
+                .header(USER_ID_HEADER, USER_ID)
+                .param("userId", USER_ID.toString())
+                .param("after", "테스트중입니다만")
+            )
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("사용자 정보가 존재하지 않으면 404를 반환한다.")
+    void getNotifications_returns404WhenUserNotFound() throws Exception {
+        given(notificationUseCase.getNotifications(any(), any(), any(), any(), any()))
+            .willThrow(new NotificationException(NotificationErrorCode.NOTIFICATION_USER_NOT_FOUND));
+
+        mockMvc.perform(get(basePath)
+                .param("userId", USER_ID.toString()))
+            .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("알림 목록 조회에 성공하면 200을 반환한다.")
+    void getNotifications_returns200WhenSuccessful() throws Exception {
+        String cursor = "2026-10-16T10:09:56.963925Z";
+
+        mockMvc.perform(get(basePath)
+                .header(USER_ID_HEADER, USER_ID)
+                .param("userId", USER_ID.toString())
+                .param("direction", "ASC")
+                .param("cursor", cursor)
+                .param("after", cursor)
+                .param("limit", "10"))
+            .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("필수 파라미터만 전달해도 알림 목록 조회에 성공하여 200을 반환한다.")
+    void getNotifications_returns200WhenOnlyRequiredParametersProvided() throws Exception {
+        mockMvc.perform(get(basePath)
+                .header(USER_ID_HEADER, USER_ID)
+                .param("userId", USER_ID.toString()))
+            .andExpect(status().isOk());
+    }
+
 }

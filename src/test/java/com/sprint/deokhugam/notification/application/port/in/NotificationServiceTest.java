@@ -1,9 +1,11 @@
 package com.sprint.deokhugam.notification.application.port.in;
 
-import static org.assertj.core.api.AssertionsForClassTypes.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,18 +19,25 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Sort;
 
+import com.sprint.deokhugam.common.pagination.CursorPageResponse;
+import com.sprint.deokhugam.notification.adapter.in.web.dto.NotificationDto;
 import com.sprint.deokhugam.notification.adapter.in.web.mapper.NotificationMapper;
 import com.sprint.deokhugam.notification.application.port.out.NotificationRepositoryPort;
 import com.sprint.deokhugam.notification.domain.Notification;
 import com.sprint.deokhugam.notification.domain.exception.NotificationException;
 import com.sprint.deokhugam.review.domain.Review;
+import com.sprint.deokhugam.user.application.port.out.UserRepositoryPort;
 import com.sprint.deokhugam.user.domain.User;
 
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceTest {
     @Mock
     private NotificationRepositoryPort notificationRepository;
+
+    @Mock
+    private UserRepositoryPort userRepository;
 
     @InjectMocks
     private NotificationService notificationService;
@@ -38,6 +47,12 @@ class NotificationServiceTest {
 
     @Mock
     private Review review;
+
+    private record Item(String id, Instant createdAt) {
+    }
+
+    private static final Instant T1 = Instant.parse("2026-01-01T00:00:00Z");
+    private static final Instant T2 = Instant.parse("2026-01-02T00:00:00Z");
 
     @Test
     @DisplayName("좋아요 알림 생성 시 메시지, 리뷰 정보 및 저장 호출을 검증한다.")
@@ -201,7 +216,104 @@ class NotificationServiceTest {
 
         // then
         verify(notificationRepository).markAllAsRead(userId);
-
     }
 
+    @Test
+    @DisplayName("사용자가 존재하지 않으면 NotificationException이 발생하고 알림 조회를 수행하지 않는다.")
+    void getNotifications_failsWhenUserNotFound() {
+        UUID userId = UUID.fromString("50000000-0000-0000-0000-000000000002");
+        // given
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+        // when, then
+        assertThrows(NotificationException.class, () -> notificationService.getNotifications(
+            userId,
+            null,
+            null,
+            null,
+            null
+        ));
+    }
+
+    @Test
+    @DisplayName("다음 페이지가 존재하면 hasNext는 true이고 마지막 항목의 생성일을 nextCursor로 반환한다.")
+    void getNotifications_succeedsWhenNextPageExists() {
+        // given
+        int limit = 2;
+        UUID userId = UUID.fromString("50000000-0000-0000-0000-000000000002");
+        Instant t1 = Instant.parse("2026-01-01T00:00:00Z");
+        Instant t2 = Instant.parse("2026-01-02T00:00:00Z");
+        Instant t3 = Instant.parse("2026-01-03T00:00:00Z");
+
+        User user = mock(User.class);
+        Notification n1 = mock(Notification.class);
+        Notification n2 = mock(Notification.class);
+        Notification n3 = mock(Notification.class);
+        NotificationDto dto1 = createDto(t1);
+        NotificationDto dto2 = createDto(t2);
+        NotificationDto dto3 = createDto(t3);
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(notificationRepository.countByUserId(userId)).willReturn(10L);
+        given(notificationRepository.findAllByUserIdWithCursor(any(), any(), any(), any(), eq(limit)))
+            .willReturn(List.of(n1, n2, n3));
+        given(notificationMapper.toDto(n1)).willReturn(dto1);
+        given(notificationMapper.toDto(n2)).willReturn(dto2);
+        given(notificationMapper.toDto(n3)).willReturn(dto3);
+
+        // when
+        CursorPageResponse<NotificationDto> result =
+            notificationService.getNotifications(userId, Sort.Direction.DESC, null, null, limit);
+
+        // then
+        assertThat(result.hasNext()).isTrue();
+        assertThat(result.content()).containsExactly(dto1, dto2);
+        assertThat(result.nextCursor()).isEqualTo(t2.toString());
+        assertThat(result.nextAfter()).isEqualTo(t2);
+        assertThat(result.size()).isEqualTo(limit);
+        assertThat(result.totalElements()).isEqualTo(10L);
+    }
+
+    @Test
+    @DisplayName("다음 페이지가 존재하지 않으면 hasNext는 false이고 nextCursor는 null을 반환한다.")
+    void getNotifications_succeedsWhenNextPageNotExists() {
+        // given
+        int limit = 2;
+        UUID userId = UUID.fromString("50000000-0000-0000-0000-000000000002");
+        Instant t1 = Instant.parse("2026-01-01T00:00:00Z");
+        Instant t2 = Instant.parse("2026-01-02T00:00:00Z");
+
+        User user = mock(User.class);
+        Notification n1 = mock(Notification.class);
+        Notification n2 = mock(Notification.class);
+        Notification n3 = mock(Notification.class);
+        NotificationDto dto1 = createDto(t1);
+        NotificationDto dto2 = createDto(t2);
+
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(notificationRepository.countByUserId(userId)).willReturn(2L);
+        given(notificationRepository.findAllByUserIdWithCursor(any(), any(), any(), any(), eq(limit)))
+            .willReturn(List.of(n1, n2));
+        given(notificationMapper.toDto(n1)).willReturn(dto1);
+        given(notificationMapper.toDto(n2)).willReturn(dto2);
+
+        // when
+        CursorPageResponse<NotificationDto> result =
+            notificationService.getNotifications(userId, Sort.Direction.DESC, null, null, limit);
+
+        // then
+        assertThat(result.hasNext()).isFalse();
+        assertThat(result.content()).containsExactly(dto1, dto2);
+        assertThat(result.nextCursor()).isNull();
+        assertThat(result.nextAfter()).isNull();
+        assertThat(result.size()).isEqualTo(limit);
+        assertThat(result.totalElements()).isEqualTo(2L);
+    }
+
+    private NotificationDto createDto(Instant createdAt) {
+        return new NotificationDto(
+            UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
+            "리뷰 내용", "알림 메시지", false, createdAt, createdAt
+        );
+    }
 }
