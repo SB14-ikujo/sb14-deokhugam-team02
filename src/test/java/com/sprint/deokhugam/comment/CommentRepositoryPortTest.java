@@ -107,6 +107,64 @@ class CommentRepositoryPortTest {
     }
 
     @Test
+    @DisplayName("오래된순(ASC) 첫 페이지는 오래된 댓글부터 조회한다")
+    void findByCursor_asc_firstPage() throws InterruptedException {
+        saveComment("1");
+        saveComment("2");
+        saveComment("3");
+        em.clear();
+
+        List<Comment> result = commentRepository.findByCursor(
+            review.getId(), null, null, Sort.Direction.ASC, 2);
+
+        assertThat(result).extracting(Comment::getContent).containsExactly("1", "2");
+    }
+
+    @Test
+    @DisplayName("오래된순(ASC) 다음 페이지는 after 이후에 생성된 댓글만 조회한다")
+    void findByCursor_asc_nextPage() throws InterruptedException {
+        Comment c1 = saveComment("1");
+        saveComment("2");
+        saveComment("3");
+        em.clear();
+
+        List<Comment> result = commentRepository.findByCursor(
+            review.getId(), c1.getCreatedAt(), c1.getId(), Sort.Direction.ASC, 10);
+
+        assertThat(result).extracting(Comment::getContent).containsExactly("2", "3");
+    }
+
+    @Test
+    @DisplayName("다른 리뷰의 댓글은 조회되지 않는다")
+    void findByCursor_otherReview() throws InterruptedException {
+        saveComment("이 리뷰의 댓글");
+        Review other = em.persist(Review.create(user, review.getBook(), "다른 리뷰", 4));
+        em.persistAndFlush(Comment.create(other, user, "다른 리뷰의 댓글"));
+        em.clear();
+
+        List<Comment> result = commentRepository.findByCursor(
+            review.getId(), null, null, Sort.Direction.DESC, 10);
+
+        assertThat(result).extracting(Comment::getContent).containsExactly("이 리뷰의 댓글");
+    }
+
+    @Test
+    @DisplayName("논리 삭제된 댓글은 다음 페이지에서도 제외된다")
+    void findByCursor_nextPage_excludesDeleted() throws InterruptedException {
+        saveComment("1");
+        Comment deleted = saveComment("2-삭제");
+        Comment c3 = saveComment("3");
+        deleted.softDelete();
+        em.flush();
+        em.clear();
+
+        List<Comment> result = commentRepository.findByCursor(
+            review.getId(), c3.getCreatedAt(), c3.getId(), Sort.Direction.DESC, 10);
+
+        assertThat(result).extracting(Comment::getContent).containsExactly("1");
+    }
+
+    @Test
     @DisplayName("createdAt이 같은 댓글이 페이지 경계에 걸려도 누락·중복 없이 조회된다")
     void cursorPagination_sameCreatedAt() throws InterruptedException {
         saveComment("1");
