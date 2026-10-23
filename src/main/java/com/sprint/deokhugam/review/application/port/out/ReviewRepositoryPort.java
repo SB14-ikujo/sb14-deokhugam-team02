@@ -17,4 +17,6 @@ public interface ReviewRepositoryPort extends JpaRepository<Review, UUID> {
         + " AND r.book.id = :bookId "
         + " AND r.isDeleted = false")
     Optional<Review> findValidReview(@Param("userId") UUID userId, @Param("bookId") UUID bookId);
+
+    Optional<Review> findByIdAndIsDeletedFalse(UUID reviewId);
 }
