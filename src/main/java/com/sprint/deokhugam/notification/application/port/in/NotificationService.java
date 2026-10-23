@@ -81,7 +81,7 @@ public class NotificationService implements NotificationUseCase {
     @Override
     @Transactional(readOnly = true)
     public CursorPageResponse<NotificationDto> getNotifications(
-        UUID userId, Sort.Direction direction, String cursor,
+        UUID userId, Sort.Direction direction, Instant cursor,
         Instant after, Integer limit
     ) {
         log.debug("user : {} 알림 목록 조회 ", userId);

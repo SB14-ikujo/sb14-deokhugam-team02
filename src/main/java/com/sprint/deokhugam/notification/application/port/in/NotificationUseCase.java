@@ -20,7 +20,7 @@ public interface NotificationUseCase {
     void markAllAsRead(UUID userId);
 
     CursorPageResponse<NotificationDto> getNotifications(
-        UUID userId, Sort.Direction direction, String cursor,
+        UUID userId, Sort.Direction direction, Instant cursor,
         Instant after, Integer limit
     );
 }

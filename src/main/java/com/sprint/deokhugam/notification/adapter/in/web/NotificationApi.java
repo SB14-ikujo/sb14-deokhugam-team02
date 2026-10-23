@@ -88,7 +88,11 @@ public interface NotificationApi {
         example = "DESC",
         schema = @Schema(allowableValues = {"ASC", "DESC"}, defaultValue = "DESC")
     )
-    @Parameter(name = "cursor", description = "커서 페이지네이션 커서")
+    @Parameter(
+        name = "cursor",
+        description = "커서 페이지네이션 커서 (ISO-8601 형식)",
+        schema = @Schema(type = "string")
+    )
     @Parameter(
         name = "after", description = "보조커서(createdAt)",
         schema = @Schema(implementation = Instant.class)
@@ -106,6 +110,6 @@ public interface NotificationApi {
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     CursorPageResponse<NotificationDto> getNotifications(
         UUID userId, Sort.Direction direction,
-        String cursor, Instant after, Integer limit
+        Instant cursor, Instant after, Integer limit
     );
 }
