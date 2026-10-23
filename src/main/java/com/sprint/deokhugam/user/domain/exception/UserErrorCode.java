@@ -16,7 +16,9 @@ public enum UserErrorCode implements ErrorCode {
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자 정보를 찾을 수 없습니다."),
     USER_FORBIDDEN(HttpStatus.FORBIDDEN, "사용자 정보 수정·삭제 권한이 없습니다."),
     USER_INVALID_HEADER(HttpStatus.UNAUTHORIZED, "사용자 인증 정보가 올바르지 않습니다."),
-    USER_NICKNAME_INVALID(HttpStatus.BAD_REQUEST, "닉네임은 2자 이상 20자 이하여야 합니다.");
+    USER_NICKNAME_INVALID(HttpStatus.BAD_REQUEST, "닉네임은 2자 이상 20자 이하여야 합니다."),
+    USER_NICKNAME_DUPLICATE(HttpStatus.CONFLICT, "이미 사용 중인 닉네임입니다."),
+    USER_DUPLICATE(HttpStatus.CONFLICT, "이미 사용 중인 이메일 또는 닉네임입니다.");
 
     private final HttpStatus status;
     private final String message;
