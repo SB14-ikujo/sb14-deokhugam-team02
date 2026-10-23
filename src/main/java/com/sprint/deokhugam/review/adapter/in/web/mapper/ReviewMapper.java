@@ -8,10 +8,12 @@ import com.sprint.deokhugam.review.domain.Review;
 
 @Mapper(componentModel = "spring")
 public interface ReviewMapper {
-    @Mapping(target = "bookId", source = "book.id")
-    @Mapping(target = "bookTitle", source = "book.title")
-    @Mapping(target = "bookThumbnailUrl", source = "book.thumbnailUrl")
-    @Mapping(target = "userId", source = "user.id")
-    @Mapping(target = "userNickname", source = "user.nickname")
-    ReviewDto toDto(Review review);
+    @Mapping(target = "bookId", source = "review.book.id")
+    @Mapping(target = "bookTitle", source = "review.book.title")
+    @Mapping(target = "bookThumbnailUrl", source = "review.book.thumbnailUrl")
+    @Mapping(target = "userId", source = "review.user.id")
+    @Mapping(target = "userNickname", source = "review.user.nickname")
+
+    @Mapping(target = "likedByMe", source = "likedByMe")
+    ReviewDto toDto(Review review, boolean likedByMe);
 }
