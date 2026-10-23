@@ -1,5 +1,7 @@
 package com.sprint.deokhugam.review.domain;
 
+import java.util.UUID;
+
 import org.hibernate.annotations.ColumnDefault;
 
 import jakarta.persistence.Column;
@@ -15,6 +17,8 @@ import lombok.NoArgsConstructor;
 
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.common.domain.BaseEntity;
+import com.sprint.deokhugam.review.domain.exception.ReviewErrorCode;
+import com.sprint.deokhugam.review.domain.exception.ReviewException;
 import com.sprint.deokhugam.user.domain.User;
 
 @Entity
@@ -60,4 +64,15 @@ public class Review extends BaseEntity {
         return new Review(user, book, content, rating);
     }
 
+    public void softDelete(UUID requestUserID) {
+        // 이미 삭제된 리뷰는 소프트 딜리트를 할 수 없음
+        if (this.isDeleted) {
+            throw new ReviewException(ReviewErrorCode.REVIEW_DUPLICATE);
+        }
+        // 해당 리뷰를 작성한 유저가 아니면 소프트 딜리트를 할 수 없음
+        if (!requestUserID.equals(this.user.getId())) {
+            throw new ReviewException(ReviewErrorCode.REVIEW_FORBIDDEN);
+        }
+        this.isDeleted = true;
+    }
 }

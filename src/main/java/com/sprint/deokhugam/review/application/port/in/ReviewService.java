@@ -13,6 +13,7 @@ import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
 import com.sprint.deokhugam.book.domain.exception.BookException;
+import com.sprint.deokhugam.common.context.user.UserContextHolder;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
 import com.sprint.deokhugam.review.adapter.in.web.mapper.ReviewMapper;
@@ -70,5 +71,19 @@ public class ReviewService implements ReviewUseCase {
         } catch (DataIntegrityViolationException e) {
             throw new ReviewException(ReviewErrorCode.REVIEW_DUPLICATE);
         }
+    }
+
+    // 리뷰 소프트 딜리트
+    @Transactional
+    public void reviewSoftDelete(UUID reviewId) {
+        // 요청자 Id
+        UUID requestUserId = UserContextHolder.getUserId();
+
+        // 리뷰 가져오기
+        Review review = reviewRepositoryPort.findByIdAndIsDeletedFalse(reviewId)
+            .orElseThrow(() -> new ReviewException(ReviewErrorCode.REVIEW_NOT_FOUND));
+
+        // 논리적 삭제(Soft-delete) 하기
+        review.softDelete(requestUserId);
     }
 }
