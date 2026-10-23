@@ -58,7 +58,7 @@ public class NotificationController implements NotificationApi {
     public CursorPageResponse<NotificationDto> getNotifications(
         @RequestParam UUID userId,
         @RequestParam(defaultValue = "DESC") Sort.Direction direction,
-        @RequestParam(required = false) String cursor,
+        @RequestParam(required = false) Instant cursor,
         @RequestParam(required = false) Instant after,
         @RequestParam(defaultValue = "20") Integer limit
     ) {

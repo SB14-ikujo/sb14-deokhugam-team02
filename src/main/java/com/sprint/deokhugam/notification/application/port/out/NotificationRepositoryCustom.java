@@ -14,6 +14,6 @@ public interface NotificationRepositoryCustom {
 
     Long countByUserId(UUID userId);
 
-    List<Notification> findAllByUserIdWithCursor(UUID userId, Sort.Direction direction, String cursor, Instant after,
+    List<Notification> findAllByUserIdWithCursor(UUID userId, Sort.Direction direction, Instant cursor, Instant after,
         Integer limit);
 }
