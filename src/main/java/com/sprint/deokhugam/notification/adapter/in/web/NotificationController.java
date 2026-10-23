@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -60,7 +61,8 @@ public class NotificationController implements NotificationApi {
         @RequestParam(defaultValue = "DESC") Sort.Direction direction,
         @RequestParam(required = false) Instant cursor,
         @RequestParam(required = false) Instant after,
-        @RequestParam(defaultValue = "20") Integer limit
+        @RequestParam(required = false, defaultValue = "20") @Min(value = 1, message = "limit은 1 이상이어야 합니다.")
+        Integer limit
     ) {
         return notificationUseCase.getNotifications(userId, direction, cursor, after, limit);
     }
