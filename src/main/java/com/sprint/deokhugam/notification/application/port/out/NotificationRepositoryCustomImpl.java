@@ -74,6 +74,7 @@ public class NotificationRepositoryCustomImpl implements NotificationRepositoryC
 
         return queryFactory
             .selectFrom(notification)
+            .join(notification.review).fetchJoin()
             .where(
                 notification.user.id.eq(userId),
                 this.cursorCondition(direction, cursor, after)
