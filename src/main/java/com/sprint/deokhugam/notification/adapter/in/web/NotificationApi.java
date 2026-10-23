@@ -97,8 +97,7 @@ public interface NotificationApi {
         name = "limit", description = "페이지 크기", example = "20",
         schema = @Schema(implementation = Integer.class, defaultValue = "20")
     )
-    @ApiResponse(responseCode = "200", description = "알림 목록 조회 성공",
-        content = @Content(schema = @Schema(implementation = NotificationDto.class)))
+    @ApiResponse(responseCode = "200", description = "알림 목록 조회 성공")
     @ApiResponse(responseCode = "400", description = "잘못된 요청 (정렬 방향 오류, 페이지네이션 파라미터 오류, 사용자 ID 누락)",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(responseCode = "404", description = "사용자 정보 없음",
