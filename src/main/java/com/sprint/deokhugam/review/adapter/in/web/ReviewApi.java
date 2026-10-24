@@ -1,12 +1,14 @@
 package com.sprint.deokhugam.review.adapter.in.web;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 import com.sprint.deokhugam.common.exception.ErrorResponse;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
@@ -25,5 +27,5 @@ public interface ReviewApi {
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(responseCode = "500", description = "서버 내부 오류",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    ResponseEntity<ReviewDto> createReview(ReviewCreateRequest createRequest);
+    ResponseEntity<ReviewDto> createReview(@Valid @RequestBody ReviewCreateRequest createRequest);
 }
