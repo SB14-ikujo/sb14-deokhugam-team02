@@ -76,11 +76,11 @@ public class ReviewService implements ReviewUseCase {
     // 리뷰 소프트 딜리트
     @Transactional
     public void reviewSoftDelete(UUID reviewId) {
-        // 요청자 Id
+        // 요청자 ID
         UUID requestUserId = UserContextHolder.getUserId();
 
-        // 리뷰 가져오기
-        Review review = reviewRepositoryPort.findByIdAndIsDeletedFalse(reviewId)
+        // 리뷰 가져오기 (리뷰 = 요청자ID + isDeleted 가 'false')
+        Review review = reviewRepositoryPort.findByIdAndIsDeletedFalse(reviewId, requestUserId)
             .orElseThrow(() -> new ReviewException(ReviewErrorCode.REVIEW_NOT_FOUND));
 
         // 논리적 삭제(Soft-delete) 하기
