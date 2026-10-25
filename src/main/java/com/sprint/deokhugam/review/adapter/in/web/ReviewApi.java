@@ -2,6 +2,7 @@ package com.sprint.deokhugam.review.adapter.in.web;
 
 import java.util.UUID;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -17,6 +18,7 @@ import com.sprint.deokhugam.common.context.user.RequestUserId;
 import com.sprint.deokhugam.common.exception.ErrorResponse;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
+
 
 @Tag(name = "리뷰 관리", description = "리뷰 관련 API")
 public interface ReviewApi {
@@ -48,4 +50,17 @@ public interface ReviewApi {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     void reviewSoftDelete(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId);
+
+    @Operation(summary = "리뷰 상세 정보 조회", description = "리뷰 ID로 상세 정보를 조회합니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "리뷰 정보 조회 성공",
+            content = @Content(schema = @Schema(implementation = ReviewDto.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (요청자 ID 누락)",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "리뷰 정보 없음",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    ResponseEntity<ReviewDto> getReviewDetail(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId);
 }
