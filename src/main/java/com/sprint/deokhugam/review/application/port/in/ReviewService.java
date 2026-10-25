@@ -1,9 +1,7 @@
 package com.sprint.deokhugam.review.application.port.in;
 
-import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
