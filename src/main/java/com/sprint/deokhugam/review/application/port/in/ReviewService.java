@@ -13,6 +13,7 @@ import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
 import com.sprint.deokhugam.book.domain.exception.BookException;
+import com.sprint.deokhugam.common.context.user.UserContextHolder;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
 import com.sprint.deokhugam.review.adapter.in.web.mapper.ReviewMapper;
@@ -81,5 +82,25 @@ public class ReviewService implements ReviewUseCase {
 
         // 논리적 삭제(Soft-delete) 하기
         review.softDelete(requestUserId);
+    }
+
+    // 리뷰 상세 조회
+    @Transactional
+    public ReviewDto getReviewDetail(UUID reviewId) {
+        // 유저 요청 ID
+        UUID requestUserId = UserContextHolder.getUserId();
+
+        // 존재하는 유저인지 확인
+        User user = userUseCase.findById(requestUserId);
+
+        // 리뷰 찾기 (리뷰가 있는지 없는지 예외처리)
+        Review review = reviewRepositoryPort.findByFetchJoin(reviewId)
+            .orElseThrow(() -> new ReviewException(ReviewErrorCode.REVIEW_NOT_FOUND));
+
+        // 내가 이 리뷰에 좋아요를 남겼는지 확인
+        boolean likedByMe = reviewLikeRepositoryPort.existsByReviewIdAndUserId(reviewId, requestUserId);
+
+        // 반환
+        return reviewMapper.toDto(review, likedByMe);
     }
 }
