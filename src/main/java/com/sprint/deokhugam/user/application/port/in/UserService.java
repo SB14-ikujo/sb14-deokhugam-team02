@@ -102,7 +102,7 @@ public class UserService implements UserUseCase {
 
     // 88888888
     public User findById(UUID userId) {
-        return userRepositoryPort.findById(userId)
+        return userRepositoryPort.findByIdAndIsDeletedFalse(userId)
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
     }
 }
