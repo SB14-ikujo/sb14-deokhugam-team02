@@ -24,6 +24,7 @@ import com.sprint.deokhugam.comment.adapter.in.web.CommentController;
 import com.sprint.deokhugam.comment.adapter.in.web.dto.CommentCreateRequest;
 import com.sprint.deokhugam.comment.adapter.in.web.dto.CommentDto;
 import com.sprint.deokhugam.comment.adapter.in.web.dto.CommentListRequest;
+import com.sprint.deokhugam.comment.adapter.in.web.dto.CommentUpdateRequest;
 import com.sprint.deokhugam.comment.application.port.in.CommentUseCase;
 import com.sprint.deokhugam.comment.domain.exception.CommentErrorCode;
 import com.sprint.deokhugam.comment.domain.exception.CommentException;
@@ -263,5 +264,124 @@ class CommentControllerTest {
         mockMvc.perform(get("/api/comments").param("reviewId", reviewId.toString()))
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("리뷰 정보를 찾을 수 없습니다."));
+    }
+
+    // ==== 댓글 수정 ====
+
+    private static final String USER_ID_HEADER = "Deokhugam-Request-User-ID";
+
+    private String updateBody(String content) {
+        return """
+            {"content": %s}
+            """.formatted(content);
+    }
+
+    @Test
+    @DisplayName("댓글 수정 성공 - 200과 수정된 CommentDto 반환")
+    void update_success() throws Exception {
+        UUID commentId = UUID.randomUUID();
+        CommentDto dto = new CommentDto(commentId, reviewId, userId, "닉네임",
+            "수정된 댓글", Instant.now(), Instant.now());
+        given(commentUseCase.update(eq(commentId), eq(userId), any(CommentUpdateRequest.class)))
+            .willReturn(dto);
+
+        mockMvc.perform(patch("/api/comments/{commentId}", commentId)
+                .header(USER_ID_HEADER, userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateBody(quoted("수정된 댓글"))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(commentId.toString()))
+            .andExpect(jsonPath("$.content").value("수정된 댓글"));
+
+        ArgumentCaptor<CommentUpdateRequest> captor = ArgumentCaptor.forClass(CommentUpdateRequest.class);
+        verify(commentUseCase).update(eq(commentId), eq(userId), captor.capture());
+        assertThat(captor.getValue().content()).isEqualTo("수정된 댓글");
+    }
+
+    @Test
+    @DisplayName("댓글 수정 - 요청자 ID 헤더가 없으면 400")
+    void update_headerMissing() throws Exception {
+        mockMvc.perform(patch("/api/comments/{commentId}", UUID.randomUUID())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateBody(quoted("수정된 댓글"))))
+            .andExpect(status().isBadRequest());
+
+        verify(commentUseCase, never()).update(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("댓글 수정 - 요청자 ID 헤더가 UUID 형식이 아니면 401")
+    void update_headerInvalid() throws Exception {
+        mockMvc.perform(patch("/api/comments/{commentId}", UUID.randomUUID())
+                .header(USER_ID_HEADER, "not-a-uuid")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateBody(quoted("수정된 댓글"))))
+            .andExpect(status().isUnauthorized());
+
+        verify(commentUseCase, never()).update(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("댓글 수정 - content가 공백이면 400")
+    void update_contentBlank() throws Exception {
+        mockMvc.perform(patch("/api/comments/{commentId}", UUID.randomUUID())
+                .header(USER_ID_HEADER, userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateBody(quoted("   "))))
+            .andExpect(status().isBadRequest());
+
+        verify(commentUseCase, never()).update(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("댓글 수정 - content가 500자를 초과하면 400")
+    void update_contentTooLong() throws Exception {
+        mockMvc.perform(patch("/api/comments/{commentId}", UUID.randomUUID())
+                .header(USER_ID_HEADER, userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateBody(quoted("a".repeat(501)))))
+            .andExpect(status().isBadRequest());
+
+        verify(commentUseCase, never()).update(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("댓글 수정 - commentId가 UUID 형식이 아니면 400")
+    void update_invalidCommentId() throws Exception {
+        mockMvc.perform(patch("/api/comments/{commentId}", "not-a-uuid")
+                .header(USER_ID_HEADER, userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateBody(quoted("수정된 댓글"))))
+            .andExpect(status().isBadRequest());
+
+        verify(commentUseCase, never()).update(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("댓글 수정 - 작성자가 아니면 403")
+    void update_forbidden() throws Exception {
+        given(commentUseCase.update(any(), any(), any(CommentUpdateRequest.class)))
+            .willThrow(new CommentException(CommentErrorCode.COMMENT_FORBIDDEN));
+
+        mockMvc.perform(patch("/api/comments/{commentId}", UUID.randomUUID())
+                .header(USER_ID_HEADER, userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateBody(quoted("수정된 댓글"))))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message").value("댓글 수정·삭제 권한이 없습니다."));
+    }
+
+    @Test
+    @DisplayName("댓글 수정 - 댓글이 없으면 404")
+    void update_commentNotFound() throws Exception {
+        given(commentUseCase.update(any(), any(), any(CommentUpdateRequest.class)))
+            .willThrow(new CommentException(CommentErrorCode.COMMENT_NOT_FOUND));
+
+        mockMvc.perform(patch("/api/comments/{commentId}", UUID.randomUUID())
+                .header(USER_ID_HEADER, userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(updateBody(quoted("수정된 댓글"))))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.message").value("댓글 정보를 찾을 수 없습니다."));
     }
 }
