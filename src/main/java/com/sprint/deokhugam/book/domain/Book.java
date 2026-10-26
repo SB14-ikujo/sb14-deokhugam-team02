@@ -77,4 +77,8 @@ public class Book extends BaseEntity {
         return new Book(title, user, author, description, publisher, publishedDate, isbn, thumbnailUrl);
     }
 
+    // 리뷰 수 증가
+    public void increaseReviewCount() {
+        this.reviewCount += 1;
+    }
 }
