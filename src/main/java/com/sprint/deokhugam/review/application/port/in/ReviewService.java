@@ -58,6 +58,8 @@ public class ReviewService implements ReviewUseCase {
             throw new ReviewException(ReviewErrorCode.REVIEW_DUPLICATE);
         }
 
+        targetBook.increaseReviewCount(); // 해당 도서의 리뷰수 증가
+
         String content = createRequest.content();
         Integer rating = createRequest.rating();
 
