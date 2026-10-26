@@ -48,8 +48,15 @@ public class UserService implements UserUseCase {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserDto login(UserLoginRequest request) {
-        return null;
+        User user = userRepository.findByEmailAndIsDeletedFalse(normalizeEmail(request.email()))
+            .orElseThrow(() -> new UserException(UserErrorCode.USER_LOGIN_FAILED));
+
+        if (!passwordHasher.matches(request.password(), user.getPassword())) {
+            throw new UserException(UserErrorCode.USER_LOGIN_FAILED);
+        }
+        return userMapper.toDto(user);
     }
 
     private String normalizeEmail(String email) {
