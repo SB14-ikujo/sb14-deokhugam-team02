@@ -40,6 +40,7 @@ public class UserController implements UserApi {
         return userUseCase.login(request);
     }
 
+    @Override
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/{userId}")
     public UserDto findUser(@PathVariable UUID userId) {
