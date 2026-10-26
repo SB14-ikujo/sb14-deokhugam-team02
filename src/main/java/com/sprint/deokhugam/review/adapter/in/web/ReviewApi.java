@@ -2,7 +2,6 @@ package com.sprint.deokhugam.review.adapter.in.web;
 
 import java.util.UUID;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -22,16 +21,18 @@ import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
 @Tag(name = "리뷰 관리", description = "리뷰 관련 API")
 public interface ReviewApi {
     @Operation(summary = "리뷰 등록", description = "새로운 리뷰를 등록합니다.")
-    @ApiResponse(responseCode = "201", description = "리뷰 등록 성공",
-        content = @Content(schema = @Schema(implementation = ReviewDto.class)))
-    @ApiResponse(responseCode = "400", description = "잘못된 요청 (입력값 검증 실패)",
-        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    @ApiResponse(responseCode = "404", description = "도서 정보 없음",
-        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    @ApiResponse(responseCode = "409", description = "이미 작성된 리뷰 존재",
-        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    @ApiResponse(responseCode = "500", description = "서버 내부 오류",
-        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "리뷰 등록 성공",
+            content = @Content(schema = @Schema(implementation = ReviewDto.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (입력값 검증 실패)",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "도서 정보 없음",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "409", description = "이미 작성된 리뷰 존재",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
     ReviewDto createReview(@Valid @RequestBody ReviewCreateRequest createRequest);
 
     @Operation(summary = "리뷰 논리 삭제", description = "본인이 작성한 리뷰를 논리적으로 삭제합니다.")
@@ -46,5 +47,5 @@ public interface ReviewApi {
         @ApiResponse(responseCode = "500", description = "서버 내부 오류",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    ResponseEntity<Void> reviewSoftDelete(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId);
+    void reviewSoftDelete(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId);
 }

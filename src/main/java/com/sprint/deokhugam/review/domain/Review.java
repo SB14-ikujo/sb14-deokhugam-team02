@@ -67,7 +67,7 @@ public class Review extends BaseEntity {
     public void softDelete(UUID requestUserID) {
         // 이미 삭제된 리뷰는 소프트 딜리트를 할 수 없음
         if (this.isDeleted) {
-            throw new ReviewException(ReviewErrorCode.REVIEW_DUPLICATE);
+            throw new ReviewException(ReviewErrorCode.REVIEW_ALREADY_DELETED);
         }
         // 해당 리뷰를 작성한 유저가 아니면 소프트 딜리트를 할 수 없음
         if (!requestUserID.equals(this.user.getId())) {

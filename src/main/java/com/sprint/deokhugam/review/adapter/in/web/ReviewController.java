@@ -3,7 +3,6 @@ package com.sprint.deokhugam.review.adapter.in.web;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,11 +32,9 @@ public class ReviewController implements ReviewApi {
     }
 
     // 리뷰 논리적 삭제
-    @RequestMapping(method = RequestMethod.PATCH, value = "/api/reviews/{reviewId}")
-    public ResponseEntity<Void> reviewSoftDelete(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId) {
-        reviewUseCase.reviewSoftDelete(reviewId);
-        return ResponseEntity
-            .status(HttpStatus.NO_CONTENT)
-            .build();
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @RequestMapping(method = RequestMethod.DELETE, value = "/api/reviews/{reviewId}")
+    public void reviewSoftDelete(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId) {
+        reviewUseCase.reviewSoftDelete(reviewId, requestUserId);
     }
 }
