@@ -50,12 +50,13 @@ public class UserController implements UserApi {
         return userUseCase.findUser(userId);
     }
 
+    @ResponseStatus(HttpStatus.OK)
     @PatchMapping("/{userId}")
     public UserDto updateNickName(
         @PathVariable UUID userId,
         @RequestUserId UUID requesterId,
-        @RequestBody UserUpdateRequest request
+        @Valid @RequestBody UserUpdateRequest request
     ) {
-        return null;
+        return userUseCase.updateNickname(userId, requesterId, request);
     }
 }
