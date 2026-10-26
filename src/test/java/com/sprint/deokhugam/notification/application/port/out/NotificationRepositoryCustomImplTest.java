@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,7 +37,10 @@ class NotificationRepositoryCustomImplTest {
     @Autowired
     private NotificationRepositoryCustomImpl notificationRepository;
 
-    private static final Instant BASE = Instant.parse("2026-01-01T00:00:00Z");
+    private static final Instant BASE = Instant.parse("2026-10-01T00:00:00Z");
+    private static final LocalDate BASE_DATE = LocalDate.of(2026, 10, 26);
+    // 기준일 - 7일 00:00 (Asia/Seoul)
+    private static final Instant CUTOFF = LocalDate.of(2026, 10, 19).atStartOfDay(ZoneId.of("Asia/Seoul")).toInstant();
 
     private User user;
 
@@ -137,8 +142,71 @@ class NotificationRepositoryCustomImplTest {
             .containsExactly(time(3), time(4), time(5));
     }
 
+    @Test
+    @DisplayName("기준일 7일 전 시각보다 오래된 읽은 알림만 삭제한다.")
+    void deleteReadNotificationsBefore_deletesOnlyOldReadNotifications() {
+        // given: 덕후4(읽음, 기준 시각 1초 전) → 삭제 대상, 덕후5(읽음, 방금 전) → 유지
+        fixUpdatedAt(4, CUTOFF.minusSeconds(1));
+
+        // when
+        long deleted = notificationRepository.deleteReadNotificationsBefore(BASE_DATE);
+
+        // then
+        assertThat(deleted).isEqualTo(1);
+        assertThat(remainingMessages()).hasSize(4)
+            .noneMatch(message -> message.startsWith("[덕후4]"));
+    }
+
+    @Test
+    @DisplayName("기준 시각과 정확히 같은 시각에 읽은 알림은 삭제하지 않는다.")
+    void deleteReadNotificationsBefore_keepsNotificationAtCutoff() {
+        // given
+        fixUpdatedAt(4, CUTOFF);
+
+        // when
+        long deleted = notificationRepository.deleteReadNotificationsBefore(BASE_DATE);
+
+        // then
+        assertThat(deleted).isZero();
+        assertThat(remainingMessages()).hasSize(5);
+    }
+
+    @Test
+    @DisplayName("오래됐더라도 읽지 않은 알림은 삭제하지 않는다.")
+    void deleteReadNotificationsBefore_keepsOldUnreadNotifications() {
+        // given: 안 읽은 알림(덕후1~3)을 오래된 시각으로 변경
+        for (int i = 1; i <= 3; i++) {
+            fixUpdatedAt(i, CUTOFF.minus(30, ChronoUnit.DAYS));
+        }
+
+        // when
+        long deleted = notificationRepository.deleteReadNotificationsBefore(BASE_DATE);
+
+        // then
+        assertThat(deleted).isZero();
+        assertThat(remainingMessages()).hasSize(5);
+    }
+
+    @Test
+    @DisplayName("삭제 대상이 없으면 0을 반환한다.")
+    void deleteReadNotificationsBefore_returnsZeroWhenNothingToDelete() {
+        // when: 읽은 알림(덕후4, 5)의 updatedAt이 방금 전이라 삭제 대상 아님
+        long deleted = notificationRepository.deleteReadNotificationsBefore(BASE_DATE);
+
+        // then
+        assertThat(deleted).isZero();
+        assertThat(remainingMessages()).hasSize(5);
+    }
+
     private Instant time(int index) {
         return BASE.plusSeconds(index);
+    }
+
+    private List<String> remainingMessages() {
+        entityManager.clear();
+        return entityManager.getEntityManager()
+            .createQuery("select n.message from Notification n", String.class)
+            .getResultList();
     }
 
     /**
@@ -146,6 +214,7 @@ class NotificationRepositoryCustomImplTest {
      * createdAt은 updatable = false라 네이티브 쿼리로 직접 변경한다.
      */
     private void fixCreatedAtByMessageOrder() {
+
         for (int i = 1; i <= 5; i++) {
             entityManager.getEntityManager()
                 .createNativeQuery("update notifications set created_at = :createdAt where message like :message")
@@ -153,6 +222,18 @@ class NotificationRepositoryCustomImplTest {
                 .setParameter("message", "[덕후" + i + "]%")
                 .executeUpdate();
         }
+        entityManager.clear();
+    }
+
+    /**
+     * updatedAt은 Auditing이 관리하므로 네이티브 쿼리로 메시지 번호(덕후N)의 알림 updatedAt을 직접 변경한다.
+     */
+    private void fixUpdatedAt(int index, Instant updatedAt) {
+        entityManager.getEntityManager()
+            .createNativeQuery("update notifications set updated_at = :updatedAt where message like :message")
+            .setParameter("updatedAt", updatedAt)
+            .setParameter("message", "[덕후" + index + "]%")
+            .executeUpdate();
         entityManager.clear();
     }
 }

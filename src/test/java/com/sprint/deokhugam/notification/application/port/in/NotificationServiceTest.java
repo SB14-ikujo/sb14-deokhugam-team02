@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,6 +23,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
+import com.sprint.deokhugam.dashboard.application.port.out.popularreview.PopularReviewRepositoryPort;
+import com.sprint.deokhugam.dashboard.domain.PeriodType;
+import com.sprint.deokhugam.dashboard.domain.PopularReview;
 import com.sprint.deokhugam.notification.adapter.in.web.dto.NotificationDto;
 import com.sprint.deokhugam.notification.adapter.in.web.mapper.NotificationMapper;
 import com.sprint.deokhugam.notification.application.port.out.NotificationRepositoryPort;
@@ -37,6 +41,9 @@ class NotificationServiceTest {
     private NotificationRepositoryPort notificationRepository;
 
     @Mock
+    private PopularReviewRepositoryPort popularReviewRepository;
+
+    @Mock
     private UserRepositoryPort userRepository;
 
     @InjectMocks
@@ -48,8 +55,8 @@ class NotificationServiceTest {
     @Mock
     private Review review;
 
-    private record Item(String id, Instant createdAt) {
-    }
+    @Mock
+    private PopularReview popularReview;
 
     private static final Instant T1 = Instant.parse("2026-01-01T00:00:00Z");
     private static final Instant T2 = Instant.parse("2026-01-02T00:00:00Z");
@@ -308,6 +315,53 @@ class NotificationServiceTest {
         assertThat(result.nextAfter()).isNull();
         assertThat(result.size()).isEqualTo(limit);
         assertThat(result.totalElements()).isEqualTo(2L);
+    }
+
+    @Test
+    @DisplayName("인기 리뷰를 알림 엔티티로 변환한다")
+    void toNotification_success() {
+        // private static final LocalDate YESTERDAY = LocalDate.of(2026, 10, 18);
+        // private static final LocalDate TODAY = LocalDate.of(2026, 10, 19);
+        // private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
+
+    }
+
+    @Test
+    @DisplayName("기간별 인기 리뷰 TOP 10 알림을 생성한다")
+    void createTop10ReviewNotifications_success() {
+        // given: 2026-10-28(수) → DAILY만 대상
+        LocalDate baseDate = LocalDate.of(2026, 10, 28);
+        Review review = mock(Review.class);
+        given(review.getContent()).willReturn("123456789");
+        PopularReview popular = mock(PopularReview.class);
+        given(popular.getReview()).willReturn(review);
+        given(popular.getPeriod()).willReturn(PeriodType.DAILY);
+        given(popularReviewRepository.findTop10ByPeriod(PeriodType.DAILY, baseDate))
+            .willReturn(List.of(popular));
+        given(notificationRepository.saveAll(anyList()))
+            .willAnswer(inv -> inv.getArgument(0));
+
+        // when
+        long created = notificationService.createTop10ReviewNotifications(baseDate);
+
+        // then
+        ArgumentCaptor<List<Notification>> captor = ArgumentCaptor.forClass(List.class);
+        verify(notificationRepository).saveAll(captor.capture());
+        assertThat(created).isEqualTo(1);
+        assertThat(captor.getValue()).extracting(Notification::getMessage).allMatch(m -> m.contains("12345..."));
+        verify(popularReviewRepository, never()).findTop10ByPeriod(eq(PeriodType.WEEKLY), any());
+    }
+
+    @Test
+    @DisplayName("지정된 날짜 기준으로 읽은 알림을 삭제한다")
+    void deleteReadNotifications_success() {
+        // given
+        LocalDate baseDate = LocalDate.of(2026, 10, 18);
+        // when
+        notificationService.deleteReadNotifications(baseDate);
+        // then
+        verify(notificationRepository).deleteReadNotificationsBefore(baseDate);
+
     }
 
     private NotificationDto createDto(Instant createdAt) {

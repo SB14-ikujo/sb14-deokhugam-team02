@@ -12,6 +12,9 @@ import org.junit.jupiter.params.provider.CsvSource;
 
 class PeriodTypeTest {
     private static final LocalDate BASE_DATE = LocalDate.of(2026, 10, 19);
+    private static final LocalDate MONTHLY_DATE = LocalDate.of(2026, 10, 1);
+    private static final LocalDate WEEKLY_DATE = LocalDate.of(2026, 10, 5);
+    private static final LocalDate DAILY_DATE = LocalDate.of(2026, 10, 22);
 
     @ParameterizedTest(name = "{0} 시작 시각 = {1}")
     @CsvSource({
@@ -42,5 +45,30 @@ class PeriodTypeTest {
         LocalDate firstOfMarch = LocalDate.of(2026, 3, 1);
 
         assertThat(PeriodType.DAILY.startOf(firstOfMarch)).isEqualTo(Instant.parse("2026-02-27T15:00:00Z"));
+    }
+
+    @Test
+    @DisplayName("일간은 매일 알림을 생성한다")
+    void isNotifyDay_daily() {
+        PeriodType periodType = PeriodType.DAILY;
+
+        assertThat(periodType.isNotifyDay(MONTHLY_DATE)).isTrue();
+    }
+
+    @Test
+    @DisplayName("주간은 월요일에만 알림을 생성한다")
+    void isNotifyDay_weekly() {
+        PeriodType periodType = PeriodType.WEEKLY;
+        assertThat(periodType.isNotifyDay(WEEKLY_DATE)).isTrue();
+        assertThat(periodType.isNotifyDay(WEEKLY_DATE.plusDays(1))).isFalse();
+    }
+
+    @Test
+    @DisplayName("월간은 매월 1일에만 알림을 생성한다")
+    void isNotifyDay_monthly() {
+        PeriodType periodType = PeriodType.MONTHLY;
+        assertThat(periodType.isNotifyDay(MONTHLY_DATE)).isTrue();
+        assertThat(periodType.isNotifyDay(MONTHLY_DATE.plusDays(2))).isFalse();
+
     }
 }
