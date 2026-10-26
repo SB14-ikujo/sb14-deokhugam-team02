@@ -1,6 +1,10 @@
 package com.sprint.deokhugam.user.adapter.in.web;
 
+import java.util.UUID;
+
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -35,4 +39,17 @@ public interface UserApi {
     @ApiResponse(responseCode = "500", description = "서버 내부 오류",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     UserDto login(UserLoginRequest request);
+
+    @Operation(summary = "사용자 정보 조회", description = "사용자 ID로 사용자 정보를 조회합니다.")
+    @Parameter(name = "userId", description = "사용자 ID", in = ParameterIn.PATH, required = true,
+        example = "123e4567-e89b-12d3-a456-426614174000")
+    @ApiResponse(responseCode = "200", description = "사용자 정보 조회 성공",
+        content = @Content(schema = @Schema(implementation = UserDto.class)))
+    @ApiResponse(responseCode = "400", description = "잘못된 요청 (사용자 ID 형식 오류)",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "사용자 정보 없음",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    UserDto findUser(UUID userId);
 }
