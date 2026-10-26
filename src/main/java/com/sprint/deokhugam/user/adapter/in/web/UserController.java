@@ -29,8 +29,9 @@ public class UserController implements UserApi {
         return userUseCase.register(request);
     }
 
+    @ResponseStatus(HttpStatus.OK)
     @PostMapping("/login")
-    public UserDto login(@RequestBody UserLoginRequest request) {
-        return null;
+    public UserDto login(@Valid @RequestBody UserLoginRequest request) {
+        return userUseCase.login(request);
     }
 }
