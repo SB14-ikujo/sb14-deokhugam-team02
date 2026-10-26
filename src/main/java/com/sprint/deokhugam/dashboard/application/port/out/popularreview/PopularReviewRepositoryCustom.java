@@ -19,5 +19,5 @@ public interface PopularReviewRepositoryCustom {
     List<PopularReview> findCandidates(PeriodType period, LocalDate baseDate);
 
     // Top10 인기리뷰 가져오기
-    List<PopularReview> findTop10ByPeriod(PeriodType periodType);
+    List<PopularReview> findTop10ByPeriod(PeriodType period, LocalDate baseDate);
 }

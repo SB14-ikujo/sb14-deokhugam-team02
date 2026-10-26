@@ -1,6 +1,7 @@
 package com.sprint.deokhugam.notification.application.port.in;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.springframework.data.domain.Sort;
@@ -24,5 +25,5 @@ public interface NotificationUseCase {
         Instant after, Integer limit
     );
 
-    void createTop10ReviewNotificationsByPeriod();
+    void createTop10ReviewNotifications(LocalDate baseDate);
 }

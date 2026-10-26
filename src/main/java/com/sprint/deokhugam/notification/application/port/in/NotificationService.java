@@ -1,10 +1,10 @@
 package com.sprint.deokhugam.notification.application.port.in;
 
 import java.time.Instant;
-import java.util.Collection;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
@@ -119,32 +119,18 @@ public class NotificationService implements NotificationUseCase {
 
     @Override
     @Transactional
-    public void createTop10ReviewNotificationsByPeriod() {
-        // 기간별 테이블 리뷰 Top10 조회
-        List<PopularReview> dailyTopReviews = popularReviewRepository.findTop10ByPeriod(PeriodType.DAILY);
-        List<PopularReview> weeklyTopReviews = popularReviewRepository.findTop10ByPeriod(PeriodType.WEEKLY);
-        List<PopularReview> monthlyTopReviews = popularReviewRepository.findTop10ByPeriod(PeriodType.MONTHLY);
+    public void createTop10ReviewNotifications(LocalDate baseDate) {
+        List<Notification> notifications = new ArrayList<>();
 
-        List<PopularReview> result = Stream.of(dailyTopReviews, weeklyTopReviews, monthlyTopReviews)
-            .flatMap(Collection::stream)
-            .toList();
-
-        List<Notification> savedNotifications = result.stream().map(topReview -> {
-            log.debug("인기 리뷰 알림 생성 대상 리뷰 ID: {} , Rank: {}, 기간 :{}",
-                topReview.getReview().getId(), topReview.getRank(), topReview.getPeriod());
-
-            String reviewContent = topReview.getReview().getContent();
-            String truncatedReviewContent = reviewContent.length() > 5
-                ? reviewContent.substring(0, 5) + "..."
-                : reviewContent;
-            String savedMessage = this.getNotificationMessageTemplate(NotificationType.PERIOD)
-                .createMessageTemplate(truncatedReviewContent, topReview.getPeriod());
-            return Notification.create(topReview.getReview(), savedMessage);
-        }).toList();
-
-        notificationRepository.saveAll(savedNotifications);
-        log.info("기간별 인기리뷰 알림 생성 완료 : 월간: {}건 / 주간 : {}건 / 일간: {} 건", monthlyTopReviews.size(), weeklyTopReviews.size(),
-            dailyTopReviews.size());
+        for (PeriodType period : PeriodType.values()) {
+            if (!period.isNotifyDay(baseDate)) {
+                continue;
+            }
+            List<PopularReview> top = popularReviewRepository.findTop10ByPeriod(period, baseDate);
+            top.forEach(popularReview -> notifications.add(toNotification(popularReview)));
+            log.info("인기 리뷰 알림 생성: period={}, count={}", period, top.size());
+        }
+        notificationRepository.saveAll(notifications);
     }
 
     private void createNotification(Review review, String actorNickname, NotificationType type) {
@@ -172,5 +158,18 @@ public class NotificationService implements NotificationUseCase {
             case COMMENT -> NotificationMessageTemplate.COMMENT;
             case PERIOD -> NotificationMessageTemplate.BEST_REVIEW;
         };
+    }
+
+    private Notification toNotification(PopularReview popularReview) {
+        log.debug("인기 리뷰 알림 생성 대상 리뷰 ID: {} , Rank: {}, 기간 :{}",
+            popularReview.getReview().getId(), popularReview.getRank(), popularReview.getPeriod());
+
+        String reviewContent = popularReview.getReview().getContent();
+        String truncatedReviewContent = reviewContent.length() > 5
+            ? reviewContent.substring(0, 5) + "..."
+            : reviewContent;
+        String savedMessage = this.getNotificationMessageTemplate(NotificationType.PERIOD)
+            .createMessageTemplate(truncatedReviewContent, popularReview.getPeriod());
+        return Notification.create(popularReview.getReview(), savedMessage);
     }
 }
