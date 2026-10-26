@@ -5,6 +5,7 @@ import java.util.UUID;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserDto;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserLoginRequest;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserRegisterRequest;
+import com.sprint.deokhugam.user.adapter.in.web.dto.UserUpdateRequest;
 
 public interface UserUseCase {
 
@@ -13,5 +14,7 @@ public interface UserUseCase {
     UserDto login(UserLoginRequest request);
 
     UserDto findUser(UUID userId);
+
+    UserDto updateNickname(UUID userId, UUID requestId, UserUpdateRequest request);
 
 }
