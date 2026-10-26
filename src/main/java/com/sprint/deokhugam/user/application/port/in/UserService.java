@@ -1,6 +1,7 @@
 package com.sprint.deokhugam.user.application.port.in;
 
 import java.util.Locale;
+import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -57,6 +58,11 @@ public class UserService implements UserUseCase {
             throw new UserException(UserErrorCode.USER_LOGIN_FAILED);
         }
         return userMapper.toDto(user);
+    }
+
+    @Override
+    public UserDto findUser(UUID userId) {
+        return null;
     }
 
     private String normalizeEmail(String email) {

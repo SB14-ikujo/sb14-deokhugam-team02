@@ -140,7 +140,7 @@ class UserServiceTest {
     @Test
     @DisplayName("이메일과 비밀번호가 맞으면 UserDto를 반환")
     void login_success() {
-        //given
+        // given
         UserLoginRequest request = new UserLoginRequest(EMAIL, RAW_PASSWORD);
         User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
         UserDto expected = new UserDto(UUID.randomUUID(), EMAIL, NICKNAME, Instant.now());
@@ -148,21 +148,21 @@ class UserServiceTest {
         given(passwordHasher.matches(RAW_PASSWORD, HASHED_PASSWORD)).willReturn(true);
         given(userMapper.toDto(user)).willReturn(expected);
 
-        //when
+        // when
         UserDto result = userService.login(request);
 
-        //then
+        // then
         assertThat(result).isEqualTo(expected);
     }
 
     @Test
     @DisplayName("가입되지 않은 이메일이면 USER_LOGIN_FAILED 예외가 발생한다.")
     void login_emailNotFound() {
-        //given
+        // given
         UserLoginRequest request = new UserLoginRequest(EMAIL, RAW_PASSWORD);
         given(userRepository.findByEmailAndIsDeletedFalse(EMAIL)).willReturn(Optional.empty());
 
-        //when & then
+        // when & then
         assertThatThrownBy(() -> userService.login(request))
             .isInstanceOf(UserException.class)
             .extracting("errorCode")
@@ -173,13 +173,13 @@ class UserServiceTest {
     @Test
     @DisplayName("비밀번호가 틀리면 가입되지 않은 이메일과 같은 USER_LOGIN_FAILED 예외가 발생한다.")
     void login_wrongPassword() {
-        //given
+        // given
         UserLoginRequest request = new UserLoginRequest(EMAIL, "wrong123!");
         User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
         given(userRepository.findByEmailAndIsDeletedFalse(EMAIL)).willReturn(Optional.of(user));
         given(passwordHasher.matches("wrong123!", HASHED_PASSWORD)).willReturn(false);
 
-        //when & then
+        // when & then
         assertThatThrownBy(() -> userService.login(request))
             .isInstanceOf(UserException.class)
             .extracting("errorCode")
@@ -189,16 +189,47 @@ class UserServiceTest {
     @Test
     @DisplayName("이메일은 정규화해서 삭제되지 않은 사용자 중에서 조회한다.")
     void login_normalizeEmail() {
-        //given
+        // given
         UserLoginRequest request = new UserLoginRequest("   User@Naver.COM ", RAW_PASSWORD);
         User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
         given(userRepository.findByEmailAndIsDeletedFalse(EMAIL)).willReturn(Optional.of(user));
         given(passwordHasher.matches(RAW_PASSWORD, HASHED_PASSWORD)).willReturn(true);
 
-        //when
+        // when
         userService.login(request);
 
-        //then
+        // then
         then(userRepository).should().findByEmailAndIsDeletedFalse(EMAIL);
+    }
+
+    @Test
+    @DisplayName("존재하는 사용자를 조회하면 UserDto를 반환한다.")
+    void findUser_success() {
+        // given
+        UUID userId = UUID.randomUUID();
+        User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
+        UserDto expected = new UserDto(userId, EMAIL, NICKNAME, Instant.now());
+        given(userRepository.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.of(user));
+        given(userMapper.toDto(user)).willReturn(expected);
+
+        // when
+        UserDto result = userService.findUser(userId);
+
+        // then
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("없거나 논리 삭제된 사용자를 조회하면 USER_NOT_FOUND 예외가 발생한다.")
+    void findUser_notFound() {
+        // given
+        UUID userId = UUID.randomUUID();
+        given(userRepository.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.findUser(userId))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_NOT_FOUND);
     }
 }
