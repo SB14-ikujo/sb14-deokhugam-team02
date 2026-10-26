@@ -15,4 +15,7 @@ public interface PopularReviewRepositoryCustom {
     // 인기 리뷰 뽑아오기
     List<PopularReview> findPage(PeriodType period, LocalDate snapshotDate, Direction direction,
         Long cursorRank, int size);
+
+    List<PopularReview> findCandidates(PeriodType period, LocalDate baseDate);
+
 }

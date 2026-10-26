@@ -23,6 +23,9 @@ import com.sprint.deokhugam.review.domain.Review;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PopularReview extends BaseEntity {
 
+    private static final double LIKE_COUNT_WEIGHT = 0.3;
+    private static final double COMMENT_COUNT_WEIGHT = 0.7;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "review_id", nullable = false)
     private Review review;
@@ -63,6 +66,22 @@ public class PopularReview extends BaseEntity {
         return new PopularReview(review, period, rank, score, likeCount, commentCount, snapshotDate);
     }
 
+    public static PopularReview candidate(Review review, PeriodType period, Long commentCount,
+        Long likeCount, LocalDate snapshotDate) {
 
+        double score = commentCount * COMMENT_COUNT_WEIGHT + likeCount * LIKE_COUNT_WEIGHT;
+        return new PopularReview(review, period, null, score, likeCount, commentCount, snapshotDate);
+    }
+
+    public void assignRank(long rank) {
+        if (this.rank != null) {
+            throw new IllegalStateException("순위는 한 번만 배정할 수 있습니다.");
+        }
+        if (rank < 1) {
+            throw new IllegalStateException("랭킹은 1 이상이어야 합니다.");
+        }
+
+        this.rank = rank;
+    }
 
 }
