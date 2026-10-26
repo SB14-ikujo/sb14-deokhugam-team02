@@ -75,4 +75,15 @@ public class Review extends BaseEntity {
         }
         this.isDeleted = true;
     }
+
+    public void update(String content, Integer rating) {
+        // 변경할 내용이 존재하고, 공백이 아닐 때만 수정
+        if (content != null && !content.isBlank()) {
+            this.content = content;
+        }
+        // 변경할 평점이 존재할 경우에만 수정
+        if (rating != null) {
+            this.rating = rating;
+        }
+    }
 }
