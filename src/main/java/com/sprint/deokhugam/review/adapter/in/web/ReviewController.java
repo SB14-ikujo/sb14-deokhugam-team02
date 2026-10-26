@@ -3,10 +3,11 @@ package com.sprint.deokhugam.review.adapter.in.web;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -20,20 +21,21 @@ import com.sprint.deokhugam.review.application.port.in.ReviewUseCase;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/reviews")
 public class ReviewController implements ReviewApi {
 
     private final ReviewUseCase reviewUseCase;
 
     // 리뷰 생성
     @ResponseStatus(HttpStatus.CREATED)
-    @RequestMapping(method = RequestMethod.POST, value = "/api/reviews")
+    @PostMapping
     public ReviewDto createReview(@Valid @RequestBody ReviewCreateRequest createRequest) {
         return reviewUseCase.createReview(createRequest);
     }
 
     // 리뷰 논리적 삭제
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @RequestMapping(method = RequestMethod.DELETE, value = "/api/reviews/{reviewId}")
+    @DeleteMapping("/{reviewId}")
     public void reviewSoftDelete(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId) {
         reviewUseCase.reviewSoftDelete(reviewId, requestUserId);
     }
