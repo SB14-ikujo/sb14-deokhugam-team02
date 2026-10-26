@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,11 +12,16 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
+import com.sprint.deokhugam.common.util.SliceUtils;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookDto;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookRequest;
+import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularReviewDto;
+import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularReviewRequest;
 import com.sprint.deokhugam.dashboard.adapter.in.web.mapper.DashboardMapper;
 import com.sprint.deokhugam.dashboard.application.port.out.popularbook.PopularBookRepositoryPort;
+import com.sprint.deokhugam.dashboard.application.port.out.popularreview.PopularReviewRepositoryPort;
 import com.sprint.deokhugam.dashboard.domain.PopularBook;
+import com.sprint.deokhugam.dashboard.domain.PopularReview;
 import com.sprint.deokhugam.dashboard.domain.exception.DashboardErrorCode;
 import com.sprint.deokhugam.dashboard.domain.exception.DashboardException;
 
@@ -26,6 +32,7 @@ public class DashboardApplicationService implements DashboardUseCase {
 
     private final DashboardMapper dashboardMapper;
     private final PopularBookRepositoryPort popularBookRepositoryPort;
+    private final PopularReviewRepositoryPort popularReviewRepositoryPort;
 
     @Override
     @Transactional(readOnly = true)
@@ -51,25 +58,46 @@ public class DashboardApplicationService implements DashboardUseCase {
             request.direction(), parseCursor(request.cursor()), limit + 1);
 
         // 다음 페이지 판단 + DTO 변환
-        boolean hasNext = rows.size() > limit;
-        List<PopularBook> page = hasNext ? rows.subList(0, limit) : rows;
-        List<PopularBookDto> content = page.stream()
-            .map(dashboardMapper::toDto)
-            .toList();
+        Slice<PopularBookDto> slice = SliceUtils.toSlice(rows, limit).map(dashboardMapper::toDto);
 
         // 응답 만들기
         long total = popularBookRepositoryPort.countByPeriodAndSnapshotDate(request.period(), snapshotDate);
 
         log.debug("인기 도서 조회 완료: snapshotDate={}, size={}, total={}",
-            snapshotDate, content.size(), total);
-        if (!hasNext) {
-            return new CursorPageResponse<>(content, null, null, content.size(), total, false);
+            snapshotDate, slice.getNumberOfElements(), total);
+
+        return CursorPageResponse.of(slice, total, dto -> String.valueOf(dto.rank()), PopularBookDto::createdAt);
+
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CursorPageResponse<PopularReviewDto> getPopularReviews(PopularReviewRequest request) {
+        log.debug("인기 리뷰 조회: period={}, direction={}, cursor={}, limit={}",
+            request.period(), request.direction(), request.cursor(), request.limit());
+
+        // popular_review에서
+        Optional<LocalDate> latestSnapshotDate = popularReviewRepositoryPort.findLatestSnapshotDate(request.period());
+
+        if (latestSnapshotDate.isEmpty()) {
+            log.info("인기 리뷰 스냅샷 없음 : period = {}", request.period());
+            return new CursorPageResponse<>(List.of(), null, null, 0, 0L, false);
         }
-        PopularBook last = page.get(page.size() - 1);
 
-        return new CursorPageResponse<>(content, String.valueOf(last.getRank()), last.getCreatedAt(),
-            content.size(), total, true);
+        LocalDate snapshotDate = latestSnapshotDate.get();
+        int limit = request.limit();
 
+        List<PopularReview> rows = popularReviewRepositoryPort.findPage(request.period(), snapshotDate,
+            request.direction(), parseCursor(request.cursor()), limit + 1);
+
+        Slice<PopularReviewDto> slice = SliceUtils.toSlice(rows, limit).map(dashboardMapper::toDto);
+
+        long total = popularReviewRepositoryPort.countByPeriodAndSnapshotDate(request.period(), snapshotDate);
+
+        log.debug("인기 리뷰 조회 완료: snapshotDate={}, size={}, total={}",
+            snapshotDate, slice.getNumberOfElements(), total);
+
+        return CursorPageResponse.of(slice, total, dto -> String.valueOf(dto.rank()), PopularReviewDto::createdAt);
     }
 
     //커서 변환

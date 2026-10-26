@@ -10,6 +10,8 @@ import com.sprint.deokhugam.common.exception.ErrorResponse;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookDto;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookRequest;
+import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularReviewDto;
+import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularReviewRequest;
 
 public interface DashboardApi {
     @Tag(name = "도서 관리")
@@ -23,4 +25,16 @@ public interface DashboardApi {
     @ApiResponse(responseCode = "500", description = "서버 내부 오류",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     CursorPageResponse<PopularBookDto> getPopularBooks(PopularBookRequest request);
+
+    @Tag(name = "리뷰 관리")
+    @Operation(
+        summary = "인기 리뷰 목록 조회",
+        description = "기간별 인기 리뷰 목록을 조회합니다."
+    )
+    @ApiResponse(responseCode = "200", description = "인기 리뷰 목록 조회 성공")
+    @ApiResponse(responseCode = "400", description = "잘못된 요청 (랭킹 기간 오류, 정렬 방향 오류 등)",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    CursorPageResponse<PopularReviewDto> getPopularReviews(PopularReviewRequest request);
 }
