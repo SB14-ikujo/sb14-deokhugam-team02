@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
+import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewUpdateRequest;
 
 
 public interface ReviewUseCase {
@@ -12,4 +13,6 @@ public interface ReviewUseCase {
     void reviewSoftDelete(UUID reviewId, UUID requestUserId);
 
     ReviewDto getReviewDetail(UUID reviewId, UUID requestUserId);
+
+    ReviewDto updateReview(UUID reviewId, UUID requestUserId, ReviewUpdateRequest updateRequest);
 }

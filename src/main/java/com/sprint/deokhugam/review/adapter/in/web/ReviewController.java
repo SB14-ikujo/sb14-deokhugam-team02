@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import com.sprint.deokhugam.common.context.user.RequestUserId;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
+import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewUpdateRequest;
 import com.sprint.deokhugam.review.application.port.in.ReviewUseCase;
 
 @RestController
@@ -46,5 +48,16 @@ public class ReviewController implements ReviewApi {
     @ResponseStatus(HttpStatus.OK)
     public ReviewDto getReviewDetail(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId) {
         return reviewUseCase.getReviewDetail(reviewId, requestUserId);
+    }
+
+    // 리뷰 수정
+    @PatchMapping("/{reviewId}")
+    @ResponseStatus(HttpStatus.OK)
+    public ReviewDto updateReview(
+        @PathVariable UUID reviewId,
+        @RequestUserId UUID requestUserId,
+        @Valid @RequestBody ReviewUpdateRequest updateRequest
+    ) {
+        return reviewUseCase.updateReview(reviewId, requestUserId, updateRequest);
     }
 }

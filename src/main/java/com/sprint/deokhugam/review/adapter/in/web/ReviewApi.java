@@ -17,6 +17,7 @@ import com.sprint.deokhugam.common.context.user.RequestUserId;
 import com.sprint.deokhugam.common.exception.ErrorResponse;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
+import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewUpdateRequest;
 
 @Tag(name = "리뷰 관리", description = "리뷰 관련 API")
 public interface ReviewApi {
@@ -61,4 +62,23 @@ public interface ReviewApi {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     ReviewDto getReviewDetail(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId);
+
+    @Operation(summary = "리뷰 수정", description = "본인이 작성한 리뷰를 수정합니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "리뷰 수정 성공",
+            content = @Content(schema = @Schema(implementation = ReviewDto.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (입력값 검증 실패)",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "403", description = "리뷰 수정 권한 없음",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "리뷰 정보 없음",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    ReviewDto updateReview(
+        @PathVariable UUID reviewId,
+        @RequestUserId UUID requestUserId,
+        @Valid @RequestBody ReviewUpdateRequest updateRequest
+    );
 }
