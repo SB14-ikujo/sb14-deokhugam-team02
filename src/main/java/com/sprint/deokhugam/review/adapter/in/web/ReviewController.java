@@ -27,15 +27,15 @@ public class ReviewController implements ReviewApi {
     private final ReviewUseCase reviewUseCase;
 
     // 리뷰 생성
-    @ResponseStatus(HttpStatus.CREATED)
     @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public ReviewDto createReview(@Valid @RequestBody ReviewCreateRequest createRequest) {
         return reviewUseCase.createReview(createRequest);
     }
 
     // 리뷰 논리적 삭제
-    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{reviewId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void reviewSoftDelete(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId) {
         reviewUseCase.reviewSoftDelete(reviewId, requestUserId);
     }
