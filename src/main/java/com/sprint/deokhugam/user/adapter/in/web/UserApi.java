@@ -14,6 +14,7 @@ import com.sprint.deokhugam.common.exception.ErrorResponse;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserDto;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserLoginRequest;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserRegisterRequest;
+import com.sprint.deokhugam.user.adapter.in.web.dto.UserUpdateRequest;
 
 @Tag(name = "사용자 관리", description = "사용자 관련 API")
 public interface UserApi {
@@ -52,4 +53,24 @@ public interface UserApi {
     @ApiResponse(responseCode = "500", description = "서버 내부 오류",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     UserDto findUser(UUID userId);
+
+    @Operation(summary = "사용자 정보 수정", description = "본인의 닉네임을 수정합니다.")
+    @Parameter(name = "userId", description = "사용자 ID", in = ParameterIn.PATH, required = true,
+        example = "123e4567-e89b-12d3-a456-426614174000")
+    @Parameter(name = "Deokhugam-Request-User-ID", description = "요청자 ID", in = ParameterIn.HEADER,
+        required = true, example = "123e4567-e89b-12d3-a456-426614174000",
+        schema = @Schema(type = "string", format = "uuid"))
+    @ApiResponse(responseCode = "200", description = "사용자 정보 수정 성공",
+        content = @Content(schema = @Schema(implementation = UserDto.class)))
+    @ApiResponse(responseCode = "400", description = "잘못된 요청 (입력값 검증 실패, 요청자 ID 누락)",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "403", description = "사용자 정보 수정 권한 없음",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "사용자 정보 없음",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "닉네임 중복",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    UserDto updateNickname(UUID userId, UUID requesterId, UserUpdateRequest request);
 }

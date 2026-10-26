@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -50,11 +51,12 @@ public class UserController implements UserApi {
         return userUseCase.findUser(userId);
     }
 
+    @Override
     @ResponseStatus(HttpStatus.OK)
     @PatchMapping("/{userId}")
-    public UserDto updateNickName(
+    public UserDto updateNickname(
         @PathVariable UUID userId,
-        @RequestUserId UUID requesterId,
+        @Parameter(hidden = true) @RequestUserId UUID requesterId,
         @Valid @RequestBody UserUpdateRequest request
     ) {
         return userUseCase.updateNickname(userId, requesterId, request);
