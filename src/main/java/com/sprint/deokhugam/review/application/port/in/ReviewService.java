@@ -13,6 +13,7 @@ import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
 import com.sprint.deokhugam.book.domain.exception.BookException;
+import com.sprint.deokhugam.comment.application.port.out.CommentRepositoryPort;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewUpdateRequest;
@@ -36,6 +37,7 @@ public class ReviewService implements ReviewUseCase {
     private final ReviewLikeRepositoryPort reviewLikeRepositoryPort;
     private final UserRepositoryPort userRepositoryPort;
     private final BookRepositoryPort bookRepositoryPort;
+    private final CommentRepositoryPort commentRepositoryPort;
     private final ReviewMapper reviewMapper;
 
     // 리뷰 생성 (도서 별 1개의 리뷰만 등록할 수 있음)
@@ -84,6 +86,23 @@ public class ReviewService implements ReviewUseCase {
 
         // 논리적 삭제(Soft-delete) 하기
         review.softDelete(requestUserId);
+    }
+
+    // 리뷰 물리 삭제
+    @Transactional
+    public void reviewHardDelete(UUID reviewId, UUID requestUserId) {
+        // 해당 리뷰 가져오기
+        Review review = reviewRepositoryPort.findById(reviewId)
+            .orElseThrow(() -> new ReviewException(ReviewErrorCode.REVIEW_NOT_FOUND));
+
+        // 댓글 데이터 물리 삭제
+        commentRepositoryPort.deleteByReviewId(reviewId);
+
+        // 좋아요 데이터 물리 삭제
+        reviewLikeRepositoryPort.deleteByReviewId(reviewId);
+
+        // 리뷰 데이터 물리 삭제
+        reviewRepositoryPort.delete(review);
     }
 
     // 리뷰 상세 조회
