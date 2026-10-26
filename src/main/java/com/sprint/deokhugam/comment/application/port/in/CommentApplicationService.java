@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import com.sprint.deokhugam.comment.adapter.in.web.dto.CommentCreateRequest;
 import com.sprint.deokhugam.comment.adapter.in.web.dto.CommentDto;
 import com.sprint.deokhugam.comment.adapter.in.web.dto.CommentListRequest;
+import com.sprint.deokhugam.comment.adapter.in.web.dto.CommentUpdateRequest;
 import com.sprint.deokhugam.comment.adapter.in.web.mapper.CommentMapper;
 import com.sprint.deokhugam.comment.application.port.out.CommentRepositoryPort;
 import com.sprint.deokhugam.comment.domain.Comment;
@@ -81,6 +82,25 @@ public class CommentApplicationService implements CommentUseCase {
             dto -> dto.id().toString(),
             CommentDto::createdAt
         );
+    }
+
+    @Override
+    @Transactional
+    public CommentDto update(UUID commentId, UUID requestUserId, CommentUpdateRequest request) {
+        // 논리 삭제된 댓글은 "없는 댓글"로 취급
+        Comment comment = commentRepository.findByIdAndIsDeletedFalse(commentId)
+            .orElseThrow(() -> new CommentException(CommentErrorCode.COMMENT_NOT_FOUND));
+
+        // 작성자 본인만 수정 가능
+        if (!comment.getUser().getId().equals(requestUserId)) {
+            throw new CommentException(CommentErrorCode.COMMENT_FORBIDDEN);
+        }
+
+        comment.updateContent(request.content());
+        // 응답에 갱신된 updatedAt(JPA Auditing)이 담기도록 먼저 DB에 반영
+        commentRepository.flush();
+
+        return commentMapper.toDto(comment);
     }
 
     private UUID parseCursor(String cursor) {
