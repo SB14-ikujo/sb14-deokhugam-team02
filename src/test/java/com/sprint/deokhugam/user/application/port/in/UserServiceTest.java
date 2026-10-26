@@ -201,5 +201,4 @@ class UserServiceTest {
         //then
         then(userRepository).should().findByEmailAndIsDeletedFalse(EMAIL);
     }
-
 }

@@ -166,5 +166,4 @@ public class UserControllerTest {
 
         then(userUseCase).should().login(any(UserLoginRequest.class));
     }
-
 }
