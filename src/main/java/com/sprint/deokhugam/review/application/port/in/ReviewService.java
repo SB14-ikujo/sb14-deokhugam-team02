@@ -119,10 +119,7 @@ public class ReviewService implements ReviewUseCase {
         }
 
         // 평점, 내용을 수정함
-        String updateContent = updateRequest.content();
-        Integer updateRating = updateRequest.rating();
-
-        review.update(updateContent, updateRating);
+        review.update(updateRequest.content(), updateRequest.rating());
 
         // 내가 이 리뷰에 좋아요를 남겼는지 확인
         boolean likedByMe = reviewLikeRepositoryPort.existsByReviewIdAndUserId(reviewId, requestUserId);
