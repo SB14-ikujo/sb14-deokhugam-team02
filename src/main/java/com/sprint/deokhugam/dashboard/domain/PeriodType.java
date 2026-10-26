@@ -1,5 +1,6 @@
 package com.sprint.deokhugam.dashboard.domain;
 
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -34,5 +35,18 @@ public enum PeriodType {
 
     public static Instant endOf(LocalDate baseDate) {
         return baseDate.atStartOfDay(ZONE).toInstant();
+    }
+
+    /**
+     * 주어진 날짜가 이 기간의 인기 리뷰 알림을 보내는 날인지 확인한다.
+     * DAILY: 매일 / WEEKLY: 매주 월요일 / MONTHLY: 매월 1일 / ALL_TIME: 보내지 않음
+     */
+    public boolean isNotifyDay(LocalDate date) {
+        return switch (this) {
+            case DAILY -> true;
+            case WEEKLY -> date.getDayOfWeek() == DayOfWeek.MONDAY;
+            case MONTHLY -> date.getDayOfMonth() == 1;
+            case ALL_TIME -> false;
+        };
     }
 }
