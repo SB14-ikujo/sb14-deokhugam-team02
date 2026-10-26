@@ -99,10 +99,4 @@ public class UserService implements UserUseCase {
     private String normalizeEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
     }
-
-    // 88888888
-    public User findById(UUID userId) {
-        return userRepositoryPort.findById(userId)
-            .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
-    }
 }
