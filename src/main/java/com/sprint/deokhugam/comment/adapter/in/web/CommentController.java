@@ -25,6 +25,7 @@ public class CommentController implements CommentApi {
 
     private final CommentUseCase commentUseCase;
 
+    //댓글 등록 API
     @Override
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -32,6 +33,7 @@ public class CommentController implements CommentApi {
         return commentUseCase.create(request);
     }
 
+    //댓글 목록 조회
     @Override
     @GetMapping
     public CursorPageResponse<CommentDto> getList(@Valid @ParameterObject CommentListRequest request) {

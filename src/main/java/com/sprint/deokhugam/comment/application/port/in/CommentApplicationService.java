@@ -56,7 +56,7 @@ public class CommentApplicationService implements CommentUseCase {
     @Override
     @Transactional(readOnly = true)
     public CursorPageResponse<CommentDto> getList(CommentListRequest request) {
-        log.debug("댓글 목록 조회 요청: reviewId={}, direction={}, cursor={}, after={}, limit={}",
+        log.debug("댓글목록 조회 요청: reviewId={}, direction={}, cursor={}, after={}, limit={}",
             request.reviewId(), request.direction(), request.cursor(), request.after(), request.limit());
 
         int limit = request.limit();

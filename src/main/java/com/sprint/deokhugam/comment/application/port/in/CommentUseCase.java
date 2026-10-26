@@ -7,7 +7,7 @@ import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 
 public interface CommentUseCase {
 
-    CommentDto create(CommentCreateRequest request);
+    CommentDto create(CommentCreateRequest request); //댓글을 등록
 
-    CursorPageResponse<CommentDto> getList(CommentListRequest request);
+    CursorPageResponse<CommentDto> getList(CommentListRequest request); //리뷰에 달린 댓글 목록을 커서 기반으로 조회
 }
