@@ -172,7 +172,7 @@ class CommentControllerTest {
     }
 
     @Test
-    @DisplayName("목록 조회 - 쿼리 파라미터가 요청 객체로 바인딩된다")
+    @DisplayName("목록 조회 - 쿼리 파라미터가 요청 객체로 바인딩")
     void getList_bindsParams() throws Exception {
         UUID cursorId = UUID.randomUUID();
         given(commentUseCase.getList(any(CommentListRequest.class)))

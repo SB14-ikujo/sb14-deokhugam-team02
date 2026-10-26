@@ -137,7 +137,7 @@ class CommentRepositoryPortTest {
     @Test
     @DisplayName("다른 리뷰의 댓글은 조회되지 않는다")
     void findByCursor_otherReview() throws InterruptedException {
-        saveComment("이 리뷰의 댓글");
+        saveComment("리뷰의 댓글");
         Review other = em.persist(Review.create(user, review.getBook(), "다른 리뷰", 4));
         em.persistAndFlush(Comment.create(other, user, "다른 리뷰의 댓글"));
         em.clear();

@@ -30,7 +30,7 @@ public interface CommentApi {
     CommentDto create(CommentCreateRequest request);
 
     @Operation(summary = "댓글 목록 조회",
-        description = "리뷰의 댓글 목록을 생성 시간순으로 커서 페이지네이션하여 조회합니다. 논리 삭제된 댓글은 제외됩니다.")
+        description = "리뷰의 댓글 목록을 생성 시간순으로 커서 페이지네이션하여 조회. 논리 삭제된 댓글은 제외.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "댓글 목록 조회 성공",
             content = @Content(schema = @Schema(implementation = CursorPageResponse.class))),

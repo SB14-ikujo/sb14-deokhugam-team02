@@ -13,7 +13,7 @@ import jakarta.validation.constraints.NotNull;
 @Schema(description = "댓글 목록 조회 조건")
 public record CommentListRequest(
     @Schema(description = "리뷰 ID", example = "123e4567-e89b-12d3-a456-426614174000")
-    @NotNull(message = "리뷰 ID는 필수입니다.")
+    @NotNull(message = "리뷰 ID 필수입니다.")
     UUID reviewId,
 
     @Schema(description = "정렬 방향 (생성 시간 기준)", defaultValue = "DESC")
