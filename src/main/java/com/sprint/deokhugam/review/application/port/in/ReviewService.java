@@ -1,7 +1,9 @@
 package com.sprint.deokhugam.review.application.port.in;
 
+import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,10 +13,10 @@ import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
 import com.sprint.deokhugam.book.domain.exception.BookException;
-import com.sprint.deokhugam.common.context.user.UserContextHolder;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
 import com.sprint.deokhugam.review.adapter.in.web.mapper.ReviewMapper;
+import com.sprint.deokhugam.review.application.port.out.ReviewLikeRepositoryPort;
 import com.sprint.deokhugam.review.application.port.out.ReviewRepositoryPort;
 import com.sprint.deokhugam.review.domain.Review;
 import com.sprint.deokhugam.review.domain.exception.ReviewErrorCode;
@@ -30,6 +32,7 @@ import com.sprint.deokhugam.user.domain.exception.UserException;
 public class ReviewService implements ReviewUseCase {
 
     private final ReviewRepositoryPort reviewRepositoryPort;
+    private final ReviewLikeRepositoryPort reviewLikeRepositoryPort;
     private final UserRepositoryPort userRepositoryPort;
     private final BookRepositoryPort bookRepositoryPort;
     private final ReviewMapper reviewMapper;
@@ -83,15 +86,14 @@ public class ReviewService implements ReviewUseCase {
     }
 
     // 리뷰 상세 조회
-    @Transactional
-    public ReviewDto getReviewDetail(UUID reviewId) {
-        // 유저 요청 ID
-        UUID requestUserId = UserContextHolder.getUserId();
-
+    public ReviewDto getReviewDetail(UUID reviewId, UUID requestUserId) {
         // 존재하는 유저인지 확인
-        User user = userUseCase.findById(requestUserId);
+        Optional<User> wrappedUser = userRepositoryPort.findByIdAndIsDeletedFalse(requestUserId);
+        if (wrappedUser.isEmpty()) {
+            throw new UserException(UserErrorCode.USER_NOT_FOUND);
+        }
 
-        // 리뷰 찾기 (리뷰가 있는지 없는지 예외처리)
+        // 해당 리뷰 찾기 (유저와 도서를 패치조인해서 한번에 가져옴)
         Review review = reviewRepositoryPort.findByFetchJoin(reviewId)
             .orElseThrow(() -> new ReviewException(ReviewErrorCode.REVIEW_NOT_FOUND));
 

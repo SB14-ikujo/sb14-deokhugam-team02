@@ -2,7 +2,6 @@ package com.sprint.deokhugam.review.adapter.in.web;
 
 import java.util.UUID;
 
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -18,7 +17,6 @@ import com.sprint.deokhugam.common.context.user.RequestUserId;
 import com.sprint.deokhugam.common.exception.ErrorResponse;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
-
 
 @Tag(name = "리뷰 관리", description = "리뷰 관련 API")
 public interface ReviewApi {
@@ -62,5 +60,5 @@ public interface ReviewApi {
         @ApiResponse(responseCode = "500", description = "서버 내부 오류",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    ResponseEntity<ReviewDto> getReviewDetail(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId);
+    ReviewDto getReviewDetail(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId);
 }
