@@ -50,6 +50,20 @@ public interface ReviewApi {
     })
     void reviewSoftDelete(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId);
 
+    @Operation(summary = "리뷰 물리 삭제", description = "본인이 작성한 리뷰를 물리적으로 삭제합니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "리뷰 삭제 성공"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (요청자 ID 누락)",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "403", description = "리뷰 삭제 권한 없음",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "리뷰 정보 없음",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    void reviewHardDelete(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId);
+
     @Operation(summary = "리뷰 상세 정보 조회", description = "리뷰 ID로 상세 정보를 조회합니다.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "리뷰 정보 조회 성공",
