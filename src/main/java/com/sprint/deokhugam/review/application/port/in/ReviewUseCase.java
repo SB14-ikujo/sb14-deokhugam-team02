@@ -5,13 +5,10 @@ import java.util.UUID;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
 
-import java.util.UUID;
-
-import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
-
 public interface ReviewUseCase {
     ReviewDto createReview(ReviewCreateRequest createRequest);
 
     void reviewSoftDelete(UUID reviewId, UUID requestUserId);
-    ReviewDto getReviewDetail(UUID reviewId);
+
+    ReviewDto getReviewDetail(UUID reviewId, UUID requestUserId);
 }

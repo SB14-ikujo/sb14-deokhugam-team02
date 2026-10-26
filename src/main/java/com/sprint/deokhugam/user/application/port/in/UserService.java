@@ -1,7 +1,6 @@
 package com.sprint.deokhugam.user.application.port.in;
 
 import java.util.Locale;
-import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -98,11 +97,5 @@ public class UserService implements UserUseCase {
 
     private String normalizeEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
-    }
-
-    // 88888888
-    public User findById(UUID userId) {
-        return userRepositoryPort.findByIdAndIsDeletedFalse(userId)
-            .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
     }
 }
