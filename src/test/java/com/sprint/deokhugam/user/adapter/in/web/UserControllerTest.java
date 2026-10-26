@@ -106,7 +106,7 @@ public class UserControllerTest {
     }
 
     @Test
-    @DisplayName("로그인에 ㅈ성공하면 200과 비밀번호가 없는 사용자 정보를 반환한다.")
+    @DisplayName("로그인에 성공하면 200과 비밀번호가 없는 사용자 정보를 반환한다.")
     void login_success() throws Exception {
         // given
         UserDto response = new UserDto(UUID.randomUUID(), "user@naver.com", "푸우", Instant.now());
