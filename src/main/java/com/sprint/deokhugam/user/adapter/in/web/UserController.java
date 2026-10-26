@@ -29,6 +29,7 @@ public class UserController implements UserApi {
         return userUseCase.register(request);
     }
 
+    @Override
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/login")
     public UserDto login(@Valid @RequestBody UserLoginRequest request) {
