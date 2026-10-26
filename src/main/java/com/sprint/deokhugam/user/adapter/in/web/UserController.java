@@ -1,6 +1,10 @@
 package com.sprint.deokhugam.user.adapter.in.web;
 
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,5 +38,10 @@ public class UserController implements UserApi {
     @PostMapping("/login")
     public UserDto login(@Valid @RequestBody UserLoginRequest request) {
         return userUseCase.login(request);
+    }
+
+    @GetMapping("/{userId}")
+    public UserDto findUser(@PathVariable UUID userId) {
+        return null;
     }
 }

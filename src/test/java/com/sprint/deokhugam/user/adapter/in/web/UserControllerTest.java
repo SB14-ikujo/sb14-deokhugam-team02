@@ -166,4 +166,43 @@ public class UserControllerTest {
 
         then(userUseCase).should().login(any(UserLoginRequest.class));
     }
+
+    @Test
+    @DisplayName("존재하는 사용자를 조회하면 200과 비밀번호가 없는 사용자 정보를 반환한다.")
+    void findUser_success() throws Exception {
+        // given
+        UUID userId = UUID.randomUUID();
+        UserDto response = new UserDto(userId, "user@naver.com", "푸우", Instant.now());
+        given(userUseCase.findUser(userId)).willReturn(response);
+
+        // when & then
+        mockMvc.perform(get("/api/users/{userId}", userId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(userId.toString()))
+            .andExpect(jsonPath("$.email").value("user@naver.com"))
+            .andExpect(jsonPath("$.nickname").value("푸우"))
+            .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("없거나 논리 삭제된 사용자를 조회하면 404를 반환한다.")
+    void findUser_notFound() throws Exception {
+        // given
+        UUID userId = UUID.randomUUID();
+        given(userUseCase.findUser(userId)).willThrow(new UserException(UserErrorCode.USER_NOT_FOUND));
+
+        // when & then
+        mockMvc.perform(get("/api/users/{userId}", userId))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.message").value(UserErrorCode.USER_NOT_FOUND.getMessage()));
+    }
+
+    @Test
+    @DisplayName("사용자 ID가 UUID 형식이 아니면 400을 반환하고 서비스를 호출하지 않는다.")
+    void findUser_invalidId() throws Exception {
+        mockMvc.perform(get("/api/users/{userId}", "not-a-uuid"))
+            .andExpect(status().isBadRequest());
+
+        then(userUseCase).should(never()).findUser(any(UUID.class));
+    }
 }
