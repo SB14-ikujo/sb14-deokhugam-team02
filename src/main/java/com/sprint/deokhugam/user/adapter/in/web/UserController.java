@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -14,9 +15,11 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
+import com.sprint.deokhugam.common.context.user.RequestUserId;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserDto;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserLoginRequest;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserRegisterRequest;
+import com.sprint.deokhugam.user.adapter.in.web.dto.UserUpdateRequest;
 import com.sprint.deokhugam.user.application.port.in.UserUseCase;
 
 @RestController
@@ -45,5 +48,14 @@ public class UserController implements UserApi {
     @GetMapping("/{userId}")
     public UserDto findUser(@PathVariable UUID userId) {
         return userUseCase.findUser(userId);
+    }
+
+    @PatchMapping("/{userId}")
+    public UserDto updateNickName(
+        @PathVariable UUID userId,
+        @RequestUserId UUID requesterId,
+        @RequestBody UserUpdateRequest request
+    ) {
+        return null;
     }
 }
