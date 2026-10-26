@@ -70,8 +70,30 @@ public class UserService implements UserUseCase {
     }
 
     @Override
-    public UserDto updateNickname(UUID userId, UUID requestId, UserUpdateRequest request) {
-        return null;
+    @Transactional
+    public UserDto updateNickname(UUID userId, UUID requesterId, UserUpdateRequest request) {
+        if (!userId.equals(requesterId)) {
+            throw new UserException(UserErrorCode.USER_FORBIDDEN);
+        }
+
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
+            .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+
+        String newNickname = request.nickname();
+        if (newNickname.equals(user.getNickname())) {
+            return userMapper.toDto(user);
+        }
+        if (userRepository.existsByNickname(newNickname)) {
+            throw new UserException(UserErrorCode.USER_NICKNAME_DUPLICATE);
+        }
+
+        user.changeNickname(newNickname);
+        try {
+            return userMapper.toDto(userRepository.saveAndFlush(user));
+        } catch (DataIntegrityViolationException e) {
+            // 동시 요청으로 검증을 통과한 뒤 DB 유니크 제약에 걸린 경우
+            throw new UserException(UserErrorCode.USER_NICKNAME_DUPLICATE);
+        }
     }
 
     private String normalizeEmail(String email) {
