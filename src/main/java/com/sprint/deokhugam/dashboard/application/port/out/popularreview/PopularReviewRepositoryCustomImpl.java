@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,6 +20,7 @@ import java.util.UUID;
 import com.querydsl.core.Tuple;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ import com.sprint.deokhugam.dashboard.domain.Direction;
 import com.sprint.deokhugam.dashboard.domain.PeriodType;
 import com.sprint.deokhugam.dashboard.domain.PopularReview;
 import com.sprint.deokhugam.review.domain.Review;
+import com.sprint.deokhugam.dashboard.domain.QPopularReview;
 
 @RequiredArgsConstructor
 public class PopularReviewRepositoryCustomImpl implements PopularReviewRepositoryCustom {
@@ -114,6 +117,31 @@ public class PopularReviewRepositoryCustomImpl implements PopularReviewRepositor
             candidates.add(PopularReview.candidate(target, period, comments, likes, baseDate));
         }
         return candidates;
+    }
+
+
+    @Override
+    public List<PopularReview> findTop10ByPeriod(PeriodType period) {
+        LocalDate today = LocalDate.now(ZoneId.of("Asia/Seoul"));
+        QPopularReview sub = new QPopularReview("sub");
+
+        return jpaQueryFactory.selectFrom(popularReview)
+            .join(popularReview.review, review).fetchJoin()
+            .join(review.user, user).fetchJoin()
+            .where(
+                popularReview.period.eq(period),
+                popularReview.snapshotDate.eq(
+                    JPAExpressions.select(sub.snapshotDate.max())
+                        .from(sub)
+                        .where(
+                            sub.period.eq(period),
+                            sub.snapshotDate.loe(today)
+                        )
+                )
+            )
+            .orderBy(popularReview.rank.asc())
+            .limit(10)
+            .fetch();
     }
 
     private BooleanExpression afterRank(Direction direction, Long cursorRank) {

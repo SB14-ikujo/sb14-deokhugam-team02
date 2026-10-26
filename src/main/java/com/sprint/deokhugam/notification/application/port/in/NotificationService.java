@@ -1,8 +1,10 @@
 package com.sprint.deokhugam.notification.application.port.in;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
@@ -14,6 +16,9 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 import com.sprint.deokhugam.common.util.SliceUtils;
+import com.sprint.deokhugam.dashboard.application.port.out.popularreview.PopularReviewRepositoryPort;
+import com.sprint.deokhugam.dashboard.domain.PeriodType;
+import com.sprint.deokhugam.dashboard.domain.PopularReview;
 import com.sprint.deokhugam.notification.adapter.in.web.dto.NotificationDto;
 import com.sprint.deokhugam.notification.adapter.in.web.mapper.NotificationMapper;
 import com.sprint.deokhugam.notification.application.port.out.NotificationRepositoryPort;
@@ -31,6 +36,7 @@ import com.sprint.deokhugam.user.application.port.out.UserRepositoryPort;
 public class NotificationService implements NotificationUseCase {
     private final UserRepositoryPort userRepository;
     private final NotificationRepositoryPort notificationRepository;
+    private final PopularReviewRepositoryPort popularReviewRepository;
     private final NotificationMapper notificationMapper;
 
     @Override
@@ -111,6 +117,36 @@ public class NotificationService implements NotificationUseCase {
         );
     }
 
+    @Override
+    @Transactional
+    public void createTop10ReviewNotificationsByPeriod() {
+        // 기간별 테이블 리뷰 Top10 조회
+        List<PopularReview> dailyTopReviews = popularReviewRepository.findTop10ByPeriod(PeriodType.DAILY);
+        List<PopularReview> weeklyTopReviews = popularReviewRepository.findTop10ByPeriod(PeriodType.WEEKLY);
+        List<PopularReview> monthlyTopReviews = popularReviewRepository.findTop10ByPeriod(PeriodType.MONTHLY);
+
+        List<PopularReview> result = Stream.of(dailyTopReviews, weeklyTopReviews, monthlyTopReviews)
+            .flatMap(Collection::stream)
+            .toList();
+
+        List<Notification> savedNotifications = result.stream().map(topReview -> {
+            log.debug("인기 리뷰 알림 생성 대상 리뷰 ID: {} , Rank: {}, 기간 :{}",
+                topReview.getReview().getId(), topReview.getRank(), topReview.getPeriod());
+
+            String reviewContent = topReview.getReview().getContent();
+            String truncatedReviewContent = reviewContent.length() > 5
+                ? reviewContent.substring(0, 5) + "..."
+                : reviewContent;
+            String savedMessage = this.getNotificationMessageTemplate(NotificationType.PERIOD)
+                .createMessageTemplate(truncatedReviewContent, topReview.getPeriod());
+            return Notification.create(topReview.getReview(), savedMessage);
+        }).toList();
+
+        notificationRepository.saveAll(savedNotifications);
+        log.info("기간별 인기리뷰 알림 생성 완료 : 월간: {}건 / 주간 : {}건 / 일간: {} 건", monthlyTopReviews.size(), weeklyTopReviews.size(),
+            dailyTopReviews.size());
+    }
+
     private void createNotification(Review review, String actorNickname, NotificationType type) {
 
         if (review == null) {
@@ -134,6 +170,7 @@ public class NotificationService implements NotificationUseCase {
         return switch (type) {
             case LIKE -> NotificationMessageTemplate.LIKE;
             case COMMENT -> NotificationMessageTemplate.COMMENT;
+            case PERIOD -> NotificationMessageTemplate.BEST_REVIEW;
         };
     }
 }
