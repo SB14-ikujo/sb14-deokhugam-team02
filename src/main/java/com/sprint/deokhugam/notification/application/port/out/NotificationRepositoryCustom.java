@@ -1,6 +1,7 @@
 package com.sprint.deokhugam.notification.application.port.out;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,4 +17,6 @@ public interface NotificationRepositoryCustom {
 
     List<Notification> findAllByUserIdWithCursor(UUID userId, Sort.Direction direction, Instant cursor, Instant after,
         Integer limit);
+
+    long deleteReadNotificationsBefore(LocalDate baseDate);
 }
