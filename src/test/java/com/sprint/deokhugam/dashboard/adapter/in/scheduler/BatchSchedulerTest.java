@@ -17,6 +17,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.scheduling.support.CronExpression;
 
 import com.sprint.deokhugam.dashboard.application.port.in.popularbook.PopularBookRankingUseCase;
+import com.sprint.deokhugam.dashboard.application.port.in.popularreview.PopularReviewRankingUseCase;
 
 @ExtendWith(MockitoExtension.class)
 class BatchSchedulerTest {
@@ -26,15 +27,20 @@ class BatchSchedulerTest {
     @Mock
     private PopularBookRankingUseCase popularBookRankingUseCase;
 
+    @Mock
+    private PopularReviewRankingUseCase popularReviewRankingUseCase;
+
     @InjectMocks
     private BatchScheduler batchScheduler;
 
     @Test
-    @DisplayName("일일 랭킹을 실행하면 한국 시간 기준 오늘 날짜로 인기 도서를 집계한다")
-    void rankDailyRankingRanksBooksWithToday() {
+    @DisplayName("일일 랭킹을 실행하면 한국 시간 기준 오늘 날짜로 인기 도서와 인기 리뷰를 집계한다")
+    void rankDailyRankingRanksWithToday() {
         batchScheduler.rankDailyRanking();
 
-        verify(popularBookRankingUseCase).rankBooks(LocalDate.now(ZONE));
+        LocalDate today = LocalDate.now(ZONE);
+        verify(popularBookRankingUseCase).rankBooks(today);
+        verify(popularReviewRankingUseCase).rankReviews(today);
     }
 
     @Test
