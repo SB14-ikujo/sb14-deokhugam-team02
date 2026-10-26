@@ -135,7 +135,7 @@ class CommentControllerTest {
             .andExpect(jsonPath("$.message").value("리뷰 정보를 찾을 수 없습니다."));
     }
 
-    // ===== 댓글 목록 조회 =====
+    // ==== 댓글 목록 조회 ====
 
     @Test
     @DisplayName("목록 조회 성공 - 200과 CursorPageResponse 반환")
@@ -251,7 +251,7 @@ class CommentControllerTest {
                 .param("cursor", "bad")
                 .param("after", "2024-01-01T00:00:00Z"))
             .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.message").value("잘못된 커서 값입니다."));
+            .andExpect(jsonPath("$.message").value("잘못된 Cursor 값입니다."));
     }
 
     @Test
