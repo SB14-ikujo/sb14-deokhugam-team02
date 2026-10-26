@@ -61,8 +61,11 @@ public class UserService implements UserUseCase {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public UserDto findUser(UUID userId) {
-        return null;
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
+            .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+        return userMapper.toDto(user);
     }
 
     private String normalizeEmail(String email) {
