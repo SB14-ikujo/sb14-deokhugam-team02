@@ -18,6 +18,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserDto;
+import com.sprint.deokhugam.user.adapter.in.web.dto.UserLoginRequest;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserRegisterRequest;
 import com.sprint.deokhugam.user.application.port.in.UserUseCase;
 import com.sprint.deokhugam.user.domain.exception.UserErrorCode;
@@ -28,6 +29,10 @@ public class UserControllerTest {
 
     private static final String VALID_BODY = """
         {"email": "user@naver.com", "nickname": "닉네임", "password": "abcd123!"}
+        """;
+
+    private static final String LOGIN_BODY = """
+        {"email": "user@naver.com", "password": "abcd123!"}
         """;
 
     @Autowired
@@ -99,4 +104,67 @@ public class UserControllerTest {
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.message").value(UserErrorCode.USER_NICKNAME_DUPLICATE.getMessage()));
     }
+
+    @Test
+    @DisplayName("로그인에 ㅈ성공하면 200과 비밀번호가 없는 사용자 정보를 반환한다.")
+    void login_success() throws Exception {
+        // given
+        UserDto response = new UserDto(UUID.randomUUID(), "user@naver.com", "푸우", Instant.now());
+        given(userUseCase.login(any(UserLoginRequest.class))).willReturn(response);
+
+        // when & then
+        mockMvc.perform(post("/api/users/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(LOGIN_BODY))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.email").value("user@naver.com"))
+            .andExpect(jsonPath("$.nickname").value("푸우"))
+            .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "{\"email\": \"\", \"password\": \"abcd123!\"}",
+        "{\"email\": \"user@naver.com\", \"password\": \" \"}"
+    })
+    @DisplayName("이메일이나 비밀번호가 비어 있으면 400을 반환하고 서비스를 호출하지 않는다.")
+    void login_blank(String body) throws Exception {
+        mockMvc.perform(post("/api/users/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isBadRequest());
+
+        then(userUseCase).should(never()).login(any(UserLoginRequest.class));
+    }
+
+    @Test
+    @DisplayName("로그인에 실패하면 401과 에러 메세지를 반환한다.")
+    void login_failed() throws Exception {
+        // given
+        given(userUseCase.login(any(UserLoginRequest.class)))
+            .willThrow(new UserException(UserErrorCode.USER_LOGIN_FAILED));
+
+        // when & then
+        mockMvc.perform(post("/api/users/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(LOGIN_BODY))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.message").value(UserErrorCode.USER_LOGIN_FAILED.getMessage()));
+    }
+
+    @Test
+    @DisplayName("로그인 요청에는 비밀번호 정규식을 적용하지 않는다.")
+    void login_passwordWithoutPattern() throws Exception {
+        // given
+        String body = "{\"email\": \"user@naver.com\", \"password\": \"abcd1234\"}";
+
+        // when & then
+        mockMvc.perform(post("/api/users/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body))
+            .andExpect(status().isOk());
+
+        then(userUseCase).should().login(any(UserLoginRequest.class));
+    }
+
 }
