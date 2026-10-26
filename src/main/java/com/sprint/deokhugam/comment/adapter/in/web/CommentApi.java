@@ -2,6 +2,8 @@ package com.sprint.deokhugam.comment.adapter.in.web;
 
 import java.util.UUID;
 
+import org.springdoc.core.annotations.ParameterObject;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -46,7 +48,7 @@ public interface CommentApi {
         @ApiResponse(responseCode = "500", description = "서버 내부 오류",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    CursorPageResponse<CommentDto> getList(CommentListRequest request);
+    CursorPageResponse<CommentDto> getList(@ParameterObject CommentListRequest request);
 
     @Operation(summary = "댓글 수정", description = "본인이 작성한 댓글을 수정합니다.")
     @Parameter(name = "commentId", description = "댓글 ID", in = ParameterIn.PATH, required = true,
