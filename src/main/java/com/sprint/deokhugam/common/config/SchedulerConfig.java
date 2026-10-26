@@ -33,8 +33,8 @@ public class SchedulerConfig implements SchedulingConfigurer {
         scheduler.setThreadNamePrefix("deokhugam-batch-");
 
         // 예외 핸들러 등록
-        scheduler.setErrorHandler(t -> {
-            log.warn("스케줄러 에러 핸들러 감지", t);
+        scheduler.setErrorHandler(error -> {
+            log.error("[경고] 스케줄러 배치 작업 중 알 수 없는 오류가 발생했습니다.", error);
         });
 
         return scheduler;

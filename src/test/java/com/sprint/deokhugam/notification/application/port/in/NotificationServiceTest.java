@@ -318,15 +318,6 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("인기 리뷰를 알림 엔티티로 변환한다")
-    void toNotification_success() {
-        // private static final LocalDate YESTERDAY = LocalDate.of(2026, 10, 18);
-        // private static final LocalDate TODAY = LocalDate.of(2026, 10, 19);
-        // private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
-
-    }
-
-    @Test
     @DisplayName("기간별 인기 리뷰 TOP 10 알림을 생성한다")
     void createTop10ReviewNotifications_success() {
         // given: 2026-10-28(수) → DAILY만 대상
