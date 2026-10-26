@@ -43,6 +43,13 @@ public class ReviewController implements ReviewApi {
         reviewUseCase.reviewSoftDelete(reviewId, requestUserId);
     }
 
+    // 리뷰 물리적 삭제
+    @DeleteMapping("/{reviewId}/hard")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void reviewHardDelete(@PathVariable UUID reviewId, @RequestUserId UUID requestUserId) {
+        reviewUseCase.reviewHardDelete(reviewId, requestUserId);
+    }
+
     // 리뷰 상세 조회
     @GetMapping("/{reviewId}")
     @ResponseStatus(HttpStatus.OK)

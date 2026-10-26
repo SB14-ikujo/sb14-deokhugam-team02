@@ -95,6 +95,12 @@ public class ReviewService implements ReviewUseCase {
         Review review = reviewRepositoryPort.findById(reviewId)
             .orElseThrow(() -> new ReviewException(ReviewErrorCode.REVIEW_NOT_FOUND));
 
+        // 해당 리뷰를 작성한 유저와 삭제를 요청한 유저가 같은지 확인
+        UUID reviewWriterId = review.getUser().getId();
+        if (!reviewWriterId.equals(requestUserId)) {
+            throw new ReviewException(ReviewErrorCode.REVIEW_FORBIDDEN);
+        }
+
         // 댓글 데이터 물리 삭제
         commentRepositoryPort.deleteByReviewId(reviewId);
 
