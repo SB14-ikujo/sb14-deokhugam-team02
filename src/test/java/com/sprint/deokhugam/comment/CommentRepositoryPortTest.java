@@ -43,16 +43,29 @@ class CommentRepositoryPortTest {
     @BeforeEach
     void setUp() {
         user = em.persist(User.create("test@test.com", "덕후", "password1!"));
-        Book book = Book.create("제목", user, "저자", "설명", "출판사",
-            LocalDate.of(2024, 1, 1), "9781234567890", null);
-        ReflectionTestUtils.setField(book, "user", user); // Book.create가 user를 안 받아서 우회
+
+        Book book = Book.create(
+            "제목",
+            user,
+            "저자",
+            "설명",
+            "출판사",
+            LocalDate.of(2024, 1, 1),
+            "9781234567890",
+            null
+        );
+
+        ReflectionTestUtils.setField(book, "user", user);
         em.persist(book);
+
         review = em.persist(Review.create(user, book, "리뷰 내용", 5));
     }
 
     private Comment saveComment(String content) throws InterruptedException {
-        Comment comment = em.persistAndFlush(Comment.create(review, user, content));
-        Thread.sleep(10); // createdAt 순서 구분용
+        Comment comment = em.persistAndFlush(
+            Comment.create(review, user, content)
+        );
+        Thread.sleep(10);
         return comment;
     }
 
@@ -61,7 +74,9 @@ class CommentRepositoryPortTest {
     void findByIdAndIsDeletedFalse_found() throws InterruptedException {
         Comment comment = saveComment("댓글");
 
-        assertThat(commentRepository.findByIdAndIsDeletedFalse(comment.getId())).isPresent();
+        assertThat(
+            commentRepository.findByIdAndIsDeletedFalse(comment.getId())
+        ).isPresent();
     }
 
     @Test
@@ -69,10 +84,13 @@ class CommentRepositoryPortTest {
     void findByIdAndIsDeletedFalse_deleted() throws InterruptedException {
         Comment comment = saveComment("댓글");
         comment.softDelete();
+
         em.flush();
         em.clear();
 
-        assertThat(commentRepository.findByIdAndIsDeletedFalse(comment.getId())).isEmpty();
+        assertThat(
+            commentRepository.findByIdAndIsDeletedFalse(comment.getId())
+        ).isEmpty();
     }
 
     @Test
@@ -82,14 +100,22 @@ class CommentRepositoryPortTest {
         Comment deleted = saveComment("2-삭제");
         saveComment("3");
         saveComment("4");
+
         deleted.softDelete();
         em.flush();
         em.clear();
 
         List<Comment> result = commentRepository.findByCursor(
-            review.getId(), null, null, Sort.Direction.DESC, 2);
+            review.getId(),
+            null,
+            null,
+            Sort.Direction.DESC,
+            2
+        );
 
-        assertThat(result).extracting(Comment::getContent).containsExactly("4", "3");
+        assertThat(result)
+            .extracting(Comment::getContent)
+            .containsExactly("4", "3");
     }
 
     @Test
@@ -98,12 +124,20 @@ class CommentRepositoryPortTest {
         saveComment("1");
         saveComment("2");
         Comment c3 = saveComment("3");
+
         em.clear();
 
         List<Comment> result = commentRepository.findByCursor(
-            review.getId(), c3.getCreatedAt(), c3.getId(), Sort.Direction.DESC, 10);
+            review.getId(),
+            c3.getCreatedAt(),
+            c3.getId(),
+            Sort.Direction.DESC,
+            10
+        );
 
-        assertThat(result).extracting(Comment::getContent).containsExactly("2", "1");
+        assertThat(result)
+            .extracting(Comment::getContent)
+            .containsExactly("2", "1");
     }
 
     @Test
@@ -112,12 +146,20 @@ class CommentRepositoryPortTest {
         saveComment("1");
         saveComment("2");
         saveComment("3");
+
         em.clear();
 
         List<Comment> result = commentRepository.findByCursor(
-            review.getId(), null, null, Sort.Direction.ASC, 2);
+            review.getId(),
+            null,
+            null,
+            Sort.Direction.ASC,
+            2
+        );
 
-        assertThat(result).extracting(Comment::getContent).containsExactly("1", "2");
+        assertThat(result)
+            .extracting(Comment::getContent)
+            .containsExactly("1", "2");
     }
 
     @Test
@@ -126,26 +168,65 @@ class CommentRepositoryPortTest {
         Comment c1 = saveComment("1");
         saveComment("2");
         saveComment("3");
+
         em.clear();
 
         List<Comment> result = commentRepository.findByCursor(
-            review.getId(), c1.getCreatedAt(), c1.getId(), Sort.Direction.ASC, 10);
+            review.getId(),
+            c1.getCreatedAt(),
+            c1.getId(),
+            Sort.Direction.ASC,
+            10
+        );
 
-        assertThat(result).extracting(Comment::getContent).containsExactly("2", "3");
+        assertThat(result)
+            .extracting(Comment::getContent)
+            .containsExactly("2", "3");
     }
 
     @Test
     @DisplayName("다른 리뷰의 댓글은 조회되지 않는다")
     void findByCursor_otherReview() throws InterruptedException {
         saveComment("이 리뷰의 댓글");
-        Review other = em.persist(Review.create(user, review.getBook(), "다른 리뷰", 4));
-        em.persistAndFlush(Comment.create(other, user, "다른 리뷰의 댓글"));
+
+        // 기존 리뷰와 다른 책 생성
+        Book anotherBook = Book.create(
+            "다른 책 제목",
+            user,
+            "다른 저자",
+            "다른 책 설명",
+            "다른 출판사",
+            LocalDate.of(2025, 1, 1),
+            "9781234567806",
+            null
+        );
+
+        ReflectionTestUtils.setField(anotherBook, "user", user);
+        em.persist(anotherBook);
+
+        // 같은 사용자가 다른 책에 작성한 리뷰 생성
+        Review other = em.persist(
+            Review.create(user, anotherBook, "다른 리뷰", 4)
+        );
+
+        em.persistAndFlush(
+            Comment.create(other, user, "다른 리뷰의 댓글")
+        );
+
         em.clear();
 
+        // 원래 리뷰의 댓글만 조회되는지 확인
         List<Comment> result = commentRepository.findByCursor(
-            review.getId(), null, null, Sort.Direction.DESC, 10);
+            review.getId(),
+            null,
+            null,
+            Sort.Direction.DESC,
+            10
+        );
 
-        assertThat(result).extracting(Comment::getContent).containsExactly("이 리뷰의 댓글");
+        assertThat(result)
+            .extracting(Comment::getContent)
+            .containsExactly("이 리뷰의 댓글");
     }
 
     @Test
@@ -154,14 +235,22 @@ class CommentRepositoryPortTest {
         saveComment("1");
         Comment deleted = saveComment("2-삭제");
         Comment c3 = saveComment("3");
+
         deleted.softDelete();
         em.flush();
         em.clear();
 
         List<Comment> result = commentRepository.findByCursor(
-            review.getId(), c3.getCreatedAt(), c3.getId(), Sort.Direction.DESC, 10);
+            review.getId(),
+            c3.getCreatedAt(),
+            c3.getId(),
+            Sort.Direction.DESC,
+            10
+        );
 
-        assertThat(result).extracting(Comment::getContent).containsExactly("1");
+        assertThat(result)
+            .extracting(Comment::getContent)
+            .containsExactly("1");
     }
 
     @Test
@@ -170,22 +259,38 @@ class CommentRepositoryPortTest {
         saveComment("1");
         saveComment("2");
         saveComment("3");
+
         em.flush();
 
-        // 세 댓글의 createdAt을 동일하게 맞춤 (createdAt은 updatable=false라 native 쿼리 사용)
+        // createdAt을 동일하게 맞춤
         Instant sameTime = Instant.parse("2024-01-01T00:00:00Z");
+
         em.getEntityManager()
             .createNativeQuery("update comments set created_at = :t")
             .setParameter("t", sameTime)
             .executeUpdate();
+
         em.clear();
 
-        // 첫 페이지(2개) → 마지막 요소를 커서로 다음 페이지 조회
+        // 첫 페이지 조회
         List<Comment> firstPage = commentRepository.findByCursor(
-            review.getId(), null, null, Sort.Direction.DESC, 2);
+            review.getId(),
+            null,
+            null,
+            Sort.Direction.DESC,
+            2
+        );
+
+        // 마지막 요소를 커서로 다음 페이지 조회
         Comment last = firstPage.get(firstPage.size() - 1);
+
         List<Comment> nextPage = commentRepository.findByCursor(
-            review.getId(), last.getCreatedAt(), last.getId(), Sort.Direction.DESC, 10);
+            review.getId(),
+            last.getCreatedAt(),
+            last.getId(),
+            Sort.Direction.DESC,
+            10
+        );
 
         List<Comment> all = new ArrayList<>(firstPage);
         all.addAll(nextPage);
@@ -193,7 +298,9 @@ class CommentRepositoryPortTest {
         assertThat(firstPage).hasSize(2);
         assertThat(nextPage).hasSize(1);
         assertThat(all).extracting(Comment::getId).doesNotHaveDuplicates();
-        assertThat(all).extracting(Comment::getContent).containsExactlyInAnyOrder("1", "2", "3");
+        assertThat(all)
+            .extracting(Comment::getContent)
+            .containsExactlyInAnyOrder("1", "2", "3");
     }
 
     @Test
@@ -201,9 +308,12 @@ class CommentRepositoryPortTest {
     void countByReviewIdAndIsDeletedFalse() throws InterruptedException {
         saveComment("1");
         Comment deleted = saveComment("2");
+
         deleted.softDelete();
         em.flush();
 
-        assertThat(commentRepository.countByReviewIdAndIsDeletedFalse(review.getId())).isEqualTo(1L);
+        assertThat(
+            commentRepository.countByReviewIdAndIsDeletedFalse(review.getId())
+        ).isEqualTo(1L);
     }
 }
