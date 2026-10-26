@@ -5,6 +5,7 @@ import static org.mockito.AdditionalAnswers.*;
 import static org.mockito.BDDMockito.*;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
@@ -17,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserDto;
+import com.sprint.deokhugam.user.adapter.in.web.dto.UserLoginRequest;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserRegisterRequest;
 import com.sprint.deokhugam.user.adapter.in.web.mapper.UserMapper;
 import com.sprint.deokhugam.user.application.port.out.PasswordHasher;
@@ -134,4 +136,70 @@ class UserServiceTest {
             .extracting("errorCode")
             .isEqualTo(UserErrorCode.USER_DUPLICATE);
     }
+
+    @Test
+    @DisplayName("이메일과 비밀번호가 맞으면 UserDto를 반환")
+    void login_success() {
+        //given
+        UserLoginRequest request = new UserLoginRequest(EMAIL, RAW_PASSWORD);
+        User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
+        UserDto expected = new UserDto(UUID.randomUUID(), EMAIL, NICKNAME, Instant.now());
+        given(userRepository.findByEmailAndIsDeletedFalse(EMAIL)).willReturn(Optional.of(user));
+        given(passwordHasher.matches(RAW_PASSWORD, HASHED_PASSWORD)).willReturn(true);
+        given(userMapper.toDto(user)).willReturn(expected);
+
+        //when
+        UserDto result = userService.login(request);
+
+        //then
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("가입되지 않은 이메일이면 USER_LOGIN_FAILED 예외가 발생한다.")
+    void login_emailNotFound() {
+        //given
+        UserLoginRequest request = new UserLoginRequest(EMAIL, RAW_PASSWORD);
+        given(userRepository.findByEmailAndIsDeletedFalse(EMAIL)).willReturn(Optional.empty());
+
+        //when & then
+        assertThatThrownBy(() -> userService.login(request))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_LOGIN_FAILED);
+        then(passwordHasher).should(never()).matches(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("비밀번호가 틀리면 가입되지 않은 이메일과 같은 USER_LOGIN_FAILED 예외가 발생한다.")
+    void login_wrongPassword() {
+        //given
+        UserLoginRequest request = new UserLoginRequest(EMAIL, "wrong123!");
+        User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
+        given(userRepository.findByEmailAndIsDeletedFalse(EMAIL)).willReturn(Optional.of(user));
+        given(passwordHasher.matches("wrong123!", HASHED_PASSWORD)).willReturn(false);
+
+        //when & then
+        assertThatThrownBy(() -> userService.login(request))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_LOGIN_FAILED);
+    }
+
+    @Test
+    @DisplayName("이메일은 정규화해서 삭제되지 않은 사용자 중에서 조회한다.")
+    void login_normalizeEmail() {
+        //given
+        UserLoginRequest request = new UserLoginRequest("   User@Naver.COM ", RAW_PASSWORD);
+        User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
+        given(userRepository.findByEmailAndIsDeletedFalse(EMAIL)).willReturn(Optional.of(user));
+        given(passwordHasher.matches(RAW_PASSWORD, HASHED_PASSWORD)).willReturn(true);
+
+        //when
+        userService.login(request);
+
+        //then
+        then(userRepository).should().findByEmailAndIsDeletedFalse(EMAIL);
+    }
+
 }

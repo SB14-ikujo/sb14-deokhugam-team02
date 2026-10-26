@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserDto;
+import com.sprint.deokhugam.user.adapter.in.web.dto.UserLoginRequest;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserRegisterRequest;
 import com.sprint.deokhugam.user.adapter.in.web.mapper.UserMapper;
 import com.sprint.deokhugam.user.application.port.out.PasswordHasher;
@@ -44,6 +45,11 @@ public class UserService implements UserUseCase {
             // 동시 가입으로 existsBy 검사를 통과한 뒤 데이터베이스의 유니크 제약에 걸린 경우.
             throw new UserException(UserErrorCode.USER_DUPLICATE);
         }
+    }
+
+    @Override
+    public UserDto login(UserLoginRequest request) {
+        return null;
     }
 
     private String normalizeEmail(String email) {
