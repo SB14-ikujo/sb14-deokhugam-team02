@@ -13,6 +13,7 @@ import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
 import com.sprint.deokhugam.book.domain.exception.BookException;
+import com.sprint.deokhugam.common.context.user.UserContextHolder;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewUpdateRequest;
@@ -33,7 +34,6 @@ import com.sprint.deokhugam.user.domain.exception.UserException;
 public class ReviewService implements ReviewUseCase {
 
     private final ReviewRepositoryPort reviewRepositoryPort;
-    private final ReviewLikeRepositoryPort reviewLikeRepositoryPort;
     private final UserRepositoryPort userRepositoryPort;
     private final BookRepositoryPort bookRepositoryPort;
     private final ReviewMapper reviewMapper;

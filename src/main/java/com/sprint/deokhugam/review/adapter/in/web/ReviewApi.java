@@ -2,6 +2,7 @@ package com.sprint.deokhugam.review.adapter.in.web;
 
 import java.util.UUID;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
