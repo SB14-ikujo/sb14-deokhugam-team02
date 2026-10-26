@@ -119,7 +119,7 @@ public class NotificationService implements NotificationUseCase {
 
     @Override
     @Transactional
-    public void createTop10ReviewNotifications(LocalDate baseDate) {
+    public long createTop10ReviewNotifications(LocalDate baseDate) {
         List<Notification> notifications = new ArrayList<>();
 
         for (PeriodType period : PeriodType.values()) {
@@ -130,7 +130,13 @@ public class NotificationService implements NotificationUseCase {
             top.forEach(popularReview -> notifications.add(toNotification(popularReview)));
             log.info("인기 리뷰 알림 생성: period={}, count={}", period, top.size());
         }
-        notificationRepository.saveAll(notifications);
+        return notificationRepository.saveAll(notifications).size();
+    }
+
+    @Override
+    @Transactional
+    public long deleteReadNotifications(LocalDate baseDate) {
+        return notificationRepository.deleteReadNotificationsBefore(baseDate);
     }
 
     private void createNotification(Review review, String actorNickname, NotificationType type) {
