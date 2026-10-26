@@ -11,6 +11,8 @@ public interface ReviewUseCase {
 
     void reviewSoftDelete(UUID reviewId, UUID requestUserId);
 
+    void reviewHardDelete(UUID reviewId, UUID requestUserId);
+
     ReviewDto getReviewDetail(UUID reviewId, UUID requestUserId);
 
     ReviewDto updateReview(UUID reviewId, UUID requestUserId, ReviewUpdateRequest updateRequest);
