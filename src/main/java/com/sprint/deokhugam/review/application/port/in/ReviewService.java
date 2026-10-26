@@ -15,6 +15,7 @@ import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
 import com.sprint.deokhugam.book.domain.exception.BookException;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
+import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewUpdateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.mapper.ReviewMapper;
 import com.sprint.deokhugam.review.application.port.out.ReviewLikeRepositoryPort;
 import com.sprint.deokhugam.review.application.port.out.ReviewRepositoryPort;
@@ -96,6 +97,32 @@ public class ReviewService implements ReviewUseCase {
         // 해당 리뷰 찾기 (유저와 도서를 패치조인해서 한번에 가져옴)
         Review review = reviewRepositoryPort.findByFetchJoin(reviewId)
             .orElseThrow(() -> new ReviewException(ReviewErrorCode.REVIEW_NOT_FOUND));
+
+        // 내가 이 리뷰에 좋아요를 남겼는지 확인
+        boolean likedByMe = reviewLikeRepositoryPort.existsByReviewIdAndUserId(reviewId, requestUserId);
+
+        // 반환
+        return reviewMapper.toDto(review, likedByMe);
+    }
+
+    // 리뷰 수정 (본인이 작성한 리뷰만 수정할 수 있습니다.)
+    @Transactional
+    public ReviewDto updateReview(UUID reviewId, UUID requestUserId, ReviewUpdateRequest updateRequest) {
+        // 본인이 작성한 리뷰인지 확인
+        Review review = reviewRepositoryPort.findByFetchJoin(reviewId)
+            .orElseThrow(() -> new ReviewException(ReviewErrorCode.REVIEW_NOT_FOUND));
+
+        UUID reviewWriterId = review.getUser().getId();
+
+        if (!reviewWriterId.equals(requestUserId)) {
+            throw new ReviewException(ReviewErrorCode.REVIEW_FORBIDDEN);
+        }
+
+        // 평점, 내용을 수정함
+        String updateContent = updateRequest.content();
+        Integer updateRating = updateRequest.rating();
+
+        review.update(updateContent, updateRating);
 
         // 내가 이 리뷰에 좋아요를 남겼는지 확인
         boolean likedByMe = reviewLikeRepositoryPort.existsByReviewIdAndUserId(reviewId, requestUserId);
