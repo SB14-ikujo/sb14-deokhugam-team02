@@ -1,5 +1,7 @@
 package com.sprint.deokhugam.comment.adapter.in.web;
 
+import org.springdoc.core.annotations.ParameterObject;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,5 +43,5 @@ public interface CommentApi {
         @ApiResponse(responseCode = "500", description = "서버 내부 오류",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
-    CursorPageResponse<CommentDto> getList(CommentListRequest request);
+    CursorPageResponse<CommentDto> getList(@ParameterObject CommentListRequest request);
 }

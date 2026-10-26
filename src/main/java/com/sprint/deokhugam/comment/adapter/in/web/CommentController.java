@@ -1,6 +1,5 @@
 package com.sprint.deokhugam.comment.adapter.in.web;
 
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -36,7 +35,7 @@ public class CommentController implements CommentApi {
     //댓글 목록 조회
     @Override
     @GetMapping
-    public CursorPageResponse<CommentDto> getList(@Valid @ParameterObject CommentListRequest request) {
+    public CursorPageResponse<CommentDto> getList(@Valid CommentListRequest request) {
         return commentUseCase.getList(request);
     }
 
