@@ -9,5 +9,5 @@ public interface CommentUseCase {
 
     CommentDto create(CommentCreateRequest request); //댓글을 등록
 
-    CursorPageResponse<CommentDto> getList(CommentListRequest request); //리뷰에 달린 댓글 목록을 커서 기반으로 조회
+    CursorPageResponse<CommentDto> getList(CommentListRequest request); //리뷰에 달린 댓글 목록을 Cursor 기반으로 조회
 }

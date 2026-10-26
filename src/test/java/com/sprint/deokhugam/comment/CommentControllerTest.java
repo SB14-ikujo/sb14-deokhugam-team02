@@ -135,7 +135,7 @@ class CommentControllerTest {
             .andExpect(jsonPath("$.message").value("리뷰 정보를 찾을 수 없습니다."));
     }
 
-    // ==== 댓글 목록 조회 ====
+    // ===== 댓글 목록 조회 =====
 
     @Test
     @DisplayName("목록 조회 성공 - 200과 CursorPageResponse 반환")

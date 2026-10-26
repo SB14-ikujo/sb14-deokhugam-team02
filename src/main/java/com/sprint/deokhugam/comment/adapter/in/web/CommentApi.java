@@ -29,6 +29,7 @@ public interface CommentApi {
     })
     CommentDto create(CommentCreateRequest request);
 
+    //리뷰에 등록된 댓글 목록을 조회하는 API
     @Operation(summary = "댓글 목록 조회",
         description = "리뷰의 댓글 목록을 생성 시간순으로 커서 페이지네이션하여 조회. 논리 삭제된 댓글은 제외.")
     @ApiResponses({

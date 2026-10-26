@@ -53,6 +53,7 @@ public class CommentApplicationService implements CommentUseCase {
         return commentMapper.toDto(comment);
     }
 
+    //특정 리뷰의 댓글 목록을 커서 기반으로 조회
     @Override
     @Transactional(readOnly = true)
     public CursorPageResponse<CommentDto> getList(CommentListRequest request) {

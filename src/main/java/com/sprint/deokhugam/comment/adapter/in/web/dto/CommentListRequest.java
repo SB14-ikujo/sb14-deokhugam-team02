@@ -10,6 +10,7 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 
+//댓글 목록 조회에 필요한 검색 조건과 페이지네이션 정보를 담는 DTO
 @Schema(description = "댓글 목록 조회 조건")
 public record CommentListRequest(
     @Schema(description = "리뷰 ID", example = "123e4567-e89b-12d3-a456-426614174000")

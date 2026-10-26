@@ -33,7 +33,7 @@ public class CommentController implements CommentApi {
         return commentUseCase.create(request);
     }
 
-    //댓글 목록 조회
+    //댓글 목록 조회 API
     @Override
     @GetMapping
     public CursorPageResponse<CommentDto> getList(@Valid @ParameterObject CommentListRequest request) {

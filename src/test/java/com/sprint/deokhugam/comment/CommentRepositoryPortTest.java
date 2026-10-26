@@ -180,7 +180,7 @@ class CommentRepositoryPortTest {
             .executeUpdate();
         em.clear();
 
-        // 첫 페이지(2개) → 마지막 요소를 커서로 다음 페이지 조회
+        // 첫 페이지(2개) → 마지막 요소를 커서로 페이지 조회
         List<Comment> firstPage = commentRepository.findByCursor(
             review.getId(), null, null, Sort.Direction.DESC, 2);
         Comment last = firstPage.get(firstPage.size() - 1);
