@@ -12,6 +12,7 @@ import com.sprint.deokhugam.notification.domain.exception.NotificationException;
 @RequiredArgsConstructor
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public enum NotificationType {
+    PERIOD(),
     COMMENT(),
     LIKE();
 

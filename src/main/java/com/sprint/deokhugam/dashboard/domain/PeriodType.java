@@ -4,20 +4,25 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+
+@Getter
+@RequiredArgsConstructor
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public enum PeriodType {
-    DAILY(1),
-    WEEKLY(7),
-    MONTHLY(30),
-    ALL_TIME(null);
+    DAILY(1, "일간"),
+    WEEKLY(7, "주간"),
+    MONTHLY(30, "월간"),
+    ALL_TIME(null, "역대");
 
     // 아시아 서울 기준
     private static final ZoneId ZONE = ZoneId.of("Asia/Seoul");
 
-    private final Integer days;
-
-    PeriodType(Integer days) {
-        this.days = days;
-    }
+    Integer days;
+    String label;
 
     public Instant startOf(LocalDate baseDate) {
         if (days == null) {
