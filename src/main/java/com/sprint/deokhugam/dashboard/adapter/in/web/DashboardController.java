@@ -14,6 +14,8 @@ import lombok.extern.slf4j.Slf4j;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookDto;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookRequest;
+import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularReviewDto;
+import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularReviewRequest;
 import com.sprint.deokhugam.dashboard.application.port.in.DashboardUseCase;
 
 @Slf4j
@@ -32,5 +34,15 @@ public class DashboardController implements DashboardApi {
     ) {
 
         return dashboardUseCase.getPopularBooks(request);
+    }
+
+    @Override
+    @ResponseStatus(HttpStatus.OK)
+    @GetMapping("/reviews/popular")
+    public CursorPageResponse<PopularReviewDto> getPopularReviews(
+        @Valid @ParameterObject PopularReviewRequest request
+    ) {
+
+        return dashboardUseCase.getPopularReviews(request);
     }
 }

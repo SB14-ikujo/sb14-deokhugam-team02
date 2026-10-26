@@ -79,13 +79,11 @@ class DashboardApplicationServiceTest {
         PopularBook first = mock(PopularBook.class);
         PopularBook second = mock(PopularBook.class);
         PopularBook extra = mock(PopularBook.class);
-        when(second.getRank()).thenReturn(2L);
-        when(second.getCreatedAt()).thenReturn(lastCreatedAt);
         when(popularBookRepositoryPort.findPage(PeriodType.DAILY, TODAY, Direction.ASC, null, 3))
             .thenReturn(List.of(first, second, extra));
         when(popularBookRepositoryPort.countByPeriodAndSnapshotDate(PeriodType.DAILY, TODAY)).thenReturn(10L);
         when(dashboardMapper.toDto(first)).thenReturn(dto(1L));
-        when(dashboardMapper.toDto(second)).thenReturn(dto(2L));
+        when(dashboardMapper.toDto(second)).thenReturn(dto(2L, lastCreatedAt));
 
         CursorPageResponse<PopularBookDto> result = dashboardApplicationService.getPopularBooks(request(null, 2));
 
@@ -128,6 +126,11 @@ class DashboardApplicationServiceTest {
     private PopularBookDto dto(long rank) {
         return new PopularBookDto(UUID.randomUUID(), UUID.randomUUID(), "제목", "저자", null,
             PeriodType.DAILY, rank, 1.0, 1L, 4.0, Instant.now());
+    }
+
+    private PopularBookDto dto(long rank, Instant createdAt) {
+        return new PopularBookDto(UUID.randomUUID(), UUID.randomUUID(), "제목", "저자", null,
+            PeriodType.DAILY, rank, 1.0, 1L, 4.0, createdAt);
     }
 
 }
