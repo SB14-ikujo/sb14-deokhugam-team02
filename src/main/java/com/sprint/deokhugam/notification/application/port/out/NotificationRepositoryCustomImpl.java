@@ -106,14 +106,4 @@ public class NotificationRepositoryCustomImpl implements NotificationRepositoryC
             new OrderSpecifier<>(currentDirection, target),
             new OrderSpecifier<>(currentDirection, notification.id)};
     }
-
-    // 정렬 타겟 필드 동적 가져오기
-    // private ComparableExpressionBase<?> getSortTarget(String orderBy) {
-    // [Q.타입] [변수명] = [Q.].[테이블];
-    //     return switch (orderBy) {
-    //         case [orderBy-Value] -> [테이블].publishedDate;
-    //         default -> notification.id;
-    //     };
-    // }
-
 }

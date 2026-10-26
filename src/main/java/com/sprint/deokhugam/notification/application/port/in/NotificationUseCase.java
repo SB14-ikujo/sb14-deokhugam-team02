@@ -23,4 +23,6 @@ public interface NotificationUseCase {
         UUID userId, Sort.Direction direction, Instant cursor,
         Instant after, Integer limit
     );
+
+    void createTop10ReviewNotificationsByPeriod();
 }
