@@ -40,8 +40,9 @@ public class UserController implements UserApi {
         return userUseCase.login(request);
     }
 
+    @ResponseStatus(HttpStatus.OK)
     @GetMapping("/{userId}")
     public UserDto findUser(@PathVariable UUID userId) {
-        return null;
+        return userUseCase.findUser(userId);
     }
 }
