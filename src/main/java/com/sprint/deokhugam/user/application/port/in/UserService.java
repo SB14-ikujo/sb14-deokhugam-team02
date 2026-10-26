@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserDto;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserLoginRequest;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserRegisterRequest;
+import com.sprint.deokhugam.user.adapter.in.web.dto.UserUpdateRequest;
 import com.sprint.deokhugam.user.adapter.in.web.mapper.UserMapper;
 import com.sprint.deokhugam.user.application.port.out.PasswordHasher;
 import com.sprint.deokhugam.user.application.port.out.UserRepositoryPort;
@@ -66,6 +67,11 @@ public class UserService implements UserUseCase {
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
         return userMapper.toDto(user);
+    }
+
+    @Override
+    public UserDto updateNickname(UUID userId, UUID requestId, UserUpdateRequest request) {
+        return null;
     }
 
     private String normalizeEmail(String email) {

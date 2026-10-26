@@ -20,6 +20,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserDto;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserLoginRequest;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserRegisterRequest;
+import com.sprint.deokhugam.user.adapter.in.web.dto.UserUpdateRequest;
 import com.sprint.deokhugam.user.adapter.in.web.mapper.UserMapper;
 import com.sprint.deokhugam.user.application.port.out.PasswordHasher;
 import com.sprint.deokhugam.user.application.port.out.UserRepositoryPort;
@@ -34,6 +35,7 @@ class UserServiceTest {
     private static final String NICKNAME = "닉네임";
     private static final String RAW_PASSWORD = "abcd123!";
     private static final String HASHED_PASSWORD = "hashed-password";
+    private static final String NEW_NICKNAME = "새로운닉네임";
 
     @Mock
     private UserRepositoryPort userRepository;
@@ -231,5 +233,108 @@ class UserServiceTest {
             .isInstanceOf(UserException.class)
             .extracting("errorCode")
             .isEqualTo(UserErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("본인의 닉네임을 변경하면 변경된 UserDto를 반환한다.")
+    void updateNickname_success() {
+        // given
+        UUID userId = UUID.randomUUID();
+        User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
+        UserDto expected = new UserDto(userId, EMAIL, NEW_NICKNAME, Instant.now());
+        given(userRepository.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.of(user));
+        given(userRepository.existsByNickname(NEW_NICKNAME)).willReturn(false);
+        given(userRepository.saveAndFlush(user)).willReturn(user);
+        given(userMapper.toDto(user)).willReturn(expected);
+
+        // when
+        UserDto result = userService.updateNickname(userId, userId, new UserUpdateRequest(NEW_NICKNAME));
+
+        // then
+        assertThat(user.getNickname()).isEqualTo(NEW_NICKNAME);
+        assertThat(result).isEqualTo(expected);
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 닉네임을 변경하려 하면 USER_FORBIDDEN 예외가 발생하고 조회하지 않는다.")
+    void updateNickname_forbidden() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID();
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateNickname(userId, otherUserId, new UserUpdateRequest(NEW_NICKNAME)))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_FORBIDDEN);
+        then(userRepository).should(never()).findByIdAndIsDeletedFalse(any(UUID.class));
+    }
+
+    @Test
+    @DisplayName("없거나 논리 삭제된 사용자의 닉네임을 변경하려 하면 USER_NOT_FOUND 예외가 발생한다.")
+    void updateNickname_notFound() {
+        // given
+        UUID userId = UUID.randomUUID();
+        given(userRepository.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateNickname(userId, userId, new UserUpdateRequest(NEW_NICKNAME)))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("이미 사용 중인 닉네임으로 변경하면 USER_NICKNAME_DUPLICATE 예외가 발생하고 닉네임은 유지된다.")
+    void updateNickname_duplicate() {
+        // given
+        UUID userId = UUID.randomUUID();
+        User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
+        given(userRepository.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.of(user));
+        given(userRepository.existsByNickname(NEW_NICKNAME)).willReturn(true);
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateNickname(userId, userId, new UserUpdateRequest(NEW_NICKNAME)))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_NICKNAME_DUPLICATE);
+        assertThat(user.getNickname()).isEqualTo(NICKNAME);
+        then(userRepository).should(never()).saveAndFlush(any(User.class));
+    }
+
+    @Test
+    @DisplayName("현재와 같은 닉네임으로 변경하면 중복 검사 없이 그대로 반환한다.")
+    void updateNickname_sameNickname() {
+        // given
+        UUID userId = UUID.randomUUID();
+        User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
+        UserDto expected = new UserDto(userId, EMAIL, NICKNAME, Instant.now());
+        given(userRepository.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.of(user));
+        given(userMapper.toDto(user)).willReturn(expected);
+
+        // when
+        UserDto result = userService.updateNickname(userId, userId, new UserUpdateRequest(NICKNAME));
+
+        // then
+        assertThat(result).isEqualTo(expected);
+        then(userRepository).should(never()).existsByNickname(anyString());
+        then(userRepository).should(never()).saveAndFlush(any(User.class));
+    }
+
+    @Test
+    @DisplayName("동시 요청으로 DB unique 제약에 걸리면 USER_NICKNAME_DUPLICATE 예외로 반환한다.")
+    void updateNickname_concurrentDuplicate() {
+        // given
+        UUID userId = UUID.randomUUID();
+        User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
+        given(userRepository.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.of(user));
+        given(userRepository.existsByNickname(NEW_NICKNAME)).willReturn(false);
+        given(userRepository.saveAndFlush(user)).willThrow(new DataIntegrityViolationException("duplicate key"));
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateNickname(userId, userId, new UserUpdateRequest(NEW_NICKNAME)))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_NICKNAME_DUPLICATE);
     }
 }
