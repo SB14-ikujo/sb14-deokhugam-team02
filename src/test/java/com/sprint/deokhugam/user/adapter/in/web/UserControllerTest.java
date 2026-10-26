@@ -20,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserDto;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserLoginRequest;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserRegisterRequest;
+import com.sprint.deokhugam.user.adapter.in.web.dto.UserUpdateRequest;
 import com.sprint.deokhugam.user.application.port.in.UserUseCase;
 import com.sprint.deokhugam.user.domain.exception.UserErrorCode;
 import com.sprint.deokhugam.user.domain.exception.UserException;
@@ -34,6 +35,10 @@ public class UserControllerTest {
     private static final String LOGIN_BODY = """
         {"email": "user@naver.com", "password": "abcd123!"}
         """;
+
+    private static final String USER_ID_HEADER = "Deokhugam-Request-User-ID";
+    private static final String UPDATE_BODY = """
+        {"nickname": "새로운닉네임"}""";
 
     @Autowired
     private MockMvc mockMvc;
@@ -204,5 +209,69 @@ public class UserControllerTest {
             .andExpect(status().isBadRequest());
 
         then(userUseCase).should(never()).findUser(any(UUID.class));
+    }
+
+    @Test
+    @DisplayName("본인의 닉네임을 변경하면 200과 변경된 사용자 정보를 반환한다.")
+    void updateNickname_success() throws Exception {
+        // given
+        UUID userId = UUID.randomUUID();
+        UserDto response = new UserDto(userId, "user@naver.com", "새로운닉네임", Instant.now());
+        given(userUseCase.updateNickname(eq(userId), eq(userId), any(UserUpdateRequest.class)))
+            .willReturn(response);
+
+        // when & then
+        mockMvc.perform(patch("/api/users/{userId}", userId)
+                .header(USER_ID_HEADER, userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(UPDATE_BODY))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.nickname").value("새로운닉네임"))
+            .andExpect(jsonPath("$.password").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("닉네임이 2자 미만이면 400을 반환하고 서비스를 호출하지 않는다.")
+    void updateNickname_invalidNickname() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        mockMvc.perform(patch("/api/users/{userId}", userId)
+                .header(USER_ID_HEADER, userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"nickname\": \"닉\"}"))
+            .andExpect(status().isBadRequest());
+
+        then(userUseCase).should(never()).updateNickname(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("요청자 헤더가 없으면 400을 반환하고 서비스를 호출하지 않는다.")
+    void updateNickname_missingHeader() throws Exception {
+        UUID userId = UUID.randomUUID();
+
+        mockMvc.perform(patch("/api/users/{userId}", userId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(UPDATE_BODY))
+            .andExpect(status().isBadRequest());
+
+        then(userUseCase).should(never()).updateNickname(any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 닉네임을 변경하려 하면 403을 반환한다.")
+    void updateNickname_forbidden() throws Exception {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID();
+        given(userUseCase.updateNickname(eq(userId), eq(otherUserId), any(UserUpdateRequest.class)))
+            .willThrow(new UserException(UserErrorCode.USER_FORBIDDEN));
+
+        // when & then
+        mockMvc.perform(patch("/api/users/{userId}", userId)
+                .header(USER_ID_HEADER, otherUserId)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(UPDATE_BODY))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message").value(UserErrorCode.USER_FORBIDDEN.getMessage()));
     }
 }
