@@ -16,6 +16,8 @@ import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookDto;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookRequest;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularReviewDto;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularReviewRequest;
+import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PowerUserDto;
+import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PowerUserRequest;
 import com.sprint.deokhugam.dashboard.application.port.in.DashboardUseCase;
 
 @Slf4j
@@ -44,5 +46,15 @@ public class DashboardController implements DashboardApi {
     ) {
 
         return dashboardUseCase.getPopularReviews(request);
+    }
+
+    @Override
+    @ResponseStatus(HttpStatus.OK)
+    @GetMapping("/users/power")
+    public CursorPageResponse<PowerUserDto> getPowerUsers(
+        @Valid @ParameterObject PowerUserRequest request
+    ) {
+
+        return dashboardUseCase.getPowerUsers(request);
     }
 }
