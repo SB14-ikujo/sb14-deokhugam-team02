@@ -12,4 +12,9 @@ public abstract class DeokhugamException extends RuntimeException {
         this.errorCode = errorCode;
     }
 
+    public DeokhugamException(ErrorCode errorCode, Throwable cause) {
+        super(errorCode.getMessage(), cause);
+        this.errorCode = errorCode;
+    }
+
 }
