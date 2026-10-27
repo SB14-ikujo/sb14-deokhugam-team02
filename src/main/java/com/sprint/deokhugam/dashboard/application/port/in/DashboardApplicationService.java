@@ -17,11 +17,15 @@ import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookDto;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookRequest;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularReviewDto;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularReviewRequest;
+import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PowerUserDto;
+import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PowerUserRequest;
 import com.sprint.deokhugam.dashboard.adapter.in.web.mapper.DashboardMapper;
 import com.sprint.deokhugam.dashboard.application.port.out.popularbook.PopularBookRepositoryPort;
 import com.sprint.deokhugam.dashboard.application.port.out.popularreview.PopularReviewRepositoryPort;
+import com.sprint.deokhugam.dashboard.application.port.out.poweruser.PowerUserRepositoryPort;
 import com.sprint.deokhugam.dashboard.domain.PopularBook;
 import com.sprint.deokhugam.dashboard.domain.PopularReview;
+import com.sprint.deokhugam.dashboard.domain.PowerUser;
 import com.sprint.deokhugam.dashboard.domain.exception.DashboardErrorCode;
 import com.sprint.deokhugam.dashboard.domain.exception.DashboardException;
 
@@ -33,6 +37,7 @@ public class DashboardApplicationService implements DashboardUseCase {
     private final DashboardMapper dashboardMapper;
     private final PopularBookRepositoryPort popularBookRepositoryPort;
     private final PopularReviewRepositoryPort popularReviewRepositoryPort;
+    private final PowerUserRepositoryPort powerUserRepositoryPort;
 
     @Override
     @Transactional(readOnly = true)
@@ -98,6 +103,34 @@ public class DashboardApplicationService implements DashboardUseCase {
             snapshotDate, slice.getNumberOfElements(), total);
 
         return CursorPageResponse.of(slice, total, dto -> String.valueOf(dto.rank()), PopularReviewDto::createdAt);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CursorPageResponse<PowerUserDto> getPowerUsers(PowerUserRequest request) {
+        log.debug("파워 유저 조회: period={}, direction={}, cursor={}, limit={}", request.period(), request.direction(),
+            request.cursor(), request.limit());
+
+        Optional<LocalDate> latestSnapshotDate = powerUserRepositoryPort.findLatestSnapshotDate(request.period());
+
+        if (latestSnapshotDate.isEmpty()) {
+            log.info("파워 유저 스냅샷 없음: period={}", request.period());
+            return new CursorPageResponse<>(List.of(), null, null, 0, 0L, false);
+        }
+        LocalDate snapshotDate = latestSnapshotDate.get();
+        int limit = request.limit();
+
+        List<PowerUser> rows = powerUserRepositoryPort.findPage(request.period(), snapshotDate,
+            request.direction(), parseCursor(request.cursor()), limit + 1);
+
+        Slice<PowerUserDto> slice = SliceUtils.toSlice(rows, limit).map(dashboardMapper::toDto);
+
+        long total = powerUserRepositoryPort.countByPeriodAndSnapshotDate(request.period(), snapshotDate);
+
+        log.debug("파워 유저 조회 완료: snapshotDate={}, size={}, total={}",
+            snapshotDate, slice.getNumberOfElements(), total);
+
+        return CursorPageResponse.of(slice, total, dto -> String.valueOf(dto.rank()), PowerUserDto::createdAt);
     }
 
     //커서 변환
