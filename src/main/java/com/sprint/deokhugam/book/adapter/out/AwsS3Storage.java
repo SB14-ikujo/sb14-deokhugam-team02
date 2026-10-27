@@ -71,8 +71,7 @@ public class AwsS3Storage implements BookImageStorage {
 
         PresignedGetObjectRequest presignedRequest = s3Presigner.presignGetObject(presignRequest);
 
-        log.info("이미지 Presigned URL 생성 완료: [{}]", presignedRequest.url());
-        log.info("이미지 요청 HTTP 메서드: [{}]", presignedRequest.httpRequest().method());
+        log.debug("이미지 Presigned URL 생성 완료: key=[{}]", imageKey);
 
         return presignedRequest.url().toString();
     }
