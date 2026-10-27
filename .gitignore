@@ -72,3 +72,7 @@ local-seed.sql
 
 ### Local image storage ###
 uploads/
+
+# 더미 데이터 주석처리
+src/main/resources/data.sql
+
