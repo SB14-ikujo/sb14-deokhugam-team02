@@ -9,4 +9,6 @@ import com.sprint.deokhugam.book.domain.Book;
 
 public interface BookRepositoryPort extends JpaRepository<Book, UUID> {
     Optional<Book> findByIdAndIsDeletedFalse(UUID id);
+
+    boolean existsByIsbn(String isbn);
 }
