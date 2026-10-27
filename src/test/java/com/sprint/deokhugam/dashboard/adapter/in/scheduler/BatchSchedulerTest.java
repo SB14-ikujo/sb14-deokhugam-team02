@@ -44,6 +44,26 @@ class BatchSchedulerTest {
     }
 
     @Test
+    @DisplayName("인기 도서 집계가 실패해도 인기 리뷰 집계는 실행된다")
+    void rankDailyRankingRanksReviewsEvenIfBooksFail() {
+        doThrow(new IllegalStateException("도서 집계 실패")).when(popularBookRankingUseCase).rankBooks(any());
+
+        assertThatCode(() -> batchScheduler.rankDailyRanking()).doesNotThrowAnyException();
+
+        verify(popularReviewRankingUseCase).rankReviews(LocalDate.now(ZONE));
+    }
+
+    @Test
+    @DisplayName("인기 리뷰 집계가 실패해도 예외가 스케줄러 밖으로 나가지 않는다")
+    void rankDailyRankingSwallowsReviewFailure() {
+        doThrow(new IllegalStateException("리뷰 집계 실패")).when(popularReviewRankingUseCase).rankReviews(any());
+
+        assertThatCode(() -> batchScheduler.rankDailyRanking()).doesNotThrowAnyException();
+
+        verify(popularBookRankingUseCase).rankBooks(LocalDate.now(ZONE));
+    }
+
+    @Test
     @DisplayName("일일 랭킹은 매일 한국 시간 0시에 실행된다")
     void rankDailyRankingRunsAtMidnightInKorea() throws NoSuchMethodException {
         Scheduled scheduled = BatchScheduler.class.getMethod("rankDailyRanking").getAnnotation(Scheduled.class);
