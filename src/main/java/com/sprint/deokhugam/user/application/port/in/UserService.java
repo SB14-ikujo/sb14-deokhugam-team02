@@ -96,6 +96,10 @@ public class UserService implements UserUseCase {
         }
     }
 
+    @Override
+    public void deleteUser(UUID userId, UUID requesterId) {
+    }
+
     private String normalizeEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
     }

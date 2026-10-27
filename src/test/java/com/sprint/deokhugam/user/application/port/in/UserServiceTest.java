@@ -337,4 +337,48 @@ class UserServiceTest {
             .extracting("errorCode")
             .isEqualTo(UserErrorCode.USER_NICKNAME_DUPLICATE);
     }
+
+    @Test
+    @DisplayName("본인 계정을 탈퇴하면 사용자가 논리 삭제 상태가 된다.")
+    void deleteUser_success() {
+        // given
+        UUID userId = UUID.randomUUID();
+        User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
+        given(userRepository.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.of(user));
+
+        // when
+        userService.deleteUser(userId, userId);
+
+        // then
+        assertThat(user.isDeleted()).isTrue();
+    }
+
+    @Test
+    @DisplayName("다른 사용자를 탈퇴시키려 하면 USER_FORBIDDEN 예외가 발생하고 조회하지 않는다.")
+    void deleteUser_forbidden() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID();
+
+        // when & then
+        assertThatThrownBy(() -> userService.deleteUser(userId, otherUserId))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_FORBIDDEN);
+        then(userRepository).should(never()).findByIdAndIsDeletedFalse(any(UUID.class));
+    }
+
+    @Test
+    @DisplayName("없거나 이미 논리 삭제된 사용자를 탈퇴시키려 하면 USER_NOT_FOUND 예외가 발생한다.")
+    void deleteUser_notFound() {
+        // given
+        UUID userId = UUID.randomUUID();
+        given(userRepository.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.deleteUser(userId, userId))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_NOT_FOUND);
+    }
 }
