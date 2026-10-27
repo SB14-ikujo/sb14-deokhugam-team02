@@ -384,4 +384,71 @@ class CommentControllerTest {
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("댓글 정보를 찾을 수 없습니다."));
     }
+
+    // ==== 댓글 논리 삭제 ====
+
+    @Test
+    @DisplayName("댓글 논리 삭제 성공 - 204 반환, 요청자 ID와 댓글 ID가 UseCase로 전달된다")
+    void softDelete_success() throws Exception {
+        UUID commentId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/comments/{commentId}", commentId)
+                .header(USER_ID_HEADER, userId))
+            .andExpect(status().isNoContent());
+
+        verify(commentUseCase).softDelete(commentId, userId);
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 - 요청자 ID 헤더가 없으면 400")
+    void softDelete_headerMissing() throws Exception {
+        mockMvc.perform(delete("/api/comments/{commentId}", UUID.randomUUID()))
+            .andExpect(status().isBadRequest());
+
+        verify(commentUseCase, never()).softDelete(any(), any());
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 - 요청자 ID 헤더가 UUID 형식이 아니면 401")
+    void softDelete_headerInvalid() throws Exception {
+        mockMvc.perform(delete("/api/comments/{commentId}", UUID.randomUUID())
+                .header(USER_ID_HEADER, "not-a-uuid"))
+            .andExpect(status().isUnauthorized());
+
+        verify(commentUseCase, never()).softDelete(any(), any());
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 - commentId가 UUID 형식이 아니면 400")
+    void softDelete_invalidCommentId() throws Exception {
+        mockMvc.perform(delete("/api/comments/{commentId}", "not-a-uuid")
+                .header(USER_ID_HEADER, userId))
+            .andExpect(status().isBadRequest());
+
+        verify(commentUseCase, never()).softDelete(any(), any());
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 - 작성자가 아니면 403")
+    void softDelete_forbidden() throws Exception {
+        willThrow(new CommentException(CommentErrorCode.COMMENT_FORBIDDEN))
+            .given(commentUseCase).softDelete(any(), any());
+
+        mockMvc.perform(delete("/api/comments/{commentId}", UUID.randomUUID())
+                .header(USER_ID_HEADER, userId))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message").value("댓글 수정·삭제 권한이 없습니다."));
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 - 댓글이 없으면 404")
+    void softDelete_commentNotFound() throws Exception {
+        willThrow(new CommentException(CommentErrorCode.COMMENT_NOT_FOUND))
+            .given(commentUseCase).softDelete(any(), any());
+
+        mockMvc.perform(delete("/api/comments/{commentId}", UUID.randomUUID())
+                .header(USER_ID_HEADER, userId))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.message").value("댓글 정보를 찾을 수 없습니다."));
+    }
 }

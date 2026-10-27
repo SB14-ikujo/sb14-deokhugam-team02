@@ -343,4 +343,41 @@ class CommentServiceTest {
         assertThat(comment.getContent()).isEqualTo("수정 전");
         verify(commentRepository, never()).flush();
     }
+
+    // ===== 댓글 논리 삭제 =====
+
+    @Test
+    @DisplayName("댓글 논리 삭제 성공 - 작성자 본인이면 isDeleted가 true가 된다")
+    void softDelete_success() {
+        Comment comment = givenCommentWrittenBy(userId);
+
+        commentService.softDelete(commentId, userId);
+
+        assertThat(comment.isDeleted()).isTrue();
+        verify(commentRepository, never()).delete(any(Comment.class));
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 - 존재하지 않거나 이미 논리 삭제된 댓글이면 COMMENT_NOT_FOUND")
+    void softDelete_commentNotFound() {
+        given(commentRepository.findByIdAndIsDeletedFalse(commentId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> commentService.softDelete(commentId, userId))
+            .isInstanceOf(CommentException.class)
+            .extracting("errorCode")
+            .isEqualTo(CommentErrorCode.COMMENT_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("댓글 논리 삭제 - 작성자가 아니면 COMMENT_FORBIDDEN이고 삭제되지 않는다")
+    void softDelete_forbidden() {
+        Comment comment = givenCommentWrittenBy(UUID.randomUUID());
+
+        assertThatThrownBy(() -> commentService.softDelete(commentId, userId))
+            .isInstanceOf(CommentException.class)
+            .extracting("errorCode")
+            .isEqualTo(CommentErrorCode.COMMENT_FORBIDDEN);
+
+        assertThat(comment.isDeleted()).isFalse();
+    }
 }
