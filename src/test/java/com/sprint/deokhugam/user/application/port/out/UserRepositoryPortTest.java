@@ -2,6 +2,8 @@ package com.sprint.deokhugam.user.application.port.out;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.time.Instant;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,5 +57,20 @@ class UserRepositoryPortTest {
 
         // when & then
         assertThat(userRepository.findByEmailAndIsDeletedFalse("d@naver.com")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("사용자를 논리 삭제하면 update_at이 갱신된다.")
+    void delete_updatesUpdatedAt() {
+        // given
+        User user = userRepository.saveAndFlush(User.create("delete@naver.com", "탈퇴합니다", "encoded"));
+        Instant beforeDelete = user.getUpdatedAt();
+
+        // when
+        user.delete();
+        userRepository.saveAndFlush(user);
+
+        // then
+        assertThat(user.getUpdatedAt()).isAfter(beforeDelete);
     }
 }
