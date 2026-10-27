@@ -116,7 +116,43 @@ class BookJpaTest {
         )).isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    @Test
+    @DisplayName("논리 삭제된 도서의 ISBN은 재사용할 수 없다.")
+    void failWhenIsbnBelongsToSoftDeletedBook() {
+        // given
+        String isbn = "9791168945456";
+
+        insertBook("논리 삭제된 도서", isbn, true);
+
+        // when & then
+        assertThatThrownBy(() -> insertBook("새로운 도서", isbn))
+            .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    @DisplayName("물리 삭제된 도서의 ISBN은 재사용할 수 없다.")
+    void canReuseIsbnAfterPhysicalDelete() {
+        // given
+        String isbn = "9791168945456";
+
+        insertBook("물리 삭제된 도서", isbn);
+
+        // when
+        jdbcTemplate.update(
+            "DELETE FROM books WHERE isbn = ?",
+            isbn
+        );
+
+        // then
+        assertThatCode(() -> insertBook("새로운 도서", isbn))
+            .doesNotThrowAnyException();
+    }
+
     private void insertBook(String title, String isbn) {
+        insertBook(title, isbn, false);
+    }
+
+    private void insertBook(String title, String isbn, boolean isDeleted) {
         String sql = """
             INSERT INTO books (
                 id,
@@ -147,7 +183,7 @@ class BookJpaTest {
             isbn,
             0,
             0.0,
-            false,
+            isDeleted,
             Timestamp.from(Instant.now())
         );
     }
