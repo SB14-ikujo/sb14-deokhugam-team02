@@ -99,7 +99,8 @@ public class GlobalExceptionController {
     public ResponseEntity<ErrorResponse> handleStorageException(StorageException ex) {
         ErrorCode errorCode = ex.getErrorCode();
         log.error("Storage 예외 발생: {}", errorCode.getMessage(), ex);
-        if (ex.getCause() instanceof AwsServiceException awsServiceException) {
+        if (ex.getCause() instanceof AwsServiceException awsServiceException
+            && awsServiceException.awsErrorDetails() != null) {
             log.error("AWS 에러코드: {}", awsServiceException.awsErrorDetails().errorCode());
         }
 
