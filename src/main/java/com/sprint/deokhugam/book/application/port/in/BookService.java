@@ -1,7 +1,12 @@
 package com.sprint.deokhugam.book.application.port.in;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +21,8 @@ import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
 import com.sprint.deokhugam.book.domain.exception.BookException;
 import com.sprint.deokhugam.book.domain.validator.IsbnValidator;
+import com.sprint.deokhugam.common.pagination.CursorPageResponse;
+import com.sprint.deokhugam.common.util.SliceUtils;
 import com.sprint.deokhugam.user.application.port.out.UserRepositoryPort;
 import com.sprint.deokhugam.user.domain.User;
 import com.sprint.deokhugam.user.domain.exception.UserErrorCode;
@@ -65,5 +72,35 @@ public class BookService implements BookUseCase {
         BookDto bookDto = bookMapper.toDto(savedBook);
 
         return bookDto;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public CursorPageResponse<BookDto> getBooks(
+        String keyword, String orderBy, Sort.Direction direction,
+        String cursor, Instant after, Integer limit
+    ) {
+
+        long bookTotalCount = bookRepositoryPort.countByKeyword(keyword);
+
+        List<BookDto> books = bookRepositoryPort
+            .findAllByCursor(keyword, orderBy, direction, cursor, after, limit)
+            .stream().map(bookMapper::toDto)
+            .toList();
+
+        Slice<BookDto> slice = SliceUtils.toSlice(books, limit);
+
+        Function<BookDto, String> cursorExtractor = switch (orderBy) {
+            case "publishedDate" -> dto -> dto.publishedDate().toString();  // 출판일순
+            case "rating" -> dto -> String.valueOf(dto.rating());           // 평점
+            case "reviewCount" -> dto -> String.valueOf(dto.reviewCount()); // 리뷰
+            default -> BookDto::title;                                      // 제목순
+        };
+
+        return CursorPageResponse.of(
+            slice, bookTotalCount,
+            cursorExtractor,
+            BookDto::createdAt
+        );
     }
 }

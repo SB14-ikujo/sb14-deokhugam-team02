@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.sprint.deokhugam.book.domain.Book;
 
-public interface BookRepositoryPort extends JpaRepository<Book, UUID> {
+public interface BookRepositoryPort extends JpaRepository<Book, UUID>, BookRepositoryCustom {
     Optional<Book> findByIdAndIsDeletedFalse(UUID id);
 
     boolean existsByIsbn(String isbn);

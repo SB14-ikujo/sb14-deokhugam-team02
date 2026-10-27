@@ -2,7 +2,9 @@ package com.sprint.deokhugam.book.adapter.in.web;
 
 import java.util.UUID;
 
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,8 +17,10 @@ import lombok.extern.slf4j.Slf4j;
 
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookCreateRequest;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookDto;
+import com.sprint.deokhugam.book.adapter.in.web.dto.BookSearchRequest;
 import com.sprint.deokhugam.book.application.port.in.BookUseCase;
 import com.sprint.deokhugam.common.context.user.RequestUserId;
+import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 
 @Slf4j
 @RestController
@@ -38,5 +42,16 @@ public class BookController implements BookApi {
         log.info("도서 등록 API 성공 : bookId: {}", bookDto.id());
 
         return bookDto;
+    }
+
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public CursorPageResponse<BookDto> getBooks(
+        @Valid @ParameterObject BookSearchRequest request
+    ) {
+        return bookUseCase.getBooks(
+            request.keyword(), request.orderBy(), request.direction(),
+            request.cursor(), request.after(), request.limit()
+        );
     }
 }
