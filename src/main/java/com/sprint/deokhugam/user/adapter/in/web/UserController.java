@@ -63,10 +63,12 @@ public class UserController implements UserApi {
         return userUseCase.updateNickname(userId, requesterId, request);
     }
 
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("/{userId}")
     public void deleteUser(
         @PathVariable UUID userId,
         @RequestUserId UUID requesterId
     ) {
+        userUseCase.deleteUser(userId, requesterId);
     }
 }
