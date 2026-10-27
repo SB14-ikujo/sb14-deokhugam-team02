@@ -77,13 +77,18 @@ public class Review extends BaseEntity {
     }
 
     public void update(String content, Integer rating) {
-        // 변경할 내용이 존재하고, 공백이 아닐 때만 수정
-        if (content != null && !content.isBlank()) {
-            this.content = content;
+        // 1. 내용(content) 검증: null이거나 공백이면 예외를 확실히 던짐 (예외 삼키기 방지)
+        if (content == null || content.isBlank()) {
+            throw new ReviewException(ReviewErrorCode.INVALID_REVIEW_CONTENT);
         }
-        // 변경할 평점이 존재할 경우에만 수정
-        if (rating != null) {
-            this.rating = rating;
+
+        // 2. 평점(rating) 검증: null이거나 범위를 벗어나면 예외를 확실히 던짐
+        if (rating == null || rating < 1 || rating > 5) {
+            throw new ReviewException(ReviewErrorCode.INVALID_REVIEW_RATING);
         }
+
+        // 3. 완벽하게 검증된 안전한 데이터만 비즈니스 필드에 대입
+        this.content = content;
+        this.rating = rating;
     }
 }
