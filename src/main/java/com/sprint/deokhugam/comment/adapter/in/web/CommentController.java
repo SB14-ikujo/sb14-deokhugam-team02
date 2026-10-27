@@ -69,4 +69,14 @@ public class CommentController implements CommentApi {
         commentUseCase.softDelete(commentId, requestUserId);
     }
 
+    //댓글 물리 삭제 API
+    @Override
+    @DeleteMapping("/{commentId}/hard")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void hardDelete(
+        @PathVariable UUID commentId,
+        @Parameter(hidden = true) @RequestUserId UUID requestUserId
+    ) {
+        commentUseCase.hardDelete(commentId, requestUserId);
+    }
 }

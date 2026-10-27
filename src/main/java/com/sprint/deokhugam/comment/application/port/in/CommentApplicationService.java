@@ -120,6 +120,23 @@ public class CommentApplicationService implements CommentUseCase {
         log.debug("댓글 논리 삭제: commentId={}, requestUserId={}", commentId, requestUserId);
     }
 
+    @Override
+    @Transactional
+    public void hardDelete(UUID commentId, UUID requestUserId) {
+        // 물리 삭제는 논리 삭제된 댓글도 대상이므로 isDeleted 조건 없이 조회
+        Comment comment = commentRepository.findById(commentId)
+            .orElseThrow(() -> new CommentException(CommentErrorCode.COMMENT_NOT_FOUND));
+
+        // 작성자 본인만 삭제 가능
+        if (!comment.getUser().getId().equals(requestUserId)) {
+            throw new CommentException(CommentErrorCode.COMMENT_FORBIDDEN);
+        }
+
+        // 행 자체를 DB에서 제거 (isDeleted 플래그 변경이 아님)
+        commentRepository.delete(comment);
+        log.debug("댓글 물리 삭제: commentId={}, requestUserId={}", commentId, requestUserId);
+    }
+
     private UUID parseCursor(String cursor) {
         if (cursor == null || cursor.isBlank()) {
             return null;

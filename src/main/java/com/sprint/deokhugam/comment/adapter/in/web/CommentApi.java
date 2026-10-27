@@ -86,4 +86,22 @@ public interface CommentApi {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     void softDelete(UUID commentId, UUID requestUserId);
+
+    @Operation(summary = "댓글 물리 삭제", description = "본인이 작성한 댓글을 물리적으로 삭제합니다.")
+    @Parameter(name = "commentId", description = "댓글 ID", in = ParameterIn.PATH, required = true,
+        example = "123e4567-e89b-12d3-a456-426614174000")
+    @Parameter(name = "Deokhugam-Request-User-ID", description = "요청자 ID", in = ParameterIn.HEADER,
+        required = true, example = "123e4567-e89b-12d3-a456-426614174000")
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "댓글 삭제 성공"),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (요청자 ID 누락)",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "403", description = "댓글 삭제 권한 없음",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "404", description = "댓글 정보 없음",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    void hardDelete(UUID commentId, UUID requestUserId);
 }

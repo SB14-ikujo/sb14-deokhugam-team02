@@ -17,4 +17,7 @@ public interface CommentUseCase {
     CommentDto update(UUID commentId, UUID requestUserId, CommentUpdateRequest request); //댓글 내용을 수정
 
     void softDelete(UUID commentId, UUID requestUserId); //댓글을 논리 삭제
+
+    void hardDelete(UUID commentId, UUID requestUserId); //댓글을 물리 삭제
 }
+
