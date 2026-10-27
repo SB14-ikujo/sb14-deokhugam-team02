@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -315,5 +316,55 @@ class CommentRepositoryPortTest {
         assertThat(
             commentRepository.countByReviewIdAndIsDeletedFalse(review.getId())
         ).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("물리 삭제하면 DB에서 행이 완전히 사라진다")
+    void hardDelete_removesRow() throws InterruptedException {
+        Comment comment = saveComment("삭제 대상");
+        UUID id = comment.getId();
+
+        commentRepository.delete(comment);
+        em.flush();
+        em.clear();
+
+        assertThat(commentRepository.findById(id)).isEmpty();
+        assertThat(em.find(Comment.class, id)).isNull();
+        assertThat(commentRepository.countByReviewIdAndIsDeletedFalse(review.getId())).isZero();
+    }
+
+    @Test
+    @DisplayName("논리 삭제는 행이 남고(isDeleted=true), 물리 삭제는 행이 사라진다")
+    void softDelete_vs_hardDelete() throws InterruptedException {
+        Comment soft = saveComment("논리 삭제 대상");
+        Comment hard = saveComment("물리 삭제 대상");
+        UUID softId = soft.getId();
+        UUID hardId = hard.getId();
+
+        soft.softDelete();
+        commentRepository.delete(hard);
+        em.flush();
+        em.clear();
+
+        // 논리 삭제: 행은 그대로 있고 플래그만 true, 일반 조회에서는 제외
+        assertThat(commentRepository.findById(softId).orElseThrow().isDeleted()).isTrue();
+        assertThat(commentRepository.findByIdAndIsDeletedFalse(softId)).isEmpty();
+        // 물리 삭제: 행 자체가 없음
+        assertThat(commentRepository.findById(hardId)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("논리 삭제된 댓글도 물리 삭제할 수 있다")
+    void hardDelete_afterSoftDelete() throws InterruptedException {
+        Comment comment = saveComment("논리 삭제 후 물리 삭제");
+        UUID id = comment.getId();
+        comment.softDelete();
+        em.flush();
+
+        commentRepository.delete(comment);
+        em.flush();
+        em.clear();
+
+        assertThat(commentRepository.findById(id)).isEmpty();
     }
 }

@@ -380,4 +380,64 @@ class CommentServiceTest {
 
         assertThat(comment.isDeleted()).isFalse();
     }
+
+    // ===== 댓글 물리 삭제 =====
+
+    private Comment givenAnyCommentWrittenBy(UUID authorId) {
+        Review review = mock(Review.class);
+        User author = mock(User.class);
+        given(author.getId()).willReturn(authorId);
+
+        Comment comment = Comment.create(review, author, "삭제 대상");
+        given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+        return comment;
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 성공 - 작성자 본인이면 delete가 호출되고 isDeleted 플래그는 건드리지 않는다")
+    void hardDelete_success() {
+        Comment comment = givenAnyCommentWrittenBy(userId);
+
+        commentService.hardDelete(commentId, userId);
+
+        verify(commentRepository).delete(comment);
+        assertThat(comment.isDeleted()).isFalse();
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 - 이미 논리 삭제된 댓글도 물리 삭제할 수 있다")
+    void hardDelete_alreadySoftDeleted() {
+        Comment comment = givenAnyCommentWrittenBy(userId);
+        comment.softDelete();
+
+        commentService.hardDelete(commentId, userId);
+
+        verify(commentRepository).delete(comment);
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 - 존재하지 않는 댓글이면 COMMENT_NOT_FOUND")
+    void hardDelete_commentNotFound() {
+        given(commentRepository.findById(commentId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> commentService.hardDelete(commentId, userId))
+            .isInstanceOf(CommentException.class)
+            .extracting("errorCode")
+            .isEqualTo(CommentErrorCode.COMMENT_NOT_FOUND);
+
+        verify(commentRepository, never()).delete(any(Comment.class));
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 - 작성자가 아니면 COMMENT_FORBIDDEN이고 삭제되지 않는다")
+    void hardDelete_forbidden() {
+        givenAnyCommentWrittenBy(UUID.randomUUID());
+
+        assertThatThrownBy(() -> commentService.hardDelete(commentId, userId))
+            .isInstanceOf(CommentException.class)
+            .extracting("errorCode")
+            .isEqualTo(CommentErrorCode.COMMENT_FORBIDDEN);
+
+        verify(commentRepository, never()).delete(any(Comment.class));
+    }
 }
