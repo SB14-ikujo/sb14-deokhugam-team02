@@ -6,7 +6,6 @@ import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewUpdateRequest;
 
-
 public interface ReviewUseCase {
     ReviewDto createReview(ReviewCreateRequest createRequest);
 
