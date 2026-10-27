@@ -8,6 +8,4 @@ import com.sprint.deokhugam.review.domain.ReviewLike;
 
 public interface ReviewLikeRepositoryPort extends JpaRepository<ReviewLike, UUID> {
     boolean existsByReviewIdAndUserId(UUID reviewId, UUID userId);
-
-    void deleteByReviewId(UUID reviewId);
 }

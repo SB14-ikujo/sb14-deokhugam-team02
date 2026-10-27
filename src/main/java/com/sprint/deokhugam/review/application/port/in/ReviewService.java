@@ -13,7 +13,6 @@ import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
 import com.sprint.deokhugam.book.domain.exception.BookException;
-import com.sprint.deokhugam.comment.application.port.out.CommentRepositoryPort;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewUpdateRequest;
@@ -37,10 +36,10 @@ public class ReviewService implements ReviewUseCase {
     private final ReviewLikeRepositoryPort reviewLikeRepositoryPort;
     private final UserRepositoryPort userRepositoryPort;
     private final BookRepositoryPort bookRepositoryPort;
-    private final CommentRepositoryPort commentRepositoryPort;
     private final ReviewMapper reviewMapper;
 
     // 리뷰 생성 (도서 별 1개의 리뷰만 등록할 수 있음)
+    @Override
     @Transactional
     public ReviewDto createReview(ReviewCreateRequest createRequest) {
 
@@ -78,6 +77,7 @@ public class ReviewService implements ReviewUseCase {
     }
 
     // 리뷰 소프트 딜리트
+    @Override
     @Transactional
     public void reviewSoftDelete(UUID reviewId, UUID requestUserId) {
         // 해당 리뷰 가져오기 (논리적으로 삭제되지 않은 해당 리뷰만 가져오기)
@@ -89,6 +89,7 @@ public class ReviewService implements ReviewUseCase {
     }
 
     // 리뷰 물리 삭제
+    @Override
     @Transactional
     public void reviewHardDelete(UUID reviewId, UUID requestUserId) {
         // 해당 리뷰 가져오기
@@ -101,17 +102,12 @@ public class ReviewService implements ReviewUseCase {
             throw new ReviewException(ReviewErrorCode.REVIEW_FORBIDDEN);
         }
 
-        // 댓글 데이터 물리 삭제
-        commentRepositoryPort.deleteByReviewId(reviewId);
-
-        // 좋아요 데이터 물리 삭제
-        reviewLikeRepositoryPort.deleteByReviewId(reviewId);
-
         // 리뷰 데이터 물리 삭제
         reviewRepositoryPort.delete(review);
     }
 
     // 리뷰 상세 조회
+    @Override
     public ReviewDto getReviewDetail(UUID reviewId, UUID requestUserId) {
         // 존재하는 유저인지 확인
         Optional<User> wrappedUser = userRepositoryPort.findByIdAndIsDeletedFalse(requestUserId);
@@ -131,6 +127,7 @@ public class ReviewService implements ReviewUseCase {
     }
 
     // 리뷰 수정 (본인이 작성한 리뷰만 수정할 수 있습니다.)
+    @Override
     @Transactional
     public ReviewDto updateReview(UUID reviewId, UUID requestUserId, ReviewUpdateRequest updateRequest) {
         // 본인이 작성한 리뷰인지 확인
