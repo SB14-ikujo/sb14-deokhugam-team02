@@ -15,7 +15,7 @@ public interface UserUseCase {
 
     UserDto findUser(UUID userId);
 
-    UserDto updateNickname(UUID userId, UUID requestId, UserUpdateRequest request);
+    UserDto updateNickname(UUID userId, UUID requesterId, UserUpdateRequest request);
 
     void deleteUser(UUID userId, UUID requesterId);
 
