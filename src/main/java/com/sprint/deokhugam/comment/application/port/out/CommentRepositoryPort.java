@@ -13,6 +13,4 @@ public interface CommentRepositoryPort
     Optional<Comment> findByIdAndIsDeletedFalse(UUID id);
 
     long countByReviewIdAndIsDeletedFalse(UUID reviewId);
-
-    void deleteByReviewId(UUID reviewId);
 }
