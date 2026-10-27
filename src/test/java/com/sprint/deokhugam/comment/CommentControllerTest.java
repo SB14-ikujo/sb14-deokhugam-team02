@@ -451,4 +451,72 @@ class CommentControllerTest {
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("댓글 정보를 찾을 수 없습니다."));
     }
+
+    // ==== 댓글 물리 삭제 ====
+
+    @Test
+    @DisplayName("댓글 물리 삭제 성공 - 204 반환, 요청자 ID와 댓글 ID가 UseCase로 전달된다")
+    void hardDelete_success() throws Exception {
+        UUID commentId = UUID.randomUUID();
+
+        mockMvc.perform(delete("/api/comments/{commentId}/hard", commentId)
+                .header(USER_ID_HEADER, userId))
+            .andExpect(status().isNoContent());
+
+        verify(commentUseCase).hardDelete(commentId, userId);
+        verify(commentUseCase, never()).softDelete(any(), any());
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 - 요청자 ID 헤더가 없으면 400")
+    void hardDelete_headerMissing() throws Exception {
+        mockMvc.perform(delete("/api/comments/{commentId}/hard", UUID.randomUUID()))
+            .andExpect(status().isBadRequest());
+
+        verify(commentUseCase, never()).hardDelete(any(), any());
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 - 요청자 ID 헤더가 UUID 형식이 아니면 401")
+    void hardDelete_headerInvalid() throws Exception {
+        mockMvc.perform(delete("/api/comments/{commentId}/hard", UUID.randomUUID())
+                .header(USER_ID_HEADER, "not-a-uuid"))
+            .andExpect(status().isUnauthorized());
+
+        verify(commentUseCase, never()).hardDelete(any(), any());
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 - commentId가 UUID 형식이 아니면 400")
+    void hardDelete_invalidCommentId() throws Exception {
+        mockMvc.perform(delete("/api/comments/{commentId}/hard", "not-a-uuid")
+                .header(USER_ID_HEADER, userId))
+            .andExpect(status().isBadRequest());
+
+        verify(commentUseCase, never()).hardDelete(any(), any());
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 - 작성자가 아니면 403")
+    void hardDelete_forbidden() throws Exception {
+        willThrow(new CommentException(CommentErrorCode.COMMENT_FORBIDDEN))
+            .given(commentUseCase).hardDelete(any(), any());
+
+        mockMvc.perform(delete("/api/comments/{commentId}/hard", UUID.randomUUID())
+                .header(USER_ID_HEADER, userId))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message").value("댓글 수정·삭제 권한이 없습니다."));
+    }
+
+    @Test
+    @DisplayName("댓글 물리 삭제 - 댓글이 없으면 404")
+    void hardDelete_commentNotFound() throws Exception {
+        willThrow(new CommentException(CommentErrorCode.COMMENT_NOT_FOUND))
+            .given(commentUseCase).hardDelete(any(), any());
+
+        mockMvc.perform(delete("/api/comments/{commentId}/hard", UUID.randomUUID())
+                .header(USER_ID_HEADER, userId))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.message").value("댓글 정보를 찾을 수 없습니다."));
+    }
 }
