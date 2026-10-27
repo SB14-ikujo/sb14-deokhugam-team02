@@ -28,7 +28,7 @@ import com.sprint.deokhugam.common.config.AwsS3Properties;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(name = "deokhugam.storage.type", havingValue = "s3")
-public class S3BookImageStorage implements BookImageStorage {
+public class AwsS3Storage implements BookImageStorage {
     private final AwsS3Properties awsS3Properties;
     private final S3Client s3Client;
     private final S3Presigner s3Presigner;
