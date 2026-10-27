@@ -82,6 +82,9 @@ public class BookService implements BookUseCase {
     ) {
 
         long bookTotalCount = bookRepositoryPort.countByKeyword(keyword);
+        log.info("도서 목록 조회 정보 -keyword: {}, orderBy:{}, direction:{}, cursor:{}, after:{}, limit:{}",
+            keyword, orderBy, direction, cursor, after, limit
+        );
 
         List<BookDto> books = bookRepositoryPort
             .findAllByCursor(keyword, orderBy, direction, cursor, after, limit)
@@ -96,6 +99,12 @@ public class BookService implements BookUseCase {
             case "reviewCount" -> dto -> String.valueOf(dto.reviewCount()); // 리뷰
             default -> BookDto::title;                                      // 제목순
         };
+
+        log.info("총 데이터 : {}", bookTotalCount);
+        log.info(
+            "최종 데이터 정보 [content_size: {} hasNext : {}]",
+            slice.getNumberOfElements(), slice.hasNext()
+        );
 
         return CursorPageResponse.of(
             slice, bookTotalCount,
