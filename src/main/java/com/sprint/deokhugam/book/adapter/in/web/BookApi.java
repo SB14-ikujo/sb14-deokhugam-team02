@@ -65,8 +65,7 @@ public interface BookApi {
         description = "도서 제목, 저자, ISBN으로 검색하고 정렬 기준에 따라 커서 페이지네이션하여 조회합니다."
     )
     @ApiResponses({
-        @ApiResponse(responseCode = "200", description = "도서 목록 조회 성공",
-            content = @Content(schema = @Schema(implementation = CursorPageResponse.class))),
+        @ApiResponse(responseCode = "200", description = "도서 목록 조회 성공"),
         @ApiResponse(responseCode = "400", description = "잘못된 요청 (정렬 기준 또는 방향 오류, 페이지네이션 파라미터 오류)",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
         @ApiResponse(responseCode = "500", description = "서버 내부 오류",
