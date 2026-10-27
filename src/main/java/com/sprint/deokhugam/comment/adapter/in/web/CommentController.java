@@ -3,6 +3,7 @@ package com.sprint.deokhugam.comment.adapter.in.web;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -55,6 +56,17 @@ public class CommentController implements CommentApi {
         @Valid @RequestBody CommentUpdateRequest request
     ) {
         return commentUseCase.update(commentId, requestUserId, request);
+    }
+
+    //댓글 논리 삭제 API
+    @Override
+    @DeleteMapping("/{commentId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void softDelete(
+        @PathVariable UUID commentId,
+        @Parameter(hidden = true) @RequestUserId UUID requestUserId
+    ) {
+        commentUseCase.softDelete(commentId, requestUserId);
     }
 
 }

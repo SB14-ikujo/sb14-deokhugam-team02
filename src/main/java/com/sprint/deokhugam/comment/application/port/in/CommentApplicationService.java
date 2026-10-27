@@ -103,6 +103,23 @@ public class CommentApplicationService implements CommentUseCase {
         return commentMapper.toDto(comment);
     }
 
+    @Override
+    @Transactional
+    public void softDelete(UUID commentId, UUID requestUserId) {
+        // 이미 논리 삭제된 댓글은 "없는 댓글"로 취급 (재삭제 시 404)
+        Comment comment = commentRepository.findByIdAndIsDeletedFalse(commentId)
+            .orElseThrow(() -> new CommentException(CommentErrorCode.COMMENT_NOT_FOUND));
+
+        // 작성자 본인만 삭제 가능
+        if (!comment.getUser().getId().equals(requestUserId)) {
+            throw new CommentException(CommentErrorCode.COMMENT_FORBIDDEN);
+        }
+
+        // 상태 변경(isDeleted = true)은 더티 체킹으로 트랜잭션 커밋 시 DB에 반영
+        comment.softDelete();
+        log.debug("댓글 논리 삭제: commentId={}, requestUserId={}", commentId, requestUserId);
+    }
+
     private UUID parseCursor(String cursor) {
         if (cursor == null || cursor.isBlank()) {
             return null;
