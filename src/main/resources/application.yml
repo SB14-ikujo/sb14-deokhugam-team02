@@ -31,9 +31,21 @@ logging:
   level:
     root: info
     com.sprint.deokhugam: debug
+    org.hibernate.orm.jdbc.bind: trace
     org.hibernate.SQL: debug
 
 springdoc:
   swagger-ui:
     tags-sorter: alpha
     operations-sorter: method
+
+deokhugam:
+  storage:
+    type: ${STORAGE_TYPE:local}
+    s3:
+      access-key: ${AWS_S3_ACCESS_KEY:}
+      secret-key: ${AWS_S3_SECRET_KEY:}
+      region: ${AWS_S3_REGION:}
+      bucket: ${AWS_S3_BUCKET:}
+      presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600} # (기본값: 10분)
+
