@@ -1,6 +1,7 @@
 package com.sprint.deokhugam.user.application.port.in;
 
 import java.util.Locale;
+import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
