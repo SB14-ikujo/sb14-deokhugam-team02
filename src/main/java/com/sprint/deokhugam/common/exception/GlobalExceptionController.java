@@ -18,6 +18,9 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+
+import com.sprint.deokhugam.book.adapter.out.exception.StorageException;
 
 @Slf4j
 @RestControllerAdvice
@@ -90,6 +93,19 @@ public class GlobalExceptionController {
         return ResponseEntity
             .status(CommonErrorCode.INTERNAL_SERVER_ERROR.getStatus())
             .body(ErrorResponse.of(CommonErrorCode.INTERNAL_SERVER_ERROR));
+    }
+
+    @ExceptionHandler(StorageException.class)
+    public ResponseEntity<ErrorResponse> handleStorageException(StorageException ex) {
+        ErrorCode errorCode = ex.getErrorCode();
+        log.error("Storage 예외 발생: {}", errorCode.getMessage(), ex);
+        if (ex.getCause() instanceof AwsServiceException awsServiceException) {
+            log.error("AWS 에러코드: {}", awsServiceException.awsErrorDetails().errorCode());
+        }
+
+        return ResponseEntity
+            .status(errorCode.getStatus())
+            .body(ErrorResponse.of(errorCode));
     }
 
     // @Valid 실패면 "nickname: 2자 이상 20자 이하" 처럼 첫 번째 틀린 필드를 details에 담음
