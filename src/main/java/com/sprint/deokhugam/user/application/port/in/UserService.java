@@ -97,7 +97,16 @@ public class UserService implements UserUseCase {
     }
 
     @Override
+    @Transactional
     public void deleteUser(UUID userId, UUID requesterId) {
+        if (!userId.equals(requesterId)) {
+            throw new UserException(UserErrorCode.USER_FORBIDDEN);
+        }
+
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
+            .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+
+        user.delete();
     }
 
     private String normalizeEmail(String email) {
