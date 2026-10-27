@@ -274,4 +274,43 @@ public class UserControllerTest {
             .andExpect(status().isForbidden())
             .andExpect(jsonPath("$.message").value(UserErrorCode.USER_FORBIDDEN.getMessage()));
     }
+
+    @Test
+    @DisplayName("본인 계정을 탈퇴하면 204를 반환한다.")
+    void deleteUser_success() throws Exception {
+        // given
+        UUID userId = UUID.randomUUID();
+
+        // when & then
+        mockMvc.perform(delete("/api/users/{userId}", userId)
+                .header(USER_ID_HEADER, userId))
+            .andExpect(status().isNoContent());
+
+        then(userUseCase).should().deleteUser(userId, userId);
+    }
+
+    @Test
+    @DisplayName("다른 사용자를 탈퇴시키려 하면 403을 반환한다.")
+    void deleteUser_forbidden() throws Exception {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID();
+        willThrow(new UserException(UserErrorCode.USER_FORBIDDEN))
+            .given(userUseCase).deleteUser(userId, otherUserId);
+
+        // when & then
+        mockMvc.perform(delete("/api/users/{userId}", userId)
+                .header(USER_ID_HEADER, otherUserId))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message").value(UserErrorCode.USER_FORBIDDEN.getMessage()));
+    }
+
+    @Test
+    @DisplayName("요청자 헤더가 없으면 400을 반환하고 서비스를 호출하지 않는다.")
+    void deleteUser_missingHeader() throws Exception {
+        mockMvc.perform(delete("/api/users/{userId}", UUID.randomUUID()))
+            .andExpect(status().isBadRequest());
+
+        then(userUseCase).should(never()).deleteUser(any(), any());
+    }
 }
