@@ -56,11 +56,9 @@ public class BookRepositoryCustomImpl implements BookRepositoryCustom {
             return null;
         }
 
-        String pattern = "%" + value + "%";
-
-        return book.title.like(pattern)
-            .or(book.author.like(pattern))
-            .or(book.isbn.like(pattern));
+        return book.title.containsIgnoreCase(value)
+            .or(book.author.containsIgnoreCase(value))
+            .or(book.isbn.containsIgnoreCase(value));
     }
 
     // 조건절2.
