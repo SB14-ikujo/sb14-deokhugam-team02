@@ -2,7 +2,6 @@ package com.sprint.deokhugam.book.adapter.in.web;
 
 import java.util.UUID;
 
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,7 +46,7 @@ public class BookController implements BookApi {
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
     public CursorPageResponse<BookDto> getBooks(
-        @Valid @ParameterObject BookSearchRequest request
+        @Valid BookSearchRequest request
     ) {
         return bookUseCase.getBooks(
             request.keyword(), request.orderBy(), request.direction(),
