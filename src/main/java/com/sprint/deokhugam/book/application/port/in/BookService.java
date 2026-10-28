@@ -45,7 +45,7 @@ public class BookService implements BookUseCase {
         User user = userRepositoryPort.findByIdAndIsDeletedFalse(userId)
             .orElseThrow(() -> {
                 log.warn("도서 등록 실패 : 사용자를 찾을 수 없음");
-                throw new UserException(UserErrorCode.USER_NOT_FOUND);
+                return new UserException(UserErrorCode.USER_NOT_FOUND);
             });
 
         Book book = Book.create(
