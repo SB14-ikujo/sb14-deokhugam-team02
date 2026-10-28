@@ -85,6 +85,16 @@ public class CommentApplicationService implements CommentUseCase {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public CommentDto getById(UUID commentId) {
+        // 논리 삭제된 댓글은 없는 댓글로 취급
+        Comment comment = commentRepository.findByIdAndIsDeletedFalse(commentId)
+            .orElseThrow(() -> new CommentException(CommentErrorCode.COMMENT_NOT_FOUND));
+
+        return commentMapper.toDto(comment);
+    }
+
+    @Override
     @Transactional
     public CommentDto update(UUID commentId, UUID requestUserId, CommentUpdateRequest request) {
         // 논리 삭제된 댓글은 "없는 댓글"로 취급

@@ -50,6 +50,19 @@ public interface CommentApi {
     })
     CursorPageResponse<CommentDto> getList(@ParameterObject CommentListRequest request);
 
+    @Operation(summary = "댓글 상세 정보 조회", description = "특정 댓글의 상세 정보를 조회합니다. 논리 삭제된 댓글은 조회되지 않습니다.")
+    @Parameter(name = "commentId", description = "댓글 ID", in = ParameterIn.PATH, required = true,
+        example = "123e4567-e89b-12d3-a456-426614174000")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "댓글 조회 성공",
+            content = @Content(schema = @Schema(implementation = CommentDto.class))),
+        @ApiResponse(responseCode = "404", description = "댓글 정보 없음",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    CommentDto getById(UUID commentId);
+
     @Operation(summary = "댓글 수정", description = "본인이 작성한 댓글을 수정합니다.")
     @Parameter(name = "commentId", description = "댓글 ID", in = ParameterIn.PATH, required = true,
         example = "123e4567-e89b-12d3-a456-426614174000")

@@ -47,6 +47,13 @@ public class CommentController implements CommentApi {
         return commentUseCase.getList(request);
     }
 
+    //댓글 상세 정보 조회 API
+    @Override
+    @GetMapping("/{commentId}")
+    public CommentDto getById(@PathVariable UUID commentId) {
+        return commentUseCase.getById(commentId);
+    }
+
     //댓글 수정 API
     @Override
     @PatchMapping("/{commentId}")
