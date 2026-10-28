@@ -14,10 +14,11 @@ public interface CommentUseCase {
 
     CursorPageResponse<CommentDto> getList(CommentListRequest request); //리뷰에 달린 댓글 목록을 커서 기반으로 조회
 
+    CommentDto getById(UUID commentId); //댓글 상세 정보 조회
+
     CommentDto update(UUID commentId, UUID requestUserId, CommentUpdateRequest request); //댓글 내용을 수정
 
     void softDelete(UUID commentId, UUID requestUserId); //댓글을 논리 삭제
 
     void hardDelete(UUID commentId, UUID requestUserId); //댓글을 물리 삭제
 }
-
