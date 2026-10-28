@@ -3,6 +3,7 @@ package com.sprint.deokhugam.user.application.port.out;
 import static org.assertj.core.api.Assertions.*;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,8 +12,14 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
 
+import jakarta.persistence.EntityManager;
+
+import com.sprint.deokhugam.book.domain.Book;
+import com.sprint.deokhugam.comment.domain.Comment;
 import com.sprint.deokhugam.common.config.JpaConfig;
 import com.sprint.deokhugam.common.config.QuerydslConfig;
+import com.sprint.deokhugam.review.domain.Review;
+import com.sprint.deokhugam.review.domain.ReviewLike;
 import com.sprint.deokhugam.user.domain.User;
 
 @DataJpaTest
@@ -21,6 +28,9 @@ import com.sprint.deokhugam.user.domain.User;
 class UserRepositoryPortTest {
     @Autowired
     private UserRepositoryPort userRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     @Test
     @DisplayName("이미 가입된 이메일이면 true를 반환한다.")
@@ -73,4 +83,59 @@ class UserRepositoryPortTest {
         // then
         assertThat(user.getUpdatedAt()).isAfter(beforeDelete);
     }
+
+    @Test
+    @DisplayName("사용자를 물리 삭제하면 그 사용자의 리뷰는 함께 삭제되고, 등록한 도서는 등록자만 비워진 채 남는다.")
+    void delete_cascadesReviewAndKeepsBook() {
+        // given
+        User user = userRepository.saveAndFlush(User.create("hard@naver.com", "물리삭제", "encoded"));
+        Book book = Book.create("도서", user, "저자", "설명", "출판사",
+            LocalDate.of(2026, 1, 1), "user-hard-delete-isbn", null);
+        entityManager.persist(book);
+        Review review = Review.create(user, book, "리뷰 내용", 5);
+        entityManager.persist(review);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        userRepository.deleteById(user.getId());
+        entityManager.flush();
+        entityManager.clear();
+
+        // then
+        assertThat(entityManager.find(Review.class, review.getId())).isNull();
+        Book foundBook = entityManager.find(Book.class, book.getId());
+        assertThat(foundBook).isNotNull();
+        assertThat(foundBook.getUser()).isNull();
+    }
+
+    @Test
+    @DisplayName("사용자를 물리 삭제하면 다른 사람 리뷰에 남긴 댓글과 좋아요는 삭제되고, 그 리뷰는 남는다.")
+    void delete_cascadesCommentAndLikeOnOthersReview() {
+        // given
+        User writer = userRepository.saveAndFlush(User.create("writer@naver.com", "작성자", "encoded"));
+        User leaver = userRepository.saveAndFlush(User.create("leaver@naver.com", "탈퇴자", "encoded"));
+        Book book = Book.create("도서", writer, "저자", "설명", "출판사",
+            LocalDate.of(2026, 1, 1), "user-hard-delete-isbn-2", null);
+        entityManager.persist(book);
+        Review review = Review.create(writer, book, "리뷰 내용", 5);
+        entityManager.persist(review);
+        Comment comment = Comment.create(review, leaver, "댓글 내용");
+        entityManager.persist(comment);
+        ReviewLike like = ReviewLike.create(review, leaver);
+        entityManager.persist(like);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        userRepository.deleteById(leaver.getId());
+        entityManager.flush();
+        entityManager.clear();
+
+        // then
+        assertThat(entityManager.find(Comment.class, comment.getId())).isNull();
+        assertThat(entityManager.find(ReviewLike.class, like.getId())).isNull();
+        assertThat(entityManager.find(Review.class, review.getId())).isNotNull();
+    }
+
 }
