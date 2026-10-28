@@ -440,4 +440,30 @@ class CommentServiceTest {
 
         verify(commentRepository, never()).delete(any(Comment.class));
     }
+
+    // ===== 댓글 상세 정보 조회 =====
+
+    @Test
+    @DisplayName("댓글 상세 조회 성공 - 댓글 정보가 담긴 DTO를 반환한다")
+    void getById_success() {
+        Comment comment = givenCommentWrittenBy(userId);
+
+        CommentDto result = commentService.getById(commentId);
+
+        assertThat(result.content()).isEqualTo(comment.getContent());
+        assertThat(result.reviewId()).isEqualTo(reviewId);
+        assertThat(result.userId()).isEqualTo(userId);
+        assertThat(result.userNickname()).isEqualTo("닉네임");
+    }
+
+    @Test
+    @DisplayName("댓글 상세 조회 - 존재하지 않거나 논리 삭제된 댓글이면 COMMENT_NOT_FOUND")
+    void getById_commentNotFound() {
+        given(commentRepository.findByIdAndIsDeletedFalse(commentId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> commentService.getById(commentId))
+            .isInstanceOf(CommentException.class)
+            .extracting("errorCode")
+            .isEqualTo(CommentErrorCode.COMMENT_NOT_FOUND);
+    }
 }
