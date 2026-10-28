@@ -1,6 +1,8 @@
 package com.sprint.deokhugam.book.application.port.in;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
@@ -86,6 +88,8 @@ public class BookService implements BookUseCase {
             keyword, orderBy, direction, cursor, after, limit
         );
 
+        this.validateCursor(orderBy, cursor);
+
         List<BookDto> books = bookRepositoryPort
             .findAllByCursor(keyword, orderBy, direction, cursor, after, limit)
             .stream().map(bookMapper::toDto)
@@ -111,5 +115,23 @@ public class BookService implements BookUseCase {
             cursorExtractor,
             BookDto::createdAt
         );
+    }
+
+    private void validateCursor(String orderBy, String cursor) {
+        if (cursor == null) {
+            return;
+        }
+        try {
+            switch (orderBy) {
+                case "publishedDate" -> LocalDate.parse(cursor);
+                case "rating" -> Double.parseDouble(cursor);
+                case "reviewCount" -> Integer.parseInt(cursor);
+                default -> {
+                }
+            }
+        } catch (DateTimeParseException | NumberFormatException e) {
+            log.warn("도서 목록 조회 실패 : 잘못된 cursor - orderBy: {}, cursor: {}", orderBy, cursor);
+            throw new BookException(BookErrorCode.BOOK_INVALID_CURSOR);
+        }
     }
 }
