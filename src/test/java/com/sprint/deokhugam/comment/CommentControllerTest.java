@@ -519,4 +519,45 @@ class CommentControllerTest {
             .andExpect(status().isNotFound())
             .andExpect(jsonPath("$.message").value("댓글 정보를 찾을 수 없습니다."));
     }
+
+    // ==== 댓글 상세 정보 조회 ====
+
+    @Test
+    @DisplayName("댓글 상세 조회 성공 - 200과 CommentDto 반환")
+    void getById_success() throws Exception {
+        UUID commentId = UUID.randomUUID();
+        CommentDto dto = new CommentDto(commentId, reviewId, userId, "닉네임",
+            "댓글 내용", Instant.now(), Instant.now());
+        given(commentUseCase.getById(commentId)).willReturn(dto);
+
+        mockMvc.perform(get("/api/comments/{commentId}", commentId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(commentId.toString()))
+            .andExpect(jsonPath("$.reviewId").value(reviewId.toString()))
+            .andExpect(jsonPath("$.userId").value(userId.toString()))
+            .andExpect(jsonPath("$.userNickname").value("닉네임"))
+            .andExpect(jsonPath("$.content").value("댓글 내용"));
+
+        verify(commentUseCase).getById(commentId);
+    }
+
+    @Test
+    @DisplayName("댓글 상세 조회 - commentId가 UUID 형식이 아니면 400")
+    void getById_invalidCommentId() throws Exception {
+        mockMvc.perform(get("/api/comments/{commentId}", "not-a-uuid"))
+            .andExpect(status().isBadRequest());
+
+        verify(commentUseCase, never()).getById(any());
+    }
+
+    @Test
+    @DisplayName("댓글 상세 조회 - 댓글이 없으면 404")
+    void getById_commentNotFound() throws Exception {
+        given(commentUseCase.getById(any()))
+            .willThrow(new CommentException(CommentErrorCode.COMMENT_NOT_FOUND));
+
+        mockMvc.perform(get("/api/comments/{commentId}", UUID.randomUUID()))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.message").value("댓글 정보를 찾을 수 없습니다."));
+    }
 }
