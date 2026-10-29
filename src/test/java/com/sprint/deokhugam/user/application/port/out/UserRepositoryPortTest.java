@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -139,6 +141,45 @@ class UserRepositoryPortTest {
             LocalDate.of(2026, 1, 1), isbn, null);
         entityManager.persist(book);
         return book;
+    }
+
+    @Test
+    @DisplayName("논리 삭제 후 기준 시각이 지난 사용자만 물리 삭제하고, 삭제한 수를 반환한다.")
+    void deleteSoftDeletedUsersBefore() {
+        // given
+        Instant now = Instant.now();
+        Instant cutoff = now.minus(1, ChronoUnit.DAYS);
+
+        User expired = User.create("expired@naver.com", "만료", "encoded");
+        expired.delete();
+        userRepository.saveAndFlush(expired);
+
+        User recentlyDeleted = User.create("recent@naver.com", "최근탈퇴", "encoded");
+        recentlyDeleted.delete();
+        userRepository.saveAndFlush(recentlyDeleted);
+
+        User active = userRepository.saveAndFlush(User.create("active@naver.com", "활성", "encoded"));
+
+        changeUpdatedAt(expired.getId(), now.minus(2, ChronoUnit.DAYS));
+        changeUpdatedAt(recentlyDeleted.getId(), now.minus(1, ChronoUnit.HOURS));
+        changeUpdatedAt(active.getId(), now.minus(2, ChronoUnit.DAYS));
+        entityManager.clear();
+
+        // when
+        int deletedCount = userRepository.deleteSoftDeletedUsersBefore(cutoff);
+
+        // then
+        assertThat(deletedCount).isEqualTo(1);
+        assertThat(userRepository.findById(expired.getId())).isEmpty();
+        assertThat(userRepository.findById(recentlyDeleted.getId())).isPresent();
+        assertThat(userRepository.findById(active.getId())).isPresent();
+    }
+
+    private void changeUpdatedAt(UUID userId, Instant updatedAt) {
+        entityManager.createNativeQuery("update users set updated_at = ? where id = ?")
+            .setParameter(1, updatedAt)
+            .setParameter(2, userId)
+            .executeUpdate();
     }
 
 }
