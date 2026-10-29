@@ -5,6 +5,7 @@ import static org.mockito.AdditionalAnswers.*;
 import static org.mockito.BDDMockito.*;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -425,5 +426,21 @@ class UserServiceTest {
             .isInstanceOf(UserException.class)
             .extracting("errorCode")
             .isEqualTo(UserErrorCode.USER_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("논리 삭제 후 1일이 지난 사용자를 물리 삭제하고, 삭제한 수를 반환한다.")
+    void deleteExpiredUsers_success() {
+        // given
+        Instant now = Instant.parse("2026-10-29T14:30:00Z");
+        Instant expectedCutoff = now.minus(1, ChronoUnit.DAYS);
+        given(userRepository.deleteSoftDeletedUsersBefore(expectedCutoff)).willReturn(3);
+
+        // when
+        int deletedCount = userService.deleteExpiredUsers(now);
+
+        // then
+        assertThat(deletedCount).isEqualTo(3);
+        then(userRepository).should().deleteSoftDeletedUsersBefore(expectedCutoff);
     }
 }
