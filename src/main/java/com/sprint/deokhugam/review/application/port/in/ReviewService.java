@@ -158,7 +158,7 @@ public class ReviewService implements ReviewUseCase {
     // 리뷰 목록 조회
     @Override
     public CursorPageResponse<ReviewDto> getReviewList(ReviewListRequest request) {
-        // 페이지 사이즈 (size)
+        // 한 페이지 안에 보여줄 데이터 갯수 (size)
         int limit = request.limit();
 
         // 커서 유효성을 미리 파싱하고 검증 (cursor)
@@ -199,8 +199,10 @@ public class ReviewService implements ReviewUseCase {
             })
             .toList();
 
+        // 다음 페이지 여부 + 리뷰 데이터 목록들
         Slice<ReviewDto> slice = SliceUtils.toSlice(reviews, limit);
 
+        // 전체 리뷰 총 개수
         long total = reviewRepositoryPort.countByConditions(request.userId(), request.bookId(), request.keyword());
 
         return CursorPageResponse.of(
@@ -211,7 +213,7 @@ public class ReviewService implements ReviewUseCase {
         );
     }
 
-    // 평점에 .0 붙여주는 메서드
+    // 평점순(rating) 정렬일 때, 맨 마지막 리뷰의 평점을 요청 규격인 소수점 형태(".0")의 문자열로 맞춰주는 메서드
     private String extractNextCursor(ReviewDto lastReviewDto, String orderBy) {
         if ("rating".equals(orderBy)) {
             return lastReviewDto.rating() + ".0"; // 평점순일 때는 .0을 붙여서 추출
@@ -219,6 +221,7 @@ public class ReviewService implements ReviewUseCase {
         return null; // 최신순일 때는 커서가 필요 없으므로 null 반환
     }
 
+    // 평점순(rating) 정렬일 때, 요청 주소 URL의 커서 문자열이 올바른 평점(1.0 ~ 5.0)인지 검증 및 파싱하는 메서드
     private String parseCursor(String cursor, String orderBy) {
         // 평점순 정렬이 아니라 시간순 정렬이면 cursor 검증 필요 없음
         if (!"rating".equals(orderBy)) {
@@ -229,7 +232,7 @@ public class ReviewService implements ReviewUseCase {
             return null;
         }
         try {
-            double rating = Double.parseDouble(cursor);
+            double rating = Double.parseDouble(cursor); // string => double (파싱)
 
             if (rating < 1.0 || rating > 5.0) {
                 throw new ReviewException(ReviewErrorCode.REVIEW_INVALID_CURSOR);
@@ -241,5 +244,4 @@ public class ReviewService implements ReviewUseCase {
         // 검증이 완료된 cursor를 반환
         return cursor;
     }
-
 }

@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,8 +18,10 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import com.sprint.deokhugam.common.context.user.RequestUserId;
+import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
+import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewListRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewUpdateRequest;
 import com.sprint.deokhugam.review.application.port.in.ReviewUseCase;
 
@@ -66,5 +69,12 @@ public class ReviewController implements ReviewApi {
         @Valid @RequestBody ReviewUpdateRequest updateRequest
     ) {
         return reviewUseCase.updateReview(reviewId, requestUserId, updateRequest);
+    }
+
+    // 리뷰 목록 조회
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public CursorPageResponse<ReviewDto> getList(@ModelAttribute @Valid ReviewListRequest request) {
+        return reviewUseCase.getReviewList(request);
     }
 }
