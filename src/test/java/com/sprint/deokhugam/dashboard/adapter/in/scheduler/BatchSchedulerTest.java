@@ -10,6 +10,7 @@ import java.time.ZonedDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -18,6 +19,7 @@ import org.springframework.scheduling.support.CronExpression;
 
 import com.sprint.deokhugam.dashboard.application.port.in.popularbook.PopularBookRankingUseCase;
 import com.sprint.deokhugam.dashboard.application.port.in.popularreview.PopularReviewRankingUseCase;
+import com.sprint.deokhugam.dashboard.application.port.in.poweruser.PowerUserRankingUseCase;
 
 @ExtendWith(MockitoExtension.class)
 class BatchSchedulerTest {
@@ -30,17 +32,22 @@ class BatchSchedulerTest {
     @Mock
     private PopularReviewRankingUseCase popularReviewRankingUseCase;
 
+    @Mock
+    private PowerUserRankingUseCase powerUserRankingUseCase;
+
     @InjectMocks
     private BatchScheduler batchScheduler;
 
     @Test
-    @DisplayName("일일 랭킹을 실행하면 한국 시간 기준 오늘 날짜로 인기 도서와 인기 리뷰를 집계한다")
+    @DisplayName("일일 랭킹을 실행하면 한국 시간 기준 오늘 날짜로 인기 도서, 인기 리뷰, 파워 유저 순서로 집계한다")
     void rankDailyRankingRanksWithToday() {
         batchScheduler.rankDailyRanking();
 
         LocalDate today = LocalDate.now(ZONE);
-        verify(popularBookRankingUseCase).rankBooks(today);
-        verify(popularReviewRankingUseCase).rankReviews(today);
+        InOrder inOrder = inOrder(popularBookRankingUseCase, popularReviewRankingUseCase, powerUserRankingUseCase);
+        inOrder.verify(popularBookRankingUseCase).rankBooks(today);
+        inOrder.verify(popularReviewRankingUseCase).rankReviews(today);
+        inOrder.verify(powerUserRankingUseCase).rankUsers(today);
     }
 
     @Test
@@ -61,6 +68,15 @@ class BatchSchedulerTest {
         assertThatCode(() -> batchScheduler.rankDailyRanking()).doesNotThrowAnyException();
 
         verify(popularBookRankingUseCase).rankBooks(LocalDate.now(ZONE));
+        verify(powerUserRankingUseCase).rankUsers(LocalDate.now(ZONE));
+    }
+
+    @Test
+    @DisplayName("파워 유저 집계가 실패해도 예외가 스케줄러 밖으로 나가지 않는다")
+    void rankDailyRankingSwallowsPowerUserFailure() {
+        doThrow(new IllegalStateException("파워 유저 집계 실패")).when(powerUserRankingUseCase).rankUsers(any());
+
+        assertThatCode(() -> batchScheduler.rankDailyRanking()).doesNotThrowAnyException();
     }
 
     @Test

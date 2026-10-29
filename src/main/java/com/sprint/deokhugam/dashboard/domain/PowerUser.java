@@ -26,6 +26,10 @@ import com.sprint.deokhugam.user.domain.User;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PowerUser extends BaseEntity {
 
+    private static final double REVIEW_SCORE_SUM_WEIGHT = 0.5;
+    private static final double LIKE_COUNT_WEIGHT = 0.2;
+    private static final double COMMENT_COUNT_WEIGHT = 0.3;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     @OnDelete(action = OnDeleteAction.CASCADE)
@@ -69,5 +73,24 @@ public class PowerUser extends BaseEntity {
         double reviewScoreSum, Long likeCount, Long commentCount, LocalDate snapshotDate) {
 
         return new PowerUser(user, period, rank, score, reviewScoreSum, likeCount, commentCount, snapshotDate);
+    }
+
+    public static PowerUser candidate(User user, PeriodType period, double reviewScoreSum,
+        Long likeCount, Long commentCount, LocalDate snapshotDate) {
+
+        double score = reviewScoreSum * REVIEW_SCORE_SUM_WEIGHT + likeCount * LIKE_COUNT_WEIGHT
+            + commentCount * COMMENT_COUNT_WEIGHT;
+        return new PowerUser(user, period, null, score, reviewScoreSum, likeCount, commentCount, snapshotDate);
+    }
+
+    public void assignRank(long rank) {
+        if (this.rank != null) {
+            throw new IllegalStateException("순위는 한 번만 배정할 수 있습니다.");
+        }
+        if (rank < 1) {
+            throw new IllegalStateException("랭킹은 1 이상이어야 합니다.");
+        }
+
+        this.rank = rank;
     }
 }
