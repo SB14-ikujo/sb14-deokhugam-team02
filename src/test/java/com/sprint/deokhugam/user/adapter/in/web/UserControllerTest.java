@@ -313,4 +313,58 @@ public class UserControllerTest {
 
         then(userUseCase).should(never()).deleteUser(any(), any());
     }
+
+    @Test
+    @DisplayName("본인 계정을 물리 삭제하면 204를 반환한다.")
+    void hardDeleteUser_success() throws Exception {
+        // given
+        UUID userId = UUID.randomUUID();
+
+        // when & then
+        mockMvc.perform(delete("/api/users/{userId}/hard", userId)
+                .header(USER_ID_HEADER, userId))
+            .andExpect(status().isNoContent());
+
+        then(userUseCase).should().hardDeleteUser(userId, userId);
+    }
+
+    @Test
+    @DisplayName("다른 사용자를 물리 삭제하려 하면 403을 반환한다.")
+    void hardDeleteUser_forbidden() throws Exception {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID();
+        willThrow(new UserException(UserErrorCode.USER_FORBIDDEN))
+            .given(userUseCase).hardDeleteUser(userId, otherUserId);
+
+        // when & then
+        mockMvc.perform(delete("/api/users/{userId}/hard", userId)
+                .header(USER_ID_HEADER, otherUserId))
+            .andExpect(status().isForbidden())
+            .andExpect(jsonPath("$.message").value(UserErrorCode.USER_FORBIDDEN.getMessage()));
+    }
+
+    @Test
+    @DisplayName("없는 사용자를 물리 삭제하려 하면 404를 반환한다.")
+    void hardDeleteUser_notFound() throws Exception {
+        // given
+        UUID userId = UUID.randomUUID();
+        willThrow(new UserException(UserErrorCode.USER_NOT_FOUND))
+            .given(userUseCase).hardDeleteUser(userId, userId);
+
+        // when & then
+        mockMvc.perform(delete("/api/users/{userId}/hard", userId)
+                .header(USER_ID_HEADER, userId))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.message").value(UserErrorCode.USER_NOT_FOUND.getMessage()));
+    }
+
+    @Test
+    @DisplayName("물리 삭제 요청에 요청자 헤더가 없으면 400을 반환하고 서비스를 호출하지 않는다.")
+    void hardDeleteUser_missingHeader() throws Exception {
+        mockMvc.perform(delete("/api/users/{userId}/hard", UUID.randomUUID()))
+            .andExpect(status().isBadRequest());
+
+        then(userUseCase).should(never()).hardDeleteUser(any(), any());
+    }
 }
