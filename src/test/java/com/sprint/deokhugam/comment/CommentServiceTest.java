@@ -30,6 +30,7 @@ import com.sprint.deokhugam.comment.domain.Comment;
 import com.sprint.deokhugam.comment.domain.exception.CommentErrorCode;
 import com.sprint.deokhugam.comment.domain.exception.CommentException;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
+import com.sprint.deokhugam.notification.application.port.in.NotificationUseCase;
 import com.sprint.deokhugam.review.application.port.out.ReviewRepositoryPort;
 import com.sprint.deokhugam.review.domain.Review;
 import com.sprint.deokhugam.user.application.port.out.UserRepositoryPort;
@@ -44,6 +45,8 @@ class CommentServiceTest {
     private ReviewRepositoryPort reviewRepository;
     @Mock
     private UserRepositoryPort userRepository;
+    @Mock
+    private NotificationUseCase notificationUseCase;
     @Spy
     private CommentMapper commentMapper = Mappers.getMapper(CommentMapper.class);
 
@@ -76,6 +79,7 @@ class CommentServiceTest {
         assertThat(result.userNickname()).isEqualTo("닉네임");
         assertThat(result.content()).isEqualTo("좋은 리뷰네요!");
         verify(commentRepository).save(any(Comment.class));
+        verify(notificationUseCase).createCommentNotification(review, "닉네임");   // 추가
     }
 
     @Test

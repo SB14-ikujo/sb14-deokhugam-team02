@@ -47,11 +47,11 @@ public class Comment extends BaseEntity {
     }
 
     public static Comment create(Review review, User user, String content) {
-        return new Comment(review, user, content);
+        return new Comment(review, user, ProfanityWord.mask(content));   // 변경
     }
 
     public void updateContent(String content) {
-        this.content = content;
+        this.content = ProfanityWord.mask(content);                      // 변경
     }
 
     public void softDelete() {
