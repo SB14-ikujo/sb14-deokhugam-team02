@@ -89,9 +89,7 @@ class UserRepositoryPortTest {
     void delete_cascadesReviewAndKeepsBook() {
         // given
         User user = userRepository.saveAndFlush(User.create("hard@naver.com", "물리삭제", "encoded"));
-        Book book = Book.create("도서", user, "저자", "설명", "출판사",
-            LocalDate.of(2026, 1, 1), "user-hard-delete-isbn", null);
-        entityManager.persist(book);
+        Book book = persistBook(user, "user-hard-delete-isbn");
         Review review = Review.create(user, book, "리뷰 내용", 5);
         entityManager.persist(review);
         entityManager.flush();
@@ -115,9 +113,7 @@ class UserRepositoryPortTest {
         // given
         User writer = userRepository.saveAndFlush(User.create("writer@naver.com", "작성자", "encoded"));
         User leaver = userRepository.saveAndFlush(User.create("leaver@naver.com", "탈퇴자", "encoded"));
-        Book book = Book.create("도서", writer, "저자", "설명", "출판사",
-            LocalDate.of(2026, 1, 1), "user-hard-delete-isbn-2", null);
-        entityManager.persist(book);
+        Book book = persistBook(writer, "user-hard-delete-isbn");
         Review review = Review.create(writer, book, "리뷰 내용", 5);
         entityManager.persist(review);
         Comment comment = Comment.create(review, leaver, "댓글 내용");
@@ -136,6 +132,13 @@ class UserRepositoryPortTest {
         assertThat(entityManager.find(Comment.class, comment.getId())).isNull();
         assertThat(entityManager.find(ReviewLike.class, like.getId())).isNull();
         assertThat(entityManager.find(Review.class, review.getId())).isNotNull();
+    }
+
+    private Book persistBook(User registrant, String isbn) {
+        Book book = Book.create("도서", registrant, "저자", "설명", "출판사",
+            LocalDate.of(2026, 1, 1), isbn, null);
+        entityManager.persist(book);
+        return book;
     }
 
 }
