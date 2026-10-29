@@ -19,4 +19,6 @@ public interface UserUseCase {
 
     void deleteUser(UUID userId, UUID requesterId);
 
+    void hardDeleteUser(UUID userId, UUID requesterId);
+
 }
