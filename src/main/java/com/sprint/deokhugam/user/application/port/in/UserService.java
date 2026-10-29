@@ -72,9 +72,7 @@ public class UserService implements UserUseCase {
     @Override
     @Transactional
     public UserDto updateNickname(UUID userId, UUID requesterId, UserUpdateRequest request) {
-        if (!userId.equals(requesterId)) {
-            throw new UserException(UserErrorCode.USER_FORBIDDEN);
-        }
+        validateOwner(userId, requesterId);
 
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
@@ -99,9 +97,7 @@ public class UserService implements UserUseCase {
     @Override
     @Transactional
     public void deleteUser(UUID userId, UUID requesterId) {
-        if (!userId.equals(requesterId)) {
-            throw new UserException(UserErrorCode.USER_FORBIDDEN);
-        }
+        validateOwner(userId, requesterId);
 
         User user = userRepository.findByIdAndIsDeletedFalse(userId)
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
@@ -112,9 +108,7 @@ public class UserService implements UserUseCase {
     @Override
     @Transactional
     public void hardDeleteUser(UUID userId, UUID requesterId) {
-        if (!userId.equals(requesterId)) {
-            throw new UserException(UserErrorCode.USER_FORBIDDEN);
-        }
+        validateOwner(userId, requesterId);
 
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
@@ -123,5 +117,11 @@ public class UserService implements UserUseCase {
 
     private String normalizeEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private void validateOwner(UUID userId, UUID requesterId) {
+        if (!userId.equals(requesterId)) {
+            throw new UserException(UserErrorCode.USER_FORBIDDEN);
+        }
     }
 }
