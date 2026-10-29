@@ -45,4 +45,23 @@ class CommentTest {
 
         assertThat(comment.isDeleted()).isTrue();
     }
+
+    @Test
+    @DisplayName("댓글 생성 시 비속어는 ***로 치환된다")
+    void create_masksProfanity() {
+        Comment comment = Comment.create(review, user, "이 시발 리뷰 별로");
+
+        assertThat(comment.getContent()).isEqualTo("이 *** 리뷰 별로");
+    }
+
+    @Test
+    @DisplayName("댓글 수정 시 비속어는 ***로 치환된다")
+    void updateContent_masksProfanity() {
+        Comment comment = Comment.create(review, user, "수정 전");
+
+        comment.updateContent("개새끼 같은 리뷰");
+
+        assertThat(comment.getContent()).isEqualTo("*** 같은 리뷰");
+    }
+
 }

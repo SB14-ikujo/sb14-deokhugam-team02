@@ -466,4 +466,25 @@ class CommentServiceTest {
             .extracting("errorCode")
             .isEqualTo(CommentErrorCode.COMMENT_NOT_FOUND);
     }
+
+    @Test
+    @DisplayName("댓글 등록 시 비속어는 ***로 치환되어 저장된다")
+    void create_masksProfanity() {
+        Review review = mock(Review.class);
+        User user = mock(User.class);
+        given(review.isDeleted()).willReturn(false);
+        given(review.getId()).willReturn(reviewId);
+        given(user.isDeleted()).willReturn(false);
+        given(user.getId()).willReturn(userId);
+        given(user.getNickname()).willReturn("닉네임");
+        given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+        given(commentRepository.save(any(Comment.class))).willAnswer(inv -> inv.getArgument(0));
+
+        CommentDto result = commentService.create(
+            new CommentCreateRequest(reviewId, userId, "이 시발 리뷰 별로"));
+
+        assertThat(result.content()).isEqualTo("이 *** 리뷰 별로");
+    }
+
 }
