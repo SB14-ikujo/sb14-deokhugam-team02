@@ -1,6 +1,5 @@
 package com.sprint.deokhugam.dashboard.adapter.in.web;
 
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,7 +31,7 @@ public class DashboardController implements DashboardApi {
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/books/popular")
     public CursorPageResponse<PopularBookDto> getPopularBooks(
-        @Valid @ParameterObject PopularBookRequest request
+        @Valid PopularBookRequest request
     ) {
 
         return dashboardUseCase.getPopularBooks(request);
@@ -42,7 +41,7 @@ public class DashboardController implements DashboardApi {
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/reviews/popular")
     public CursorPageResponse<PopularReviewDto> getPopularReviews(
-        @Valid @ParameterObject PopularReviewRequest request
+        @Valid PopularReviewRequest request
     ) {
 
         return dashboardUseCase.getPopularReviews(request);
@@ -52,7 +51,7 @@ public class DashboardController implements DashboardApi {
     @ResponseStatus(HttpStatus.OK)
     @GetMapping("/users/power")
     public CursorPageResponse<PowerUserDto> getPowerUsers(
-        @Valid @ParameterObject PowerUserRequest request
+        @Valid PowerUserRequest request
     ) {
 
         return dashboardUseCase.getPowerUsers(request);

@@ -1,5 +1,7 @@
 package com.sprint.deokhugam.dashboard.adapter.in.web;
 
+import org.springdoc.core.annotations.ParameterObject;
+
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -26,7 +28,7 @@ public interface DashboardApi {
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(responseCode = "500", description = "서버 내부 오류",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    CursorPageResponse<PopularBookDto> getPopularBooks(PopularBookRequest request);
+    CursorPageResponse<PopularBookDto> getPopularBooks(@ParameterObject PopularBookRequest request);
 
     @Tag(name = "리뷰 관리")
     @Operation(
@@ -38,7 +40,7 @@ public interface DashboardApi {
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(responseCode = "500", description = "서버 내부 오류",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    CursorPageResponse<PopularReviewDto> getPopularReviews(PopularReviewRequest request);
+    CursorPageResponse<PopularReviewDto> getPopularReviews(@ParameterObject PopularReviewRequest request);
 
     @Tag(name = "사용자 관리")
     @Operation(
@@ -50,5 +52,5 @@ public interface DashboardApi {
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(responseCode = "500", description = "서버 내부 오류",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    CursorPageResponse<PowerUserDto> getPowerUsers(PowerUserRequest request);
+    CursorPageResponse<PowerUserDto> getPowerUsers(@ParameterObject PowerUserRequest request);
 }

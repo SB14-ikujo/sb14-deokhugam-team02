@@ -14,4 +14,6 @@ public interface PowerUserRepositoryCustom {
 
     List<PowerUser> findPage(PeriodType period, LocalDate snapshotDate, Direction direction,
         Long cursorRank, int size);
+
+    List<PowerUser> findCandidates(PeriodType period, LocalDate snapshotDate);
 }
