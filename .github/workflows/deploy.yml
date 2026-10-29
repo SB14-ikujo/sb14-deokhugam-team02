@@ -14,7 +14,7 @@ jobs:
       - name: 소스코드 가져오기
         uses: actions/checkout@v5
 
-      - name: 임시 발급증 받기
+      - name: OIDC 임시 발급증 받기
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
@@ -53,6 +53,11 @@ jobs:
 
           echo "✅ 도커 이미지 빌드 완료"
           # 빌드 테스트 단계: 푸시는 빌드 성공 확인 후 활성화
-          # docker push "$REGISTRY/$REPOSITORY:$IMAGE_TAG"
-          # echo "image=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+          echo "🚀 ECR 이미지 업로드 시작"
+          docker push "$REGISTRY/$REPOSITORY:$IMAGE_TAG"
+          echo "image=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "🎉 ECR 이미지 업로드 완료"
+
+
 
