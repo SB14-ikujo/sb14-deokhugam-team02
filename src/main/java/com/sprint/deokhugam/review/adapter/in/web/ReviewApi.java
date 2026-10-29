@@ -2,7 +2,7 @@ package com.sprint.deokhugam.review.adapter.in.web;
 
 import java.util.UUID;
 
-import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -16,8 +16,10 @@ import jakarta.validation.Valid;
 
 import com.sprint.deokhugam.common.context.user.RequestUserId;
 import com.sprint.deokhugam.common.exception.ErrorResponse;
+import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
+import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewListRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewUpdateRequest;
 
 @Tag(name = "리뷰 관리", description = "리뷰 관련 API")
@@ -96,4 +98,15 @@ public interface ReviewApi {
         @RequestUserId UUID requestUserId,
         @Valid @RequestBody ReviewUpdateRequest updateRequest
     );
+
+    @Operation(summary = "리뷰 목록 조회", description = "검색 조건에 맞는 리뷰 목록을 조회합니다.")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "리뷰 정보 조회 성공",
+            content = @Content(schema = @Schema(implementation = ReviewDto.class))),
+        @ApiResponse(responseCode = "400", description = "잘못된 요청 (정렬 기준 오류, 페이지네이션 파라미터 오류, 요청자 ID 누락)",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    CursorPageResponse<ReviewDto> getList(@ModelAttribute @Valid ReviewListRequest request);
 }

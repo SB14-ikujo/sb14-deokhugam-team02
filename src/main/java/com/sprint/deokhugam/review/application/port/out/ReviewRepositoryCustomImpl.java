@@ -52,7 +52,7 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
 
         boolean asc = (direction == Sort.Direction.ASC);
 
-        // orderBy = "rating", "createdAt"
+        // orderBy = "rating"(평점), "createdAt"(생성시간)
         boolean byRating = "rating".equals(orderBy);
 
         return queryFactory
@@ -63,8 +63,7 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
                 userIdEq(userId),
                 bookIdEq(bookId),
                 keywordContains(keyword),
-                byRating ? ratingCursor(after, cursor, asc)
-                    : createdAtCursor(after, asc)
+                byRating ? ratingCursor(after, cursor, asc) : createdAtCursor(after, asc)
             )
             .orderBy(getSortOrder(orderBy, asc))
             .limit(size + 1)

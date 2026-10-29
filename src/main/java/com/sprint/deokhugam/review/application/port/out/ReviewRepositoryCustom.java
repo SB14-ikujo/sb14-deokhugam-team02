@@ -20,5 +20,6 @@ public interface ReviewRepositoryCustom {
         int size
     );
 
+    // 조건(유저, 도서, 키워드)에 맞는 전체 리뷰의 총 개수를 세는 메서드
     long countByConditions(UUID userId, UUID bookId, String keyword);
 }
