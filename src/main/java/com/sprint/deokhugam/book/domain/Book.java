@@ -3,6 +3,8 @@ package com.sprint.deokhugam.book.domain;
 import java.time.LocalDate;
 
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -27,7 +29,8 @@ public class Book extends BaseEntity {
     private String title;   // 책제목
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
+    @OnDelete(action = OnDeleteAction.SET_NULL)
     private User user;
 
     @Column(nullable = false)
