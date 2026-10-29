@@ -41,6 +41,7 @@ public class AwsS3Storage implements BookImageStorage {
 
     @Override
     public String upload(String imageKey, byte[] value, String contentType) {
+        log.info("bucket=[{}]", awsS3Properties.getBucket());
         PutObjectRequest request = PutObjectRequest.builder()
             .bucket(awsS3Properties.getBucket())
             .key(imageKey)
