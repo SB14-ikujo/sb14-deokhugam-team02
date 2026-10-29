@@ -110,7 +110,15 @@ public class UserService implements UserUseCase {
     }
 
     @Override
+    @Transactional
     public void hardDeleteUser(UUID userId, UUID requesterId) {
+        if (!userId.equals(requesterId)) {
+            throw new UserException(UserErrorCode.USER_FORBIDDEN);
+        }
+
+        User user = userRepository.findById(userId)
+            .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+        userRepository.delete(user);
     }
 
     private String normalizeEmail(String email) {
