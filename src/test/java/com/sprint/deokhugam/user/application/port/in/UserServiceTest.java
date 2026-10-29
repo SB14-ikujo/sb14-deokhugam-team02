@@ -381,4 +381,49 @@ class UserServiceTest {
             .extracting("errorCode")
             .isEqualTo(UserErrorCode.USER_NOT_FOUND);
     }
+
+    @Test
+    @DisplayName("본인 계정을 물리 삭제하면 저장소에서 사용자를 삭제한다.")
+    void hardDeleteUser_success() {
+        // given
+        UUID userId = UUID.randomUUID();
+        User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
+        given(userRepository.findById(userId)).willReturn(Optional.of(user));
+
+        // when
+        userService.hardDeleteUser(userId, userId);
+
+        // then
+        then(userRepository).should().delete(user);
+    }
+
+    @Test
+    @DisplayName("다른 사용자를 물리 삭제하려 하면 USER_FORBIDDEN 예외가 발생하고 삭제하지 않는다.")
+    void hardDeleteUser_forbidden() {
+        // given
+        UUID userId = UUID.randomUUID();
+        UUID otherUserId = UUID.randomUUID();
+
+        // when & then
+        assertThatThrownBy(() -> userService.hardDeleteUser(userId, otherUserId))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_FORBIDDEN);
+
+        then(userRepository).should(never()).delete(any(User.class));
+    }
+
+    @Test
+    @DisplayName("없는 사용자를 물리 삭제하려 하면 USER_NOT_FOUND 예외가 발생한다.")
+    void hardDeleteUser_notFound() {
+        // given
+        UUID userId = UUID.randomUUID();
+        given(userRepository.findById(userId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> userService.hardDeleteUser(userId, userId))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_NOT_FOUND);
+    }
 }
