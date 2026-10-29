@@ -90,4 +90,21 @@ public interface UserApi {
     @ApiResponse(responseCode = "500", description = "서버 내부 오류",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     void deleteUser(UUID userId, UUID requesterId);
+
+    @Operation(summary = "사용자 물리 삭제", description = "본인 계정과 관련 데이터를 완전히 삭제합니다.")
+    @Parameter(name = "userId", description = "사용자 ID", in = ParameterIn.PATH, required = true,
+        example = "123e4567-e89b-12d3-a456-426614174000")
+    @Parameter(name = "Deokhugam-Request-User-ID", description = "요청자 ID", in = ParameterIn.HEADER,
+        required = true, example = "123e4567-e89b-12d3-a456-426614174000",
+        schema = @Schema(type = "string", format = "uuid"))
+    @ApiResponse(responseCode = "204", description = "사용자 물리 삭제 성공")
+    @ApiResponse(responseCode = "400", description = "잘못된 요청 (요청자 ID 누락)",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "403", description = "사용자 삭제 권한 없음",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "사용자 정보 없음",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    void hardDeleteUser(UUID userId, UUID requesterId);
 }
