@@ -1,5 +1,7 @@
 package com.sprint.deokhugam.user.application.port.in;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -27,6 +29,7 @@ public class UserService implements UserUseCase {
     private final UserRepositoryPort userRepository;
     private final PasswordHasher passwordHasher;
     private final UserMapper userMapper;
+    private static final Duration HARD_DELETE_GRACE_PERIOD = Duration.ofDays(1);
 
     @Override
     @Transactional
@@ -113,6 +116,12 @@ public class UserService implements UserUseCase {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
         userRepository.delete(user);
+    }
+
+    @Override
+    @Transactional
+    public int deleteExpiredUsers(Instant now) {
+        return userRepository.deleteSoftDeletedUsersBefore(now.minus(HARD_DELETE_GRACE_PERIOD));
     }
 
     private String normalizeEmail(String email) {
