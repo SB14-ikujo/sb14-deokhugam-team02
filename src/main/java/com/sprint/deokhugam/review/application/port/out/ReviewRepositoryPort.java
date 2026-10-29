@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.sprint.deokhugam.review.domain.Review;
 
-public interface ReviewRepositoryPort extends JpaRepository<Review, UUID> {
+public interface ReviewRepositoryPort extends JpaRepository<Review, UUID>, ReviewRepositoryCustom {
 
     @Query("SELECT r "
         + " FROM Review r "

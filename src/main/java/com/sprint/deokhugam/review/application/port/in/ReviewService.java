@@ -1,9 +1,11 @@
 package com.sprint.deokhugam.review.application.port.in;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,9 +15,11 @@ import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
 import com.sprint.deokhugam.book.domain.exception.BookException;
-import com.sprint.deokhugam.common.context.user.UserContextHolder;
+import com.sprint.deokhugam.common.pagination.CursorPageResponse;
+import com.sprint.deokhugam.common.util.SliceUtils;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
+import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewListRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewUpdateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.mapper.ReviewMapper;
 import com.sprint.deokhugam.review.application.port.out.ReviewLikeRepositoryPort;
@@ -34,6 +38,7 @@ import com.sprint.deokhugam.user.domain.exception.UserException;
 public class ReviewService implements ReviewUseCase {
 
     private final ReviewRepositoryPort reviewRepositoryPort;
+    private final ReviewLikeRepositoryPort reviewLikeRepositoryPort;
     private final UserRepositoryPort userRepositoryPort;
     private final BookRepositoryPort bookRepositoryPort;
     private final ReviewMapper reviewMapper;
@@ -149,4 +154,92 @@ public class ReviewService implements ReviewUseCase {
         // 반환
         return reviewMapper.toDto(review, likedByMe);
     }
+
+    // 리뷰 목록 조회
+    @Override
+    public CursorPageResponse<ReviewDto> getReviewList(ReviewListRequest request) {
+        // 페이지 사이즈 (size)
+        int limit = request.limit();
+
+        // 커서 유효성을 미리 파싱하고 검증 (cursor)
+        String validatedCursor = parseCursor(request.cursor(), request.orderBy());
+
+        // 도서가 존재하는지 확인 (bookId)
+        if (request.bookId() != null) {
+            bookRepositoryPort.findByIdAndIsDeletedFalse(request.bookId())
+                .orElseThrow(() -> new BookException(BookErrorCode.BOOK_NOT_FOUND));
+        }
+
+        // 유저가 존재하는지 확인 (userId)
+        if (request.userId() != null) {
+            userRepositoryPort.findByIdAndIsDeletedFalse(request.userId())
+                .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+        }
+
+        // 리뷰 목록 데이터(엔티티들)
+        List<Review> reviewEntities = reviewRepositoryPort.getReviewList(
+            request.userId(),
+            request.bookId(),
+            request.keyword(),
+            request.orderBy(),
+            request.after(),
+            validatedCursor,
+            request.direction(),
+            limit
+        );
+
+        // Dto로 변환
+        List<ReviewDto> reviews = reviewEntities.stream()
+            .map(review -> {
+                boolean isLikedByMe = reviewLikeRepositoryPort.existsByReviewIdAndUserId(
+                    review.getId(),
+                    request.userId()
+                );
+                return reviewMapper.toDto(review, isLikedByMe);
+            })
+            .toList();
+
+        Slice<ReviewDto> slice = SliceUtils.toSlice(reviews, limit);
+
+        long total = reviewRepositoryPort.countByConditions(request.userId(), request.bookId(), request.keyword());
+
+        return CursorPageResponse.of(
+            slice,
+            total,
+            dto -> extractNextCursor(dto, request.orderBy()),
+            ReviewDto::createdAt
+        );
+    }
+
+    // 평점에 .0 붙여주는 메서드
+    private String extractNextCursor(ReviewDto lastReviewDto, String orderBy) {
+        if ("rating".equals(orderBy)) {
+            return lastReviewDto.rating() + ".0"; // 평점순일 때는 .0을 붙여서 추출
+        }
+        return null; // 최신순일 때는 커서가 필요 없으므로 null 반환
+    }
+
+    private String parseCursor(String cursor, String orderBy) {
+        // 평점순 정렬이 아니라 시간순 정렬이면 cursor 검증 필요 없음
+        if (!"rating".equals(orderBy)) {
+            return null;
+        }
+        // 첫 페이지 요청 (cursor가 비어있으면)
+        if (cursor == null || cursor.isBlank()) {
+            return null;
+        }
+        try {
+            double rating = Double.parseDouble(cursor);
+
+            if (rating < 1.0 || rating > 5.0) {
+                throw new ReviewException(ReviewErrorCode.REVIEW_INVALID_CURSOR);
+            }
+        } catch (NumberFormatException e) {
+            throw new ReviewException(ReviewErrorCode.REVIEW_INVALID_CURSOR);
+        }
+
+        // 검증이 완료된 cursor를 반환
+        return cursor;
+    }
+
 }
