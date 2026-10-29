@@ -72,4 +72,11 @@ public class UserController implements UserApi {
     ) {
         userUseCase.deleteUser(userId, requesterId);
     }
+
+    @DeleteMapping("/{userId}/hard")
+    public void hardDeleteUser(
+        @PathVariable UUID userId,
+        @RequestUserId UUID requesterId
+    ) {
+    }
 }
