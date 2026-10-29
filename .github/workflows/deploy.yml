@@ -1,0 +1,62 @@
+name: CD
+
+on:
+  push:
+    branches: [ main, chore/infra-setup ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: 소스코드 가져오기
+        uses: actions/checkout@v5
+
+      - name: 값 확인
+        if: always()
+        run: |
+          echo "ref      = ${{ github.ref }}"
+          echo "sha      = ${{ github.sha }}"
+          echo "role     = ${{ vars.AWS_ROLE_ARN }}"
+          echo "region   = ${{ vars.AWS_REGION }}"
+          echo "ecr repo = ${{ vars.ECR_REPOSITORY }}"
+
+      - name: 임시 발급증 받기
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: 인증 확인 (누구로 로그인됐는지)
+        run: aws sts get-caller-identity
+
+      - name: ECR 로그인
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: 이미지 주소 확인
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+        run: |
+          echo "registry   = $REGISTRY"
+          echo "repository = $REPOSITORY"
+          echo "image      = $REGISTRY/$REPOSITORY:${{ github.sha }}"
+
+      - name: 이미지 빌드 및 ECR 푸시
+        id: build-image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          echo "🐳 도커 이미지 빌드 시작"
+          docker build -t "$REGISTRY/$REPOSITORY:$IMAGE_TAG" .
+
+          echo "✅ 도커 이미지 빌드 완료"
+          # 빌드 테스트 단계: 푸시는 빌드 성공 확인 후 활성화
+          # docker push "$REGISTRY/$REPOSITORY:$IMAGE_TAG"
+          # echo "image=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
