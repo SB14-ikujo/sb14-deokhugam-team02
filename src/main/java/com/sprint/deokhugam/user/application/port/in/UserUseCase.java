@@ -1,5 +1,6 @@
 package com.sprint.deokhugam.user.application.port.in;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserDto;
@@ -21,4 +22,5 @@ public interface UserUseCase {
 
     void hardDeleteUser(UUID userId, UUID requesterId);
 
+    int deleteExpiredUsers(Instant now);
 }
