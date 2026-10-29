@@ -7,6 +7,11 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      ECS_CLUSTER: deokhugam-cluster
+      ECS_SERVICE: deokhugam-app-service
+      ECS_TASK_FAMILY: deokhugam-app
+      ECS_CONTAINER: deokhugam-app
     permissions:
       id-token: write
       contents: read
@@ -17,7 +22,7 @@ jobs:
       - name: OIDC 임시 발급증 받기
         uses: aws-actions/configure-aws-credentials@v5
         with:
-          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }} # gitactions-role
           aws-region: ${{ vars.AWS_REGION }}
 
       - name: 인증 확인 (누구로 로그인됐는지)
@@ -52,12 +57,34 @@ jobs:
           docker build -t "$REGISTRY/$REPOSITORY:$IMAGE_TAG" .
 
           echo "✅ 도커 이미지 빌드 완료"
-          # 빌드 테스트 단계: 푸시는 빌드 성공 확인 후 활성화
 
           echo "🚀 ECR 이미지 업로드 시작"
           docker push "$REGISTRY/$REPOSITORY:$IMAGE_TAG"
           echo "image=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
           echo "🎉 ECR 이미지 업로드 완료"
+
+      # ECS에 등록된 최신 태스크 정의를 가져온다. 환경변수/시크릿 설정은 ECS 쪽이 기준이다.
+      - name: 현재 태스크 정의 가져오기
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "$ECS_TASK_FAMILY" \
+            --query taskDefinition > task-definition.json
+
+      - name: 태스크 정의의 이미지 교체
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.ECS_CONTAINER }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: ECS 서비스 배포
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          service: ${{ env.ECS_SERVICE }}
+          wait-for-service-stability: true
 
 
 

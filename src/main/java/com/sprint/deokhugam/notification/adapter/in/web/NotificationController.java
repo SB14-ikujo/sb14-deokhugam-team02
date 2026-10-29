@@ -64,6 +64,7 @@ public class NotificationController implements NotificationApi {
         @RequestParam(required = false, defaultValue = "20") @Min(value = 1, message = "limit은 1 이상이어야 합니다.")
         Integer limit
     ) {
+        log.info("배포 테스트용 로그임!!!!!");
         return notificationUseCase.getNotifications(userId, direction, cursor, after, limit);
     }
 
