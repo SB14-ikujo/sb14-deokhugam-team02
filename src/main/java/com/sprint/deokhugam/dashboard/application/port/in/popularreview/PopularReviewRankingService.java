@@ -24,8 +24,9 @@ public class PopularReviewRankingService implements PopularReviewRankingUseCase 
 
     @Override
     @Transactional
-    public void rankReviews(LocalDate baseDate) {
+    public int rankReviews(LocalDate baseDate) {
         log.debug("인기 리뷰 집계 시작: baseDate={}", baseDate);
+        int total = 0;
 
         for (PeriodType period : PeriodType.values()) {
             popularReviewRepositoryPort.deleteByPeriodAndSnapshotDate(period, baseDate);
@@ -35,10 +36,12 @@ public class PopularReviewRankingService implements PopularReviewRankingUseCase 
             List<PopularReview> ranked = popularReviewRanker.rank(candidates);
 
             popularReviewRepositoryPort.saveAll(ranked);
+            total += ranked.size();
 
             log.info("인기 리뷰 집계 완료: baseDate={}, period={}, count={}", baseDate, period, ranked.size());
 
         }
 
+        return total;
     }
 }
