@@ -19,5 +19,5 @@ public interface ReviewUseCase {
 
     ReviewDto updateReview(UUID reviewId, UUID requestUserId, ReviewUpdateRequest updateRequest);
 
-    CursorPageResponse<ReviewDto> getReviewList(ReviewListRequest request);
+    CursorPageResponse<ReviewDto> getReviewList(ReviewListRequest request, UUID requestUserId);
 }
