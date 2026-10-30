@@ -4,5 +4,5 @@ import java.time.LocalDate;
 
 public interface PopularBookRankingUseCase {
 
-    void rankBooks(LocalDate baseDate);
+    int rankBooks(LocalDate baseDate);
 }

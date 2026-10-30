@@ -24,8 +24,9 @@ public class PopularBookRankingService implements PopularBookRankingUseCase {
 
     @Override
     @Transactional
-    public void rankBooks(LocalDate baseDate) {
+    public int rankBooks(LocalDate baseDate) {
         log.info("인기 도서 집계 시작: baseDate={}", baseDate);
+        int total = 0;
 
         for (PeriodType period : PeriodType.values()) {
             // 같은  날 다시 돌려도 중복되지 않게 기존 순위 지우기
@@ -39,8 +40,11 @@ public class PopularBookRankingService implements PopularBookRankingUseCase {
 
             // 저장
             popularBookRepositoryPort.saveAll(ranked);
+            total += ranked.size();
 
             log.info("인기 도서 집계 완료: baseDate={}, period={}, count={}", baseDate, period, ranked.size());
         }
+
+        return total;
     }
 }

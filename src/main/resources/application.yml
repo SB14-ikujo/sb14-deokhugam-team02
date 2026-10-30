@@ -26,6 +26,11 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  batch:
+    jdbc:
+      initialize-schema: always   # 실행 기록 테이블(BATCH_*)을 자동 생성
+    job:
+      enabled: false              # 앱 켤 때 Job 자동 실행 끄기
 
 logging:
   file:
@@ -50,3 +55,8 @@ deokhugam:
       bucket: ${AWS_S3_BUCKET:}
       presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600} # (기본값: 10분)
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics   # 이 두 개만 열기, Spring Batch 관련
