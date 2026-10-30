@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Parameter;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import com.sprint.deokhugam.common.context.user.RequestUserId;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserDto;
@@ -24,6 +25,7 @@ import com.sprint.deokhugam.user.adapter.in.web.dto.UserRegisterRequest;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserUpdateRequest;
 import com.sprint.deokhugam.user.application.port.in.UserUseCase;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
@@ -42,6 +44,7 @@ public class UserController implements UserApi {
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/login")
     public UserDto login(@Valid @RequestBody UserLoginRequest request) {
+        log.info("배포 테스트 체크용 입니다.!!!");
         return userUseCase.login(request);
     }
 
