@@ -60,6 +60,19 @@ class PopularBookRankingServiceTest {
         verify(popularBookRepositoryPort).saveAll(List.of(highScore, lowScore));
     }
 
+    @Test
+    @DisplayName("모든 기간에서 저장한 순위 수를 합해 반환한다")
+    void rankBooksReturnsTotalSavedCount() {
+        when(popularBookRepositoryPort.findCandidates(PeriodType.DAILY, TODAY))
+            .thenReturn(List.of(candidate("A", 1, 5.0), candidate("B", 2, 9.0)));
+        when(popularBookRepositoryPort.findCandidates(PeriodType.WEEKLY, TODAY))
+            .thenReturn(List.of(candidate("C", 3, 7.0)));
+
+        int total = popularBookRankingService.rankBooks(TODAY);
+
+        assertThat(total).isEqualTo(3);
+    }
+
     private PopularBook candidate(String title, long idNumber, double score) {
         Book book = Book.create(title, null, "저자", "설명", "출판사", LocalDate.of(2020, 1, 1), "isbn-" + title, null);
         ReflectionTestUtils.setField(book, "id", new UUID(0L, idNumber));
