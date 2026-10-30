@@ -23,16 +23,19 @@ public class PowerUserRankingService implements PowerUserRankingUseCase {
 
     @Override
     @Transactional
-    public void rankUsers(LocalDate baseDate) {
+    public int rankUsers(LocalDate baseDate) {
         log.debug("파워 유저 집계 시작: baseDate={}", baseDate);
+        int total = 0;
 
         for (PeriodType period : PeriodType.values()) {
             powerUserRepositoryPort.deleteByPeriodAndSnapshotDate(period, baseDate);
             List<PowerUser> candidates = powerUserRepositoryPort.findCandidates(period, baseDate);
             List<PowerUser> rank = powerUserRanker.rank(candidates);
             powerUserRepositoryPort.saveAll(rank);
+            total += rank.size();
             log.info("파워 유저 집계 완료: baseDate={}, period={}, count={}", baseDate, period, rank.size());
         }
 
+        return total;
     }
 }
