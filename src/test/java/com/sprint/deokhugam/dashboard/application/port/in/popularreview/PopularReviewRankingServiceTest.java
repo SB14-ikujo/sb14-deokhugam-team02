@@ -60,6 +60,19 @@ class PopularReviewRankingServiceTest {
         verify(popularReviewRepositoryPort).saveAll(List.of(highScore, lowScore));
     }
 
+    @Test
+    @DisplayName("모든 기간에서 저장한 순위 수를 합해 반환한다")
+    void rankReviewsReturnsTotalSavedCount() {
+        when(popularReviewRepositoryPort.findCandidates(PeriodType.DAILY, TODAY))
+            .thenReturn(List.of(candidate("A", 1, 0.7), candidate("B", 2, 2.3)));
+        when(popularReviewRepositoryPort.findCandidates(PeriodType.WEEKLY, TODAY))
+            .thenReturn(List.of(candidate("C", 3, 1.5)));
+
+        int total = popularReviewRankingService.rankReviews(TODAY);
+
+        assertThat(total).isEqualTo(3);
+    }
+
     private PopularReview candidate(String content, long idNumber, double score) {
         Review review = Review.create(null, null, content, 5);
         ReflectionTestUtils.setField(review, "id", new UUID(0L, idNumber));

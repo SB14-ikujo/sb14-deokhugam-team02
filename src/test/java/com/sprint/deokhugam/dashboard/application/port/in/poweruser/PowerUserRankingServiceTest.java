@@ -60,6 +60,19 @@ class PowerUserRankingServiceTest {
         verify(powerUserRepositoryPort).saveAll(List.of(highScore, lowScore));
     }
 
+    @Test
+    @DisplayName("모든 기간에서 저장한 순위 수를 합해 반환한다")
+    void rankUsersReturnsTotalSavedCount() {
+        when(powerUserRepositoryPort.findCandidates(PeriodType.DAILY, TODAY))
+            .thenReturn(List.of(candidate("userA", 1, 0.7), candidate("userB", 2, 2.3)));
+        when(powerUserRepositoryPort.findCandidates(PeriodType.WEEKLY, TODAY))
+            .thenReturn(List.of(candidate("userC", 3, 1.5)));
+
+        int total = powerUserRankingService.rankUsers(TODAY);
+
+        assertThat(total).isEqualTo(3);
+    }
+
     private PowerUser candidate(String nickname, long idNumber, double score) {
         User user = User.create(nickname + "@test.com", nickname, "password1!");
         ReflectionTestUtils.setField(user, "id", new UUID(0L, idNumber));
