@@ -21,6 +21,7 @@ import com.sprint.deokhugam.comment.domain.exception.CommentErrorCode;
 import com.sprint.deokhugam.comment.domain.exception.CommentException;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 import com.sprint.deokhugam.common.util.SliceUtils;
+import com.sprint.deokhugam.notification.application.port.in.NotificationUseCase;
 import com.sprint.deokhugam.review.application.port.out.ReviewRepositoryPort;
 import com.sprint.deokhugam.review.domain.Review;
 import com.sprint.deokhugam.user.application.port.out.UserRepositoryPort;
@@ -30,7 +31,7 @@ import com.sprint.deokhugam.user.domain.User;
 @Service
 @RequiredArgsConstructor
 public class CommentApplicationService implements CommentUseCase {
-
+    private final NotificationUseCase notificationUseCase;
     private final CommentRepositoryPort commentRepository;
     private final ReviewRepositoryPort reviewRepository;
     private final UserRepositoryPort userRepository;
@@ -50,6 +51,7 @@ public class CommentApplicationService implements CommentUseCase {
             .orElseThrow(() -> new CommentException(CommentErrorCode.COMMENT_USER_NOT_FOUND));
 
         Comment comment = commentRepository.save(Comment.create(review, user, request.content()));
+        notificationUseCase.createCommentNotification(review, user.getNickname());
 
         return commentMapper.toDto(comment);
     }
