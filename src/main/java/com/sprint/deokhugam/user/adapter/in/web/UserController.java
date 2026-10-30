@@ -44,7 +44,7 @@ public class UserController implements UserApi {
     @ResponseStatus(HttpStatus.OK)
     @PostMapping("/login")
     public UserDto login(@Valid @RequestBody UserLoginRequest request) {
-        log.info("배포 테스트 체크용 입니다.!!!");
+        log.info("배포 테스트 체크용 입니다.!!!!!!");
         return userUseCase.login(request);
     }
 
