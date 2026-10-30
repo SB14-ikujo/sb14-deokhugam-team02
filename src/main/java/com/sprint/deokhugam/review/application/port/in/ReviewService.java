@@ -157,7 +157,7 @@ public class ReviewService implements ReviewUseCase {
 
     // 리뷰 목록 조회
     @Override
-    public CursorPageResponse<ReviewDto> getReviewList(ReviewListRequest request) {
+    public CursorPageResponse<ReviewDto> getReviewList(ReviewListRequest request, UUID requestUserId) {
         // 한 페이지 안에 보여줄 데이터 갯수 (size)
         int limit = request.limit();
 
@@ -188,13 +188,18 @@ public class ReviewService implements ReviewUseCase {
             limit
         );
 
+        // 리뷰들의 ID
+        List<UUID> reviewIds = reviewEntities.stream()
+            .map(Review::getId)
+            .toList();
+
+        // 리뷰 목록들 중 내가 좋아요한 리뷰 id들
+        List<UUID> likedReviewIds = reviewLikeRepositoryPort.findLikeReviewIds(requestUserId, reviewIds);
+
         // Dto로 변환
         List<ReviewDto> reviews = reviewEntities.stream()
             .map(review -> {
-                boolean isLikedByMe = reviewLikeRepositoryPort.existsByReviewIdAndUserId(
-                    review.getId(),
-                    request.userId()
-                );
+                boolean isLikedByMe = likedReviewIds.contains(review.getId());
                 return reviewMapper.toDto(review, isLikedByMe);
             })
             .toList();

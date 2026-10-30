@@ -29,13 +29,14 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
             .join(review.user)
             .join(review.book)
             .where(
+                review.isDeleted.isFalse(),
                 userIdEq(userId),
                 bookIdEq(bookId),
                 keywordContains(keyword)
             )
             .fetchOne();
 
-        return (totalCount != null) ? totalCount : 0L;
+        return totalCount;
     }
 
     @Override
@@ -52,7 +53,6 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
 
         boolean asc = (direction == Sort.Direction.ASC);
 
-        // orderBy = "rating"(평점), "createdAt"(생성시간)
         boolean byRating = "rating".equals(orderBy);
 
         return queryFactory
@@ -60,6 +60,7 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
             .join(review.user).fetchJoin()
             .join(review.book).fetchJoin()
             .where(
+                review.isDeleted.isFalse(),
                 userIdEq(userId),
                 bookIdEq(bookId),
                 keywordContains(keyword),
@@ -86,14 +87,11 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
         if (keyword == null || keyword.isBlank()) {
             return null;
         }
-        return review.user.nickname.contains(keyword)
-            .or(review.content.contains(keyword))
-            .or(review.book.title.contains(keyword));
+        return review.user.nickname.containsIgnoreCase(keyword)
+            .or(review.content.containsIgnoreCase(keyword))
+            .or(review.book.title.containsIgnoreCase(keyword));
     }
 
-    // orderBy = ASC, DESC
-    // cursor - 생성시간(createdAt)
-    // after - 생성시간(createdAt)
     private BooleanExpression createdAtCursor(Instant after, boolean asc) {
         if (after == null) {
             return null;
@@ -101,9 +99,6 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
         return asc ? review.createdAt.gt(after) : review.createdAt.lt(after);
     }
 
-    // orderBy = ASC, DESC
-    // cursor = 리뷰 평점
-    // after = 생성시간
     private BooleanExpression ratingCursor(Instant after, String cursor, boolean asc) {
         //  첫 페이지 요청이거나 값이 없는 경우
         if (after == null || cursor == null || cursor.isBlank()) {

@@ -6,6 +6,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.sprint.deokhugam.review.domain.ReviewLike;
 
-public interface ReviewLikeRepositoryPort extends JpaRepository<ReviewLike, UUID> {
+public interface ReviewLikeRepositoryPort extends JpaRepository<ReviewLike, UUID>, ReviewLikeRepositoryCustom {
     boolean existsByReviewIdAndUserId(UUID reviewId, UUID userId);
 }

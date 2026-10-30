@@ -5,7 +5,6 @@ import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -74,7 +73,9 @@ public class ReviewController implements ReviewApi {
     // 리뷰 목록 조회
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public CursorPageResponse<ReviewDto> getList(@ModelAttribute @Valid ReviewListRequest request) {
-        return reviewUseCase.getReviewList(request);
+    public CursorPageResponse<ReviewDto> getList(
+        @Valid ReviewListRequest request,
+        @RequestUserId UUID requestUserId) {
+        return reviewUseCase.getReviewList(request, requestUserId);
     }
 }

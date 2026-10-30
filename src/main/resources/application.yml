@@ -13,11 +13,6 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: create
-    #  #
-    #  sql:
-    #    init:
-    #      mode: always
-    #    #
     properties:
       hibernate:
         format_sql: true
