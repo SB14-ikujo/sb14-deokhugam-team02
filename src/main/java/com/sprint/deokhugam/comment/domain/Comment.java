@@ -47,7 +47,7 @@ public class Comment extends BaseEntity {
     }
 
     public static Comment create(Review review, User user, String content) {
-        return new Comment(review, user, ProfanityWord.mask(content));   // 변경
+        return new Comment(review, user, ProfanityWord.mask(content));
     }
 
     public void updateContent(String content) {
