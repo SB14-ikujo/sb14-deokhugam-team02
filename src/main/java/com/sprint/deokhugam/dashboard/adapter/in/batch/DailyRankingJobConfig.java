@@ -19,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import com.sprint.deokhugam.dashboard.application.port.in.popularbook.PopularBookRankingUseCase;
 import com.sprint.deokhugam.dashboard.application.port.in.popularreview.PopularReviewRankingUseCase;
 import com.sprint.deokhugam.dashboard.application.port.in.poweruser.PowerUserRankingUseCase;
+import com.sprint.deokhugam.notification.application.port.in.NotificationUseCase;
 
 @Configuration
 @RequiredArgsConstructor
@@ -32,12 +33,14 @@ public class DailyRankingJobConfig {
     private final PopularBookRankingUseCase popularBookRankingUseCase;
     private final PopularReviewRankingUseCase popularReviewRankingUseCase;
     private final PowerUserRankingUseCase powerUserRankingUseCase;
+    private final NotificationUseCase notificationUseCase;
 
     @Bean
     public Job dailyRankingJob() {
         return new JobBuilder(JOB_NAME, jobRepository)
             .start(popularBookStep())
             .next(popularReviewStep())
+            .next(popularReviewNotificationStep())
             .next(powerUserStep())
             .build();
     }
@@ -75,12 +78,23 @@ public class DailyRankingJobConfig {
             .build();
     }
 
+    @Bean
+    public Step popularReviewNotificationStep() {
+        return new StepBuilder("popularReviewNotificationStep", jobRepository)
+            .tasklet((contribution, chunkContext) -> {
+                long count = notificationUseCase.createTop10ReviewNotifications(baseDate(contribution));
+                recordCount(contribution, "popularReviewNotificationStep", count);
+                return RepeatStatus.FINISHED;
+            }, transactionManager)
+            .build();
+    }
+
     // Job을 실행할 때 넘긴 기준 날짜를 꺼낸다
     private LocalDate baseDate(StepContribution contribution) {
         return contribution.getStepExecution().getJobParameters().getLocalDate(BASE_DATE);
     }
 
-    private void recordCount(StepContribution contribution, String stepName, int count) {
+    private void recordCount(StepContribution contribution, String stepName, long count) {
         contribution.incrementWriteCount(count);
         meterRegistry.counter("deokhugam.batch.ranked.count", "step", stepName).increment(count);
     }
