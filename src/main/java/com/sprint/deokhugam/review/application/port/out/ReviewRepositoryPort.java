@@ -28,8 +28,4 @@ public interface ReviewRepositoryPort
         + "WHERE r.id = :reviewId "
         + "AND r.isDeleted = false")
     Optional<Review> findByFetchJoin(@Param("reviewId") UUID reviewId);
-
-    void increaseLikeCount(UUID reviewId);
-
-    void decreaseLikeCount(UUID reviewId);
 }

@@ -50,10 +50,10 @@ public class ReviewLikeService implements ReviewLikeUseCase {
         } else {
             reviewRepositoryPort.increaseLikeCount(reviewId);
 
-            Review review = reviewRepositoryPort.findById(reviewId)
+            Review review = reviewRepositoryPort.findByIdAndIsDeletedFalse(reviewId)
                 .orElseThrow(() -> new ReviewException(ReviewErrorCode.REVIEW_NOT_FOUND));
 
-            User requestUser = userRepositoryPort.findById(requestUserId)
+            User requestUser = userRepositoryPort.findByIdAndIsDeletedFalse(requestUserId)
                 .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
             notificationUseCase.createLikeNotification(review, requestUser.getNickname()); // 알림 생성
