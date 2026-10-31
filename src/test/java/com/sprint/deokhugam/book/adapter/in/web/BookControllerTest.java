@@ -1,10 +1,12 @@
 package com.sprint.deokhugam.book.adapter.in.web;
 
+import static com.sprint.deokhugam.common.logging.MdcLoggingInterceptor.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -15,8 +17,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockPart;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookCreateRequest;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookDto;
@@ -74,8 +78,11 @@ class BookControllerTest {
             Instant.now()
         );
 
-        given(bookUseCase.createBook(eq(userId), any(BookCreateRequest.class)))
-            .willReturn(response);
+        given(bookUseCase.createBook(
+            eq(userId),
+            any(BookCreateRequest.class),
+            nullable(MultipartFile.class)
+        )).willReturn(response);
 
         String requestJson = """
             {
@@ -89,15 +96,19 @@ class BookControllerTest {
             """;
 
         // when & then
-        mockMvc.perform(post("/api/books")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(requestJson))
+        mockMvc.perform(multipart("/api/books")
+                .part(createJsonPart(requestJson))
+                .header(USER_ID_HEADER, userId.toString()))
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.title").value("원피스 99: 밀짚모자 루피 (밀짚모자 루피)"))
             .andExpect(jsonPath("$.author").value("오다 에이치로"))
             .andExpect(jsonPath("$.isbn").value("9791168945456"));
 
-        verify(bookUseCase).createBook(eq(userId), any(BookCreateRequest.class));
+        verify(bookUseCase).createBook(
+            eq(userId),
+            any(BookCreateRequest.class),
+            nullable(MultipartFile.class)
+        );
     }
 
     @Test
@@ -106,7 +117,7 @@ class BookControllerTest {
         // given
         UserContextHolder.setUserId(userId);
 
-        String responseBody = """
+        String requestJson = """
             {
                 "title": "원피스 99: 밀짚모자 루피 (밀짚모자 루피)",
                 "author": "오다 에이치로",
@@ -117,13 +128,16 @@ class BookControllerTest {
             }
             """;
 
-        given(bookUseCase.createBook(eq(userId), any(BookCreateRequest.class)))
-            .willThrow(new BookException(BookErrorCode.BOOK_INVALID_ISBN));
+        given(bookUseCase.createBook(
+            eq(userId),
+            any(BookCreateRequest.class),
+            nullable(MultipartFile.class)
+        )).willThrow(new BookException(BookErrorCode.BOOK_INVALID_ISBN));
 
         // when & then
-        mockMvc.perform(post("/api/books")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(responseBody))
+        mockMvc.perform(multipart("/api/books")
+                .part(createJsonPart(requestJson))
+                .header(USER_ID_HEADER, userId.toString()))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value(BookErrorCode.BOOK_INVALID_ISBN.getMessage()));
@@ -135,7 +149,7 @@ class BookControllerTest {
         // given
         UserContextHolder.setUserId(userId);
 
-        String responseBody = """
+        String requestJson = """
             {
                 "title": "원피스 99: 밀짚모자 루피 (밀짚모자 루피)",
                 "author": "오다 에이치로",
@@ -146,13 +160,16 @@ class BookControllerTest {
             }
             """;
 
-        given(bookUseCase.createBook(eq(userId), any(BookCreateRequest.class)))
-            .willThrow(new BookException(BookErrorCode.BOOK_ISBN_DUPLICATE));
+        given(bookUseCase.createBook(
+            eq(userId),
+            any(BookCreateRequest.class),
+            nullable(MultipartFile.class)
+        )).willThrow(new BookException(BookErrorCode.BOOK_ISBN_DUPLICATE));
 
         // when & then
-        mockMvc.perform(post("/api/books")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(responseBody))
+        mockMvc.perform(multipart("/api/books")
+                .part(createJsonPart(requestJson))
+                .header(USER_ID_HEADER, userId.toString()))
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.status").value(409))
             .andExpect(jsonPath("$.message").value(BookErrorCode.BOOK_ISBN_DUPLICATE.getMessage()));
@@ -172,11 +189,22 @@ class BookControllerTest {
             """;
 
         // when & then
-        mockMvc.perform(post("/api/books")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
+        mockMvc.perform(multipart("/api/books")
+                .part(createJsonPart(invalidJson))
+                .header(USER_ID_HEADER, userId.toString()))
             .andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.status").value(400))
             .andExpect(jsonPath("$.message").value(CommonErrorCode.INVALID_INPUT.getMessage()));
+    }
+
+    private MockPart createJsonPart(String json) {
+        MockPart part = new MockPart(
+            "bookData",
+            json.getBytes(StandardCharsets.UTF_8)
+        );
+
+        part.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        return part;
     }
 }
