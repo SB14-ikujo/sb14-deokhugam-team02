@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import com.sprint.deokhugam.review.domain.Review;
 
-public interface ReviewCommandRepositoryPort extends ReviewRepositoryPort, JpaRepository<Review, UUID> {
+public interface ReviewCommandRepositoryPort extends JpaRepository<Review, UUID> {
     // 리뷰의 '좋아요 수' 증가
     @Modifying(clearAutomatically = true)
     @Query("UPDATE Review r SET r.likeCount = r.likeCount + 1 WHERE r.id = :reviewId")
