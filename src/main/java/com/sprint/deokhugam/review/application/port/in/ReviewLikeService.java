@@ -42,10 +42,12 @@ public class ReviewLikeService implements ReviewLikeUseCase {
         if (alreadyLike.isPresent()) {
             ReviewLike targetLike = alreadyLike.get();
 
-            reviewRepositoryPort.decreaseLikeCount(reviewId);
-            reviewLikeRepositoryPort.delete(targetLike);
+            ReviewLikeDto responseDto = reviewLikeMapper.toDto(targetLike, false);
 
-            return reviewLikeMapper.toDto(targetLike, false);
+            reviewLikeRepositoryPort.delete(targetLike);
+            reviewRepositoryPort.decreaseLikeCount(reviewId);
+
+            return responseDto;
 
         } else {
             reviewRepositoryPort.increaseLikeCount(reviewId);

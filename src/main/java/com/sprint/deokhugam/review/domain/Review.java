@@ -94,15 +94,4 @@ public class Review extends BaseEntity {
         this.content = content;
         this.rating = rating;
     }
-
-    // 리뷰 '좋아요 수' 상승
-    public void upLikeCount() {
-        this.likeCount += 1;
-    }
-
-    // 리뷰 '좋아요 수' 감소
-    public void downLikeCount() {
-        this.likeCount -= 1;
-    }
-
 }
