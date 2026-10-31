@@ -17,7 +17,9 @@ public enum CommonErrorCode implements ErrorCode {
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 내부 오류가 발생했습니다."),
 
     AWS_SERVICE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "AWS 서비스 처리 중 오류가 발생했습니다."),
-    S3_SERVICE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "S3 파일 처리 중 오류가 발생했습니다.");
+    S3_SERVICE_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "S3 파일 처리 중 오류가 발생했습니다."),
+
+    ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리되었거나 중복된 데이터 입니다.");
     private final HttpStatus status;
     private final String message;
 }
