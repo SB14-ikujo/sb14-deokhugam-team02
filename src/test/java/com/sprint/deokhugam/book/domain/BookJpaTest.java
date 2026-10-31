@@ -21,6 +21,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import jakarta.persistence.EntityManager;
 
+import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.common.config.QuerydslConfig;
 import com.sprint.deokhugam.user.domain.User;
 
@@ -43,6 +44,9 @@ class BookJpaTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private BookRepositoryPort bookRepositoryPort;
 
     private User user;
 
@@ -146,6 +150,40 @@ class BookJpaTest {
         // then
         assertThatCode(() -> insertBook("새로운 도서", isbn))
             .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("Repository를 통해 도서를 저장하고 조회할 수 있다.")
+    void saveAndFindBookByRepository() {
+        // given
+        Book book = Book.create(
+            "원피스 99: 밀짚모자 루피 (밀짚모자 루피)",
+            user,
+            "오다 에이치로",
+            "도서 소개",
+            "대원씨아이",
+            LocalDate.of(2023, 8, 16),
+            "9791168945456",
+            null
+        );
+
+        // when
+        Book savedBook = bookRepositoryPort.saveAndFlush(book);
+
+        entityManager.clear();
+
+        Book foundBook = bookRepositoryPort.findById(savedBook.getId())
+            .orElseThrow();
+
+        // then
+        assertThat(foundBook.getTitle())
+            .isEqualTo("원피스 99: 밀짚모자 루피 (밀짚모자 루피)");
+
+        assertThat(foundBook.getIsbn())
+            .isEqualTo("9791168945456");
+
+        assertThat(foundBook.getUser().getId())
+            .isEqualTo(user.getId());
     }
 
     private void insertBook(String title, String isbn) {
