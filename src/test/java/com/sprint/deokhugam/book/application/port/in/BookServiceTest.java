@@ -2,7 +2,6 @@ package com.sprint.deokhugam.book.application.port.in;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.BDDMockito.*;
 
 import java.awt.image.BufferedImage;
@@ -71,6 +70,9 @@ class BookServiceTest {
     @Mock
     private BookThumbnailDownloadPort bookThumbnailDownloadPort;
 
+    @Mock
+    private BookPersistenceService bookPersistenceService;
+
     @InjectMocks
     private BookService bookService;
 
@@ -133,6 +135,31 @@ class BookServiceTest {
         );
     }
 
+    private void givenBookPersistenceSave(
+        BookCreateRequest bookRequest,
+        String isbn
+    ) {
+        given(bookPersistenceService.saveBook(
+            eq(userId),
+            eq(bookRequest),
+            eq(isbn),
+            nullable(String.class)
+        )).willAnswer(invocation -> {
+            String thumbnailUrl = invocation.getArgument(3);
+
+            return Book.create(
+                bookRequest.title(),
+                user,
+                bookRequest.author(),
+                bookRequest.description(),
+                bookRequest.publisher(),
+                bookRequest.publishedDate(),
+                isbn,
+                thumbnailUrl
+            );
+        });
+    }
+
     @Test
     @DisplayName("정상적인 요청이면 도서를 등록하고 DTO를 반환한다.")
     void createBookSuccess() {
@@ -146,8 +173,7 @@ class BookServiceTest {
         when(bookSearchPort.searchByIsbn(request.isbn()))
             .thenReturn(List.of());
 
-        when(bookRepositoryPort.saveAndFlush(any(Book.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
+        givenBookPersistenceSave(request, request.isbn());
 
         when(bookMapper.toDto(any(Book.class)))
             .thenReturn(expectedDto);
@@ -161,19 +187,19 @@ class BookServiceTest {
         verify(bookRepositoryPort).existsByIsbn(request.isbn());
         verify(userRepositoryPort).findByIdAndIsDeletedFalse(userId);
 
-        // saveAndFlush()에 전달된 Book 객체 확인
-        ArgumentCaptor<Book> bookCaptor = ArgumentCaptor.forClass(Book.class);
+        // BookPersistenceService에 전달된 매개변수 확인
+        ArgumentCaptor<String> thumbnailCaptor = ArgumentCaptor.forClass(String.class);
 
-        verify(bookRepositoryPort).saveAndFlush(bookCaptor.capture());
+        verify(bookPersistenceService).saveBook(
+            eq(userId),
+            eq(request),
+            eq(request.isbn()),
+            thumbnailCaptor.capture()
+        );
 
-        Book savedBook = bookCaptor.getValue();
+        assertThat(thumbnailCaptor.getValue()).isNull();
 
-        assertThat(savedBook.getTitle()).isEqualTo(request.title());
-        assertThat(savedBook.getAuthor()).isEqualTo(request.author());
-        assertThat(savedBook.getIsbn()).isEqualTo(request.isbn());
-        assertThat(savedBook.getUser()).isSameAs(user);
-
-        verify(bookMapper).toDto(savedBook);
+        verify(bookMapper).toDto(any(Book.class));
     }
 
     @Test
@@ -197,7 +223,12 @@ class BookServiceTest {
             .hasMessage(BookErrorCode.BOOK_INVALID_ISBN.getMessage());
 
         verify(bookRepositoryPort, never()).existsByIsbn(any(String.class));
-        verify(bookRepositoryPort, never()).saveAndFlush(any(Book.class));
+        verify(bookPersistenceService, never()).saveBook(
+            any(UUID.class),
+            any(BookCreateRequest.class),
+            anyString(),
+            nullable(String.class)
+        );
     }
 
     @Test
@@ -214,7 +245,12 @@ class BookServiceTest {
 
         verify(bookRepositoryPort).existsByIsbn(request.isbn());
         verify(userRepositoryPort, never()).findByIdAndIsDeletedFalse(any(UUID.class));
-        verify(bookRepositoryPort, never()).saveAndFlush(any(Book.class));
+        verify(bookPersistenceService, never()).saveBook(
+            any(UUID.class),
+            any(BookCreateRequest.class),
+            anyString(),
+            nullable(String.class)
+        );
     }
 
     @Test
@@ -231,7 +267,12 @@ class BookServiceTest {
         assertThatThrownBy(() -> bookService.createBook(userId, request, null))
             .isInstanceOf(UserException.class);
 
-        verify(bookRepositoryPort, never()).saveAndFlush(any(Book.class));
+        verify(bookPersistenceService, never()).saveBook(
+            any(UUID.class),
+            any(BookCreateRequest.class),
+            anyString(),
+            nullable(String.class)
+        );
     }
 
     @Test
@@ -257,8 +298,7 @@ class BookServiceTest {
         when(userRepositoryPort.findByIdAndIsDeletedFalse(userId))
             .thenReturn(Optional.of(user));
 
-        when(bookRepositoryPort.saveAndFlush(any(Book.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
+        givenBookPersistenceSave(hyphenatedRequest, normalizedIsbn);
 
         when(bookMapper.toDto(any(Book.class)))
             .thenReturn(expectedDto);
@@ -269,12 +309,12 @@ class BookServiceTest {
         // then
         verify(bookRepositoryPort).existsByIsbn(normalizedIsbn);
 
-        ArgumentCaptor<Book> bookCaptor = ArgumentCaptor.forClass(Book.class);
-
-        verify(bookRepositoryPort).saveAndFlush(bookCaptor.capture());
-
-        assertThat(bookCaptor.getValue().getIsbn())
-            .isEqualTo(normalizedIsbn);
+        verify(bookPersistenceService).saveBook(
+            userId,
+            hyphenatedRequest,
+            normalizedIsbn,
+            null
+        );
     }
 
     @Test
@@ -383,8 +423,7 @@ class BookServiceTest {
             "image/png"
         )).thenReturn("/api/images/generated_thumbnail.png");
 
-        when(bookRepositoryPort.saveAndFlush(any(Book.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
+        givenBookPersistenceSave(request, request.isbn());
 
         when(bookMapper.toDto(any(Book.class)))
             .thenReturn(expectedDto);
@@ -399,13 +438,12 @@ class BookServiceTest {
         // then
         assertThat(result.thumbnailUrl()).isEqualTo("/api/images/generated_thumbnail.png");
 
-        ArgumentCaptor<Book> bookCaptor = ArgumentCaptor.forClass(Book.class);
-
-        verify(bookRepositoryPort).saveAndFlush(bookCaptor.capture());
-
-        Book savedBook = bookCaptor.getValue();
-
-        assertThat(savedBook.getThumbnailUrl()).isEqualTo("generated_thumbnail.png");
+        verify(bookPersistenceService).saveBook(
+            userId,
+            request,
+            request.isbn(),
+            "generated_thumbnail.png"
+        );
 
         verify(bookImageStorage).upload(
             eq("generated_thumbnail.png"),
@@ -472,8 +510,7 @@ class BookServiceTest {
             "image/png"
         )).thenReturn("/api/images/generated_kakao-thumbnail.png");
 
-        when(bookRepositoryPort.saveAndFlush(any(Book.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
+        givenBookPersistenceSave(request, request.isbn());
 
         when(bookMapper.toDto(any(Book.class)))
             .thenReturn(expectedDto);
@@ -485,13 +522,12 @@ class BookServiceTest {
         assertThat(result.thumbnailUrl())
             .isEqualTo("/api/images/generated_kakao-thumbnail.png");
 
-        ArgumentCaptor<Book> bookCaptor = ArgumentCaptor.forClass(Book.class);
-
-        verify(bookRepositoryPort).saveAndFlush(bookCaptor.capture());
-
-        Book savedBook = bookCaptor.getValue();
-
-        assertThat(savedBook.getThumbnailUrl()).isEqualTo("generated_kakao-thumbnail.png");
+        verify(bookPersistenceService).saveBook(
+            userId,
+            request,
+            request.isbn(),
+            "generated_kakao-thumbnail.png"
+        );
 
         verify(bookSearchPort).searchByIsbn(request.isbn());
         verify(bookThumbnailDownloadPort).download(thumbnailUrl);
@@ -529,8 +565,12 @@ class BookServiceTest {
             eq("image/png")
         )).thenReturn("generated_thumbnail.png");
 
-        when(bookRepositoryPort.saveAndFlush(any(Book.class)))
-            .thenThrow(new RuntimeException("DB 저장 실패"));
+        given(bookPersistenceService.saveBook(
+            eq(userId),
+            eq(request),
+            eq(request.isbn()),
+            nullable(String.class)
+        )).willThrow(new RuntimeException("DB 저장 실패"));
 
         // when & then
         assertThatThrownBy(
@@ -554,8 +594,7 @@ class BookServiceTest {
         when(bookSearchPort.searchByIsbn(request.isbn()))
             .thenReturn(List.of());
 
-        when(bookRepositoryPort.saveAndFlush(any(Book.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
+        givenBookPersistenceSave(request, request.isbn());
 
         when(bookMapper.toDto(any(Book.class)))
             .thenReturn(expectedDto);
@@ -566,11 +605,12 @@ class BookServiceTest {
         // then
         assertThat(result.thumbnailUrl()).isNull();
 
-        ArgumentCaptor<Book> bookCaptor = ArgumentCaptor.forClass(Book.class);
-
-        verify(bookRepositoryPort).saveAndFlush(bookCaptor.capture());
-
-        assertThat(bookCaptor.getValue().getThumbnailUrl()).isNull();
+        verify(bookPersistenceService).saveBook(
+            userId,
+            request,
+            request.isbn(),
+            null
+        );
 
         verify(bookImageStorage, never()).upload(anyString(), any(byte[].class), anyString());
     }
@@ -608,8 +648,7 @@ class BookServiceTest {
         when(bookThumbnailDownloadPort.download(thumbnailUrl))
             .thenReturn(Optional.empty());
 
-        when(bookRepositoryPort.saveAndFlush(any(Book.class)))
-            .thenAnswer(invocation -> invocation.getArgument(0));
+        givenBookPersistenceSave(request, request.isbn());
 
         when(bookMapper.toDto(any(Book.class)))
             .thenReturn(expectedDto);
@@ -624,7 +663,12 @@ class BookServiceTest {
 
         verify(bookImageStorage, never()).upload(anyString(), any(byte[].class), anyString());
 
-        verify(bookRepositoryPort).saveAndFlush(any(Book.class));
+        verify(bookPersistenceService).saveBook(
+            userId,
+            request,
+            request.isbn(),
+            null
+        );
     }
 
     @Test
@@ -658,8 +702,7 @@ class BookServiceTest {
             "image/png"
         )).willReturn("/api/images/generated_thumbnail.png");
 
-        given(bookRepositoryPort.saveAndFlush(any(Book.class)))
-            .willAnswer(invocation -> invocation.getArgument(0));
+        givenBookPersistenceSave(request, request.isbn());
 
         given(bookMapper.toDto(any(Book.class)))
             .willReturn(expectedDto);
@@ -674,6 +717,13 @@ class BookServiceTest {
             eq("generated_thumbnail.png"),
             any(byte[].class),
             eq("image/png")
+        );
+
+        verify(bookPersistenceService).saveBook(
+            userId,
+            request,
+            request.isbn(),
+            "generated_thumbnail.png"
         );
     }
 
@@ -708,8 +758,7 @@ class BookServiceTest {
             "image/png"
         )).willReturn("/api/images/generated_thumbnail.png");
 
-        given(bookRepositoryPort.saveAndFlush(any(Book.class)))
-            .willAnswer(invocation -> invocation.getArgument(0));
+        givenBookPersistenceSave(request, request.isbn());
 
         given(bookMapper.toDto(any(Book.class)))
             .willReturn(expectedDto);
@@ -719,6 +768,13 @@ class BookServiceTest {
 
         // then
         verify(bookImageStorage).generateImageKey("thumbnail.png");
+
+        verify(bookPersistenceService).saveBook(
+            userId,
+            request,
+            request.isbn(),
+            "generated_thumbnail.png"
+        );
     }
 
     @Test
@@ -734,13 +790,20 @@ class BookServiceTest {
             createValidPngBytes()
         );
 
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> bookService.createBook(userId, request, thumbnailImage)
-        );
+        assertThatThrownBy(() -> bookService.createBook(userId, request, thumbnailImage))
+            .isInstanceOf(BookException.class)
+            .hasMessage(BookErrorCode.BOOK_INVALID_THUMBNAIL.getMessage());
 
         then(bookImageStorage).should(never())
             .upload(anyString(), any(byte[].class), anyString());
+
+        then(bookPersistenceService).should(never())
+            .saveBook(
+                any(UUID.class),
+                any(BookCreateRequest.class),
+                anyString(),
+                nullable(String.class)
+            );
     }
 
     @Test
@@ -756,13 +819,20 @@ class BookServiceTest {
             "This is not an image".getBytes(StandardCharsets.UTF_8)
         );
 
-        assertThrows(
-            IllegalArgumentException.class,
-            () -> bookService.createBook(userId, request, thumbnailImage)
-        );
+        assertThatThrownBy(() -> bookService.createBook(userId, request, thumbnailImage))
+            .isInstanceOf(BookException.class)
+            .hasMessage(BookErrorCode.BOOK_INVALID_THUMBNAIL.getMessage());
 
         then(bookImageStorage).should(never())
             .upload(anyString(), any(byte[].class), anyString());
+
+        then(bookPersistenceService).should(never())
+            .saveBook(
+                any(UUID.class),
+                any(BookCreateRequest.class),
+                anyString(),
+                nullable(String.class)
+            );
     }
 
     @Test
@@ -783,14 +853,19 @@ class BookServiceTest {
 
         // when & then
         assertThatThrownBy(() -> bookService.createBook(userId, request, thumbnailImage))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessage("이미지 파일 크기는 5MB를 초과할 수 없습니다.");
+            .isInstanceOf(BookException.class)
+            .hasMessage(BookErrorCode.BOOK_INVALID_THUMBNAIL.getMessage());
 
         then(bookImageStorage).should(never())
             .upload(anyString(), any(byte[].class), anyString());
 
-        then(bookRepositoryPort).should(never())
-            .saveAndFlush(any(Book.class));
+        then(bookPersistenceService).should(never())
+            .saveBook(
+                any(UUID.class),
+                any(BookCreateRequest.class),
+                anyString(),
+                nullable(String.class)
+            );
     }
 
     @Test
@@ -920,6 +995,175 @@ class BookServiceTest {
         then(bookSearchPort).shouldHaveNoInteractions();
         then(bookThumbnailDownloadPort).shouldHaveNoInteractions();
         then(bookMapper).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("DB 저장과 썸네일 삭제가 모두 실패해도 DB 예외를 전달한다.")
+    void createBookPreservesOriginalExceptionWhenThumbnailDeleteFails() throws IOException {
+        // given
+        MockMultipartFile thumbnailImage = new MockMultipartFile(
+            "thumbnailImage",
+            "thumbnail.png",
+            "image/png",
+            createValidPngBytes()
+        );
+
+        given(bookRepositoryPort.existsByIsbn(request.isbn()))
+            .willReturn(false);
+
+        given(userRepositoryPort.findByIdAndIsDeletedFalse(userId))
+            .willReturn(Optional.of(user));
+
+        given(bookImageStorage.generateImageKey("thumbnail.png"))
+            .willReturn("generated_thumbnail.png");
+
+        given(bookImageStorage.upload(
+            eq("generated_thumbnail.png"),
+            any(byte[].class),
+            eq("image/png")
+        )).willReturn("generated_thumbnail.png");
+
+        RuntimeException dbException = new RuntimeException("DB 저장 실패");
+
+        given(bookPersistenceService.saveBook(
+            userId,
+            request,
+            request.isbn(),
+            "generated_thumbnail.png"
+        )).willThrow(dbException);
+
+        willThrow(new RuntimeException("S3 삭제 실패"))
+            .given(bookImageStorage)
+            .delete("generated_thumbnail.png");
+
+        // when & then
+        assertThatThrownBy(
+            () -> bookService.createBook(userId, request, thumbnailImage)
+        ).isSameAs(dbException);
+
+        then(bookImageStorage).should()
+            .delete("generated_thumbnail.png");
+    }
+
+    @Test
+    @DisplayName("빈 썸네일 파일을 첨부하면 예외가 발생하고 도서를 저장하지 않는다.")
+    void createBookWithEmptyThumbnail() {
+        // given
+        given(userRepositoryPort.findByIdAndIsDeletedFalse(userId))
+            .willReturn(Optional.of(user));
+
+        MockMultipartFile thumbnailImage = new MockMultipartFile(
+            "thumbnailImage",
+            "thumbnail.png",
+            "image/png",
+            new byte[0]
+        );
+
+        // when & then
+        assertThatThrownBy(() -> bookService.createBook(userId, request, thumbnailImage))
+            .isInstanceOf(BookException.class)
+            .hasMessage(BookErrorCode.BOOK_INVALID_THUMBNAIL.getMessage());
+
+        then(bookSearchPort).shouldHaveNoInteractions();
+
+        then(bookImageStorage).shouldHaveNoInteractions();
+
+        then(bookPersistenceService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("카카오 썸네일 검증에 실패하면 썸네일 없이 도서를 등록한다.")
+    void createBookWithoutThumbnailWhenKakaoThumbnailIsInvalid() {
+        // given
+        String thumbnailUrl =
+            "https://search1.kakaocdn.net/argon/130x130/thumbnail.png";
+
+        BookSearchResult searchResult = new BookSearchResult(
+            request.title(),
+            request.description(),
+            "https://example.com/book",
+            request.isbn(),
+            request.publishedDate(),
+            List.of(request.author()),
+            request.publisher(),
+            List.of(),
+            15000,
+            10000,
+            thumbnailUrl,
+            "정상판매"
+        );
+
+        DownloadedThumbnail invalidThumbnail = new DownloadedThumbnail(
+            "This is not an image".getBytes(StandardCharsets.UTF_8),
+            "image/png",
+            "kakao-thumbnail.png"
+        );
+
+        given(bookRepositoryPort.existsByIsbn(request.isbn()))
+            .willReturn(false);
+
+        given(userRepositoryPort.findByIdAndIsDeletedFalse(userId))
+            .willReturn(Optional.of(user));
+
+        given(bookSearchPort.searchByIsbn(request.isbn()))
+            .willReturn(List.of(searchResult));
+
+        given(bookThumbnailDownloadPort.download(thumbnailUrl))
+            .willReturn(Optional.of(invalidThumbnail));
+
+        givenBookPersistenceSave(request, request.isbn());
+
+        when(bookMapper.toDto(any(Book.class)))
+            .thenReturn(expectedDto);
+
+        // when
+        BookDto result = bookService.createBook(userId, request, null);
+
+        // then
+        assertThat(result).isEqualTo(expectedDto);
+
+        verify(bookThumbnailDownloadPort).download(thumbnailUrl);
+
+        verify(bookImageStorage, never())
+            .upload(anyString(), any(byte[].class), anyString());
+
+        verify(bookPersistenceService).saveBook(
+            userId,
+            request,
+            request.isbn(),
+            null
+        );
+    }
+
+    @Test
+    @DisplayName("Content-Type이 없으면 썸네일 업로드에 실패한다.")
+    void createBookWithMissingContentType() throws IOException {
+        // given
+        given(userRepositoryPort.findByIdAndIsDeletedFalse(userId))
+            .willReturn(Optional.of(user));
+
+        MockMultipartFile thumbnailImage = new MockMultipartFile(
+            "thumbnailImage",
+            "thumbnail.png",
+            null,
+            createValidPngBytes()
+        );
+
+        // when & then
+        assertThatThrownBy(() -> bookService.createBook(userId, request, thumbnailImage))
+            .isInstanceOf(BookException.class)
+            .hasMessage(BookErrorCode.BOOK_INVALID_THUMBNAIL.getMessage());
+
+        then(bookImageStorage).should(never())
+            .upload(anyString(), any(byte[].class), anyString());
+
+        then(bookPersistenceService).should(never())
+            .saveBook(
+                any(UUID.class),
+                any(BookCreateRequest.class),
+                anyString(),
+                nullable(String.class)
+            );
     }
 
     private byte[] createValidPngBytes() throws IOException {
