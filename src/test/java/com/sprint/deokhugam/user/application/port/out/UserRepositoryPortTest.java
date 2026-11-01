@@ -7,12 +7,14 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import jakarta.persistence.EntityManager;
 
@@ -182,4 +184,37 @@ class UserRepositoryPortTest {
             .executeUpdate();
     }
 
+    @Test
+    @DisplayName("같은 이메일로 저장하면 이메일 유니크 제약(uk_users_email) 위반으로 실패한다.")
+    void saveDuplicateEmail_violatesEmailConstraint() {
+        // given
+        userRepository.saveAndFlush(User.create("dup@naver.com", "닉네임1", "encoded"));
+        User duplicate = User.create("dup@naver.com", "닉네임2", "encoded");
+
+        // when & then
+        assertThatThrownBy(() -> userRepository.saveAndFlush(duplicate))
+            .isInstanceOf(DataIntegrityViolationException.class)
+            .satisfies(e -> assertThat(e.getCause())
+                .isInstanceOfSatisfying(ConstraintViolationException.class, cause -> {
+                    assertThat(cause.getKind()).isEqualTo(ConstraintViolationException.ConstraintKind.UNIQUE);
+                    assertThat(cause.getConstraintName()).isEqualTo("uk_users_email");
+                }));
+    }
+
+    @Test
+    @DisplayName("같은 닉네임으로 저장하면 닉네임 유니크 제약(uk_users_nickname) 위반으로 실패한다.")
+    void saveDuplicateNickname_violatesNicknameConstraint() {
+        // given
+        userRepository.saveAndFlush(User.create("first@naver.com", "중복닉네임", "encoded"));
+        User duplicate = User.create("second@naver.com", "중복닉네임", "encoded");
+
+        // when & then
+        assertThatThrownBy(() -> userRepository.saveAndFlush(duplicate))
+            .isInstanceOf(DataIntegrityViolationException.class)
+            .satisfies(e -> assertThat(e.getCause())
+                .isInstanceOfSatisfying(ConstraintViolationException.class, cause -> {
+                    assertThat(cause.getKind()).isEqualTo(ConstraintViolationException.ConstraintKind.UNIQUE);
+                    assertThat(cause.getConstraintName()).isEqualTo("uk_users_nickname");
+                }));
+    }
 }
