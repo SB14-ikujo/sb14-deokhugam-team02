@@ -4,11 +4,13 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.AdditionalAnswers.*;
 import static org.mockito.BDDMockito.*;
 
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -123,21 +125,60 @@ class UserServiceTest {
     }
 
     @Test
-    @DisplayName("동시 가입으로 DB 유니크 제약에 걸리면 USER_DUPLICATE 예외를 반환")
-    void register_concurrentDuplicate() {
+    @DisplayName("동시 가입으로 이메일 유니크 제약에 걸리면 USER_EMAIL_DUPLICATE 예외를 반환")
+    void register_concurrentEmailDuplicate() {
         // given
         UserRegisterRequest request = new UserRegisterRequest(EMAIL, NICKNAME, RAW_PASSWORD);
         given(userRepository.existsByEmail(EMAIL)).willReturn(false);
         given(userRepository.existsByNickname(NICKNAME)).willReturn(false);
         given(passwordHasher.hash(RAW_PASSWORD)).willReturn(HASHED_PASSWORD);
         given(userRepository.saveAndFlush(any(User.class)))
-            .willThrow(new DataIntegrityViolationException("duplicate key"));
+            .willThrow(constraintViolation(ConstraintViolationException.ConstraintKind.UNIQUE,
+                User.EMAIL_UNIQUE_CONSTRAINT));
 
         // when & then
         assertThatThrownBy(() -> userService.register(request))
             .isInstanceOf(UserException.class)
             .extracting("errorCode")
-            .isEqualTo(UserErrorCode.USER_DUPLICATE);
+            .isEqualTo(UserErrorCode.USER_EMAIL_DUPLICATE);
+    }
+
+    @Test
+    @DisplayName("동시 가입으로 닉네임 유니크 제약에 걸리면 USER_NICKNAME_DUPLICATE 예외를 반환")
+    void register_concurrentNicknameDuplicate() {
+        // given
+        UserRegisterRequest request = new UserRegisterRequest(EMAIL, NICKNAME, RAW_PASSWORD);
+        given(userRepository.existsByEmail(EMAIL)).willReturn(false);
+        given(userRepository.existsByNickname(NICKNAME)).willReturn(false);
+        given(passwordHasher.hash(RAW_PASSWORD)).willReturn(HASHED_PASSWORD);
+        given(userRepository.saveAndFlush(any(User.class)))
+            .willThrow(constraintViolation(ConstraintViolationException.ConstraintKind.UNIQUE,
+                User.NICKNAME_UNIQUE_CONSTRAINT));
+
+        // when & then
+        assertThatThrownBy(() -> userService.register(request))
+            .isInstanceOf(UserException.class)
+            .extracting("errorCode")
+            .isEqualTo(UserErrorCode.USER_NICKNAME_DUPLICATE);
+    }
+
+    @Test
+    @DisplayName("동시 가입 중 중복이 아닌 무결성 오류가 나면 예외를 변환하지 않고 그대로 던진다.")
+    void register_otherIntegrityViolation_rethrows() {
+        // given
+        UserRegisterRequest request = new UserRegisterRequest(EMAIL, NICKNAME, RAW_PASSWORD);
+        given(userRepository.existsByEmail(EMAIL)).willReturn(false);
+        given(userRepository.existsByNickname(NICKNAME)).willReturn(false);
+        given(passwordHasher.hash(RAW_PASSWORD)).willReturn(HASHED_PASSWORD);
+
+        DataIntegrityViolationException violationException = constraintViolation(
+            ConstraintViolationException.ConstraintKind.NOT_NULL, null);
+
+        given(userRepository.saveAndFlush(any(User.class))).willThrow(violationException);
+
+        // when & then
+        // 같은 객체인지 판단.
+        assertThatThrownBy(() -> userService.register(request)).isSameAs(violationException);
     }
 
     @Test
@@ -330,13 +371,32 @@ class UserServiceTest {
         User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
         given(userRepository.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.of(user));
         given(userRepository.existsByNickname(NEW_NICKNAME)).willReturn(false);
-        given(userRepository.saveAndFlush(user)).willThrow(new DataIntegrityViolationException("duplicate key"));
+        given(userRepository.saveAndFlush(user)).willThrow(constraintViolation(
+            ConstraintViolationException.ConstraintKind.UNIQUE, User.NICKNAME_UNIQUE_CONSTRAINT));
 
         // when & then
         assertThatThrownBy(() -> userService.updateNickname(userId, userId, new UserUpdateRequest(NEW_NICKNAME)))
             .isInstanceOf(UserException.class)
             .extracting("errorCode")
             .isEqualTo(UserErrorCode.USER_NICKNAME_DUPLICATE);
+    }
+
+    @Test
+    @DisplayName("닉네임 변경 중 중복이 아닌 무결성 오류가 나면 예외를 변환하지 않고 그대로 던진다.")
+    void updateNickname_otherIntegrityViolation_rethrows() {
+        // given
+        UUID userId = UUID.randomUUID();
+        User user = User.create(EMAIL, NICKNAME, HASHED_PASSWORD);
+        given(userRepository.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.of(user));
+        given(userRepository.existsByNickname(NEW_NICKNAME)).willReturn(false);
+
+        DataIntegrityViolationException violationException = constraintViolation(
+            ConstraintViolationException.ConstraintKind.NOT_NULL, null);
+        given(userRepository.saveAndFlush(user)).willThrow(violationException);
+
+        // when & then
+        assertThatThrownBy(() -> userService.updateNickname(userId, userId, new UserUpdateRequest(NEW_NICKNAME)))
+            .isSameAs(violationException);
     }
 
     @Test
@@ -442,5 +502,11 @@ class UserServiceTest {
         // then
         assertThat(deletedCount).isEqualTo(3);
         then(userRepository).should().deleteSoftDeletedUsersBefore(expectedCutoff);
+    }
+
+    private DataIntegrityViolationException constraintViolation(ConstraintViolationException.ConstraintKind kind,
+        String constraintName) {
+        return new DataIntegrityViolationException("constraint violation",
+            new ConstraintViolationException("constraint violation", new SQLException(), kind, constraintName));
     }
 }
