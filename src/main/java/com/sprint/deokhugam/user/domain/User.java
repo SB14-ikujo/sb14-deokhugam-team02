@@ -5,6 +5,7 @@ import org.hibernate.annotations.ColumnDefault;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,17 +16,24 @@ import com.sprint.deokhugam.user.domain.exception.UserException;
 
 @Getter
 @Entity
-@Table(name = "users")
+@Table(name = "users",
+    uniqueConstraints = {
+        @UniqueConstraint(name = User.EMAIL_UNIQUE_CONSTRAINT, columnNames = "email"),
+        @UniqueConstraint(name = User.NICKNAME_UNIQUE_CONSTRAINT, columnNames = "nickname")
+    })
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseEntity {
+
+    public static final String EMAIL_UNIQUE_CONSTRAINT = "uk_users_email";
+    public static final String NICKNAME_UNIQUE_CONSTRAINT = "uk_users_nickname";
 
     private static final int NICKNAME_MIN_LENGTH = 2;
     private static final int NICKNAME_MAX_LENGTH = 20;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String email;
 
-    @Column(nullable = false, unique = true, length = NICKNAME_MAX_LENGTH)
+    @Column(nullable = false, length = NICKNAME_MAX_LENGTH)
     private String nickname;
 
     @Column(nullable = false)
