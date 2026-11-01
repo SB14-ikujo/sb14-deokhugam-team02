@@ -44,7 +44,6 @@ import com.sprint.deokhugam.book.domain.validator.IsbnValidator;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 import com.sprint.deokhugam.common.util.SliceUtils;
 import com.sprint.deokhugam.user.application.port.out.UserRepositoryPort;
-import com.sprint.deokhugam.user.domain.User;
 import com.sprint.deokhugam.user.domain.exception.UserErrorCode;
 import com.sprint.deokhugam.user.domain.exception.UserException;
 
@@ -58,6 +57,7 @@ public class BookService implements BookUseCase {
     private final BookSearchPort bookSearchPort;
     private final BookImageStorage bookImageStorage;
     private final BookThumbnailDownloadPort bookThumbnailDownloadPort;
+    private final BookPersistenceService bookPersistenceService;
 
     // 최대 이미지 크기(5MB)
     private static final int MAX_THUMBNAIL_SIZE = 5 * 1024 * 1024;
@@ -66,7 +66,6 @@ public class BookService implements BookUseCase {
     private static final long MAX_IMAGE_PIXELS = 25_000_000L;
 
     @Override
-    @Transactional
     public BookDto createBook(UUID userId, BookCreateRequest request, MultipartFile thumbnailImage) {
         log.info("도서 등록 요청 : userId : {}", userId);
 
@@ -81,39 +80,30 @@ public class BookService implements BookUseCase {
         }
 
         // 3. 사용자 확인
-        User user = userRepositoryPort.findByIdAndIsDeletedFalse(userId)
+        userRepositoryPort.findByIdAndIsDeletedFalse(userId)
             .orElseThrow(() -> {
-                log.warn("도서 등록 실패 : 사용자를 찾을 수 없음");
+                log.warn("도서 등록 실패 : 사용자를 찾을 수 없음. userId : {}", userId);
                 return new UserException(UserErrorCode.USER_NOT_FOUND);
             });
 
         // 직접 첨부한 이미지가 있으면 우선 사용
         // 없으면 카카오 썸네일 다운로드
-        // 4. 썸네일 저장
+        // 4. 썸네일 저장 (외부 I/O: 썸네일 검증 및 S3 업로드)
         StoredThumbnail thumbnail = storeThumbnail(thumbnailImage, isbn);
 
         String thumbnailUrl = thumbnail == null ? null : thumbnail.imageKey();
 
-        // 5. 도서 엔티티 생성
-        Book book = Book.create(
-            request.title(),
-            user,
-            request.author(),
-            request.description(),
-            request.publisher(),
-            request.publishedDate(),
-            isbn,
-            thumbnailUrl
-        );
-
-        // DB 저장은 성공했지만 URL 생성에 실패한 경우 이미지가 삭제된다.
-        // DB 저장 부분만 try-catch로 감싸는게 좋다.
+        // 5. 도서 저장 및 트랜잭션 실패 시 썸네일 삭제
         Book savedBook;
 
         try {
-            // 6. 도서 저장
-            savedBook = bookRepositoryPort.saveAndFlush(book);
-            log.info("도서 등록 성공 : bookId : {}, userId : {}", savedBook.getId(), userId);
+            // 별도의 Spring Bean 트랜잭션 메서드인 BookPersistenceService.saveBook() 호출
+            savedBook = bookPersistenceService.saveBook(
+                userId,
+                request,
+                isbn,
+                thumbnailUrl
+            );
         } catch (RuntimeException e) {
             // DB 저장에 실패하면 이미 저장한 이미지 삭제
             if (thumbnailUrl != null) {
@@ -173,18 +163,22 @@ public class BookService implements BookUseCase {
         String originalFilename;
 
         // 1. 사용자가 직접 첨부한 이미지
-        if (thumbnailImage != null && !thumbnailImage.isEmpty()) {
+        if (thumbnailImage != null) {
+            if (thumbnailImage.isEmpty()) {
+                throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
+            }
+
             try {
                 imageBytes = thumbnailImage.getBytes();
             } catch (IOException e) {
-                throw new IllegalStateException("첨부한 썸네일을 읽을 수 없습니다.", e);
+                throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
             }
 
             contentType = thumbnailImage.getContentType();
             originalFilename = thumbnailImage.getOriginalFilename();
 
             if (contentType == null || contentType.isBlank()) {
-                throw new IllegalArgumentException("썸네일의 콘텐츠 타입을 확인할 수 없습니다.");
+                throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
             }
 
             if (originalFilename == null || originalFilename.isBlank()) {
@@ -230,14 +224,33 @@ public class BookService implements BookUseCase {
      */
     private Optional<DownloadedThumbnail> findKakaoThumbnail(String isbn) {
         try {
-            return bookSearchPort.searchByIsbn(isbn)
+            Optional<DownloadedThumbnail> thumbnail = bookSearchPort.searchByIsbn(isbn)
                 .stream()
                 .map(BookSearchResult::thumbnail)
-                .filter(url -> url != null && !url.isBlank())
+                .filter(uri -> uri != null && !uri.isBlank())
                 .findFirst()
                 .flatMap(bookThumbnailDownloadPort::download);
+
+            if (thumbnail.isEmpty()) {
+                return Optional.empty();
+            }
+
+            DownloadedThumbnail downloadedThumbnail = thumbnail.get();
+
+            try {
+                validateImageBytes(
+                    downloadedThumbnail.bytes(),
+                    downloadedThumbnail.contentType()
+                );
+            } catch (BookException e) {
+                log.warn("카카오 썸네일 검증 실패 : isbn : {}", isbn, e);
+
+                return Optional.empty();
+            }
+
+            return thumbnail;
         } catch (RuntimeException e) {
-            log.warn("카카오 썸네일 조회 실패 : isbn : {}", isbn);
+            log.warn("카카오 썸네일 조회 실패 : isbn : {}", isbn, e);
 
             return Optional.empty();
         }
@@ -284,14 +297,19 @@ public class BookService implements BookUseCase {
      * MIME 타입을 기준으로 파일 확장자를 검증하고 보정한다.
      */
     private String ensureFileExtension(String filename, String contentType) {
-        String normalizedContentType = contentType.split(";")[0].trim().toLowerCase();
+        if (filename == null || filename.isBlank()
+            || contentType == null || contentType.isBlank()) {
+            throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
+        }
+
+        String normalizedContentType = contentType.split(";")[0].trim().toLowerCase(Locale.ROOT);
 
         String expectedExtension = switch (normalizedContentType) {
             case "image/jpeg" -> ".jpg";
             case "image/png" -> ".png";
             case "image/webp" -> ".webp";
             case "image/gif" -> ".gif";
-            default -> throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다.");
+            default -> throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
         };
 
         int extensionIndex = filename.lastIndexOf('.');
@@ -301,7 +319,7 @@ public class BookService implements BookUseCase {
             return filename + expectedExtension;
         }
 
-        String currentExtension = filename.substring(extensionIndex).toLowerCase();
+        String currentExtension = filename.substring(extensionIndex).toLowerCase(Locale.ROOT);
 
         // JPEG는 .jpg와 .jpeg를 모두 허용
         if (normalizedContentType.equals("image/jpeg")
@@ -376,30 +394,29 @@ public class BookService implements BookUseCase {
     private void validateImageBytes(byte[] imageBytes, String contentType) {
         // 1. 이미지 파일이 비어 있는지 확인
         if (imageBytes == null || imageBytes.length == 0) {
-            throw new IllegalArgumentException("이미지 파일이 비어 있습니다.");
+            throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
         }
 
         // 2. 이미지 크기 확인
         if (imageBytes.length > MAX_THUMBNAIL_SIZE) {
-            throw new IllegalArgumentException("이미지 파일 크기는 5MB를 초과할 수 없습니다.");
+            throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
         }
 
-        // 3. Content-Type 정규화
+        // 3. Content-Type 확인 및 정규화
+        if (contentType == null || contentType.isBlank()) {
+            throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
+        }
+
         String normalizedContentType = contentType.split(";")[0].trim().toLowerCase(Locale.ROOT);
 
         String detectedContentType = detectImageContentType(imageBytes);
 
         // 4. 실제 이미지 형식 확인
         if (!detectedContentType.equals(normalizedContentType)) {
-            throw new IllegalArgumentException(
-                "이미지 파일의 실제 형식과 Content-Type이 일치하지 않습니다."
-            );
+            throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
         }
 
-        if (!detectedContentType.equals(contentType)) {
-            throw new IllegalArgumentException("이미지 파일 형식이 Content-Type과 일치하지 않습니다.");
-        }
-
+        // 5. 이미지 디코딩 및 해상도 확인
         validateImageDecodable(imageBytes);
     }
 
@@ -410,13 +427,13 @@ public class BookService implements BookUseCase {
             )
         ) {
             if (inputStream == null) {
-                throw new IllegalArgumentException("이미지 파일을 읽을 수 없습니다.");
+                throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
             }
 
             Iterator<ImageReader> readers = ImageIO.getImageReaders(inputStream);
 
             if (!readers.hasNext()) {
-                throw new IllegalArgumentException("지원하지 않거나 손상된 이미지 파일입니다.");
+                throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
             }
 
             ImageReader reader = readers.next();
@@ -429,19 +446,19 @@ public class BookService implements BookUseCase {
 
                 if (width <= 0 || height <= 0
                     || (long)width * height > MAX_IMAGE_PIXELS) {
-                    throw new IllegalArgumentException("이미지 해상도가 허용 범위를 초과했습니다.");
+                    throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
                 }
 
                 BufferedImage image = reader.read(0);
 
                 if (image == null) {
-                    throw new IllegalArgumentException("손상된 이미지 파일입니다.");
+                    throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
                 }
             } finally {
                 reader.dispose();
             }
         } catch (IOException e) {
-            throw new IllegalArgumentException("이미지 파일을 디코딩할 수 없습니다.", e);
+            throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
         }
     }
 
@@ -491,7 +508,7 @@ public class BookService implements BookUseCase {
             return "image/webp";
         }
 
-        throw new IllegalArgumentException("지원하지 않는 이미지 형식입니다.");
+        throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
     }
 
     @Override

@@ -4,9 +4,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.time.Duration;
+import java.util.Locale;
 import java.util.Optional;
 
 import org.springframework.http.MediaType;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -24,7 +28,31 @@ public class KakaoThumbnailDownloadAdapter implements BookThumbnailDownloadPort 
 
     private static final MediaType IMAGE_WEBP = MediaType.parseMediaType("image/webp");
 
-    private final RestClient restClient = RestClient.create();
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(3);
+    private static final Duration READ_TIMEOUT = Duration.ofSeconds(5);
+
+    private final RestClient restClient;
+
+    public KakaoThumbnailDownloadAdapter() {
+        HttpClient httpClient = HttpClient.newBuilder()
+            .connectTimeout(CONNECT_TIMEOUT)
+            .followRedirects(HttpClient.Redirect.NEVER)
+            .build();
+
+        JdkClientHttpRequestFactory requestFactory =
+            new JdkClientHttpRequestFactory(httpClient);
+
+        requestFactory.setReadTimeout(READ_TIMEOUT);
+
+        this.restClient = RestClient.builder()
+            .requestFactory(requestFactory)
+            .build();
+    }
+
+    // 테스트에서 MockRestServiceServer를 연결하기 위한 생성자
+    KakaoThumbnailDownloadAdapter(RestClient restClient) {
+        this.restClient = restClient;
+    }
 
     @Override
     public Optional<DownloadedThumbnail> download(String thumbnailUrl) {
@@ -95,8 +123,11 @@ public class KakaoThumbnailDownloadAdapter implements BookThumbnailDownloadPort 
         String host = uri.getHost();
 
         return "https".equalsIgnoreCase(uri.getScheme())
+            && uri.getUserInfo() == null
+            && (uri.getPort() == -1 || uri.getPort() == 443)
             && host != null
-            && (host.equals("kakaocdn.net") || host.endsWith(".kakaocdn.net"));
+            && (host.equalsIgnoreCase("kakaocdn.net")
+            || host.toLowerCase(Locale.ROOT).endsWith(".kakaocdn.net"));
     }
 
     private byte[] readLimited(InputStream inputStream) throws IOException {
