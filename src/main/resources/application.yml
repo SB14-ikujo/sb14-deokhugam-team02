@@ -54,6 +54,9 @@ deokhugam:
       region: ${AWS_S3_REGION:}
       bucket: ${AWS_S3_BUCKET:}
       presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600} # (기본값: 10분)
+  ocr:
+    api-key: ${OCR_SPACE_API_KEY:}
+    url: https://api.ocr.space/parse/image
 
 management:
   endpoints:
