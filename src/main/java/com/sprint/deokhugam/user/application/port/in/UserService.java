@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,8 +48,14 @@ public class UserService implements UserUseCase {
         try {
             return userMapper.toDto(userRepository.saveAndFlush(user));
         } catch (DataIntegrityViolationException e) {
-            // 동시 가입으로 existsBy 검사를 통과한 뒤 데이터베이스의 유니크 제약에 걸린 경우.
-            throw new UserException(UserErrorCode.USER_DUPLICATE);
+            // 동시 가입으로 existsBy 검사를 통과한 뒤 유니크 제약에 걸린 경우만 중복으로 변환한다.
+            if (isUniqueViolation(e, User.EMAIL_UNIQUE_CONSTRAINT)) {
+                throw new UserException(UserErrorCode.USER_EMAIL_DUPLICATE);
+            }
+            if (isUniqueViolation(e, User.NICKNAME_UNIQUE_CONSTRAINT)) {
+                throw new UserException(UserErrorCode.USER_NICKNAME_DUPLICATE);
+            }
+            throw e;
         }
     }
 
@@ -92,8 +99,11 @@ public class UserService implements UserUseCase {
         try {
             return userMapper.toDto(userRepository.saveAndFlush(user));
         } catch (DataIntegrityViolationException e) {
-            // 동시 요청으로 검증을 통과한 뒤 DB 유니크 제약에 걸린 경우
-            throw new UserException(UserErrorCode.USER_NICKNAME_DUPLICATE);
+            // 동시 요청으로 검증을 통과한 뒤 닉네임 유니크 제약에 걸린 경우만 중복으로 변환한다.
+            if (isUniqueViolation(e, User.NICKNAME_UNIQUE_CONSTRAINT)) {
+                throw new UserException(UserErrorCode.USER_NICKNAME_DUPLICATE);
+            }
+            throw e;
         }
     }
 
@@ -132,5 +142,11 @@ public class UserService implements UserUseCase {
         if (!userId.equals(requesterId)) {
             throw new UserException(UserErrorCode.USER_FORBIDDEN);
         }
+    }
+
+    private boolean isUniqueViolation(DataIntegrityViolationException exception, String constraintName) {
+        return exception.getCause() instanceof ConstraintViolationException cve
+            && cve.getKind() == ConstraintViolationException.ConstraintKind.UNIQUE
+            && constraintName.equals(cve.getConstraintName());
     }
 }
