@@ -21,7 +21,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import jakarta.persistence.EntityManager;
 
+import com.sprint.deokhugam.book.application.port.in.BookPersistenceService;
 import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
+import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
+import com.sprint.deokhugam.book.domain.exception.BookException;
 import com.sprint.deokhugam.common.config.QuerydslConfig;
 import com.sprint.deokhugam.user.domain.User;
 
@@ -29,7 +32,8 @@ import com.sprint.deokhugam.user.domain.User;
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @Import({
     QuerydslConfig.class,
-    BookJpaTest.JpaAuditingTestConfig.class
+    BookJpaTest.JpaAuditingTestConfig.class,
+    BookPersistenceService.class
 })
 class BookJpaTest {
 
@@ -47,6 +51,9 @@ class BookJpaTest {
 
     @Autowired
     private BookRepositoryPort bookRepositoryPort;
+
+    @Autowired
+    private BookPersistenceService bookPersistenceService;
 
     private User user;
 
@@ -134,7 +141,7 @@ class BookJpaTest {
     }
 
     @Test
-    @DisplayName("물리 삭제된 도서의 ISBN은 재사용할 수 없다.")
+    @DisplayName("물리 삭제된 도서의 ISBN은 재사용할 수 있다.")
     void canReuseIsbnAfterPhysicalDelete() {
         // given
         String isbn = "9791168945456";
@@ -224,5 +231,75 @@ class BookJpaTest {
             isDeleted,
             Timestamp.from(Instant.now())
         );
+    }
+
+    @Test
+    @DisplayName("도서를 논리 삭제하면 DB에 삭제 상태가 반영된다.")
+    void deleteBook() {
+        // given
+        String isbn = "9791168945456";
+        insertBook("논리 삭제 테스트 도서", isbn);
+
+        UUID bookId = jdbcTemplate.queryForObject(
+            "SELECT id FROM books WHERE isbn = ?",
+            UUID.class,
+            isbn
+        );
+
+        // when
+        bookPersistenceService.deleteBook(bookId);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // then
+        Book foundBook = bookRepositoryPort.findById(bookId)
+            .orElseThrow();
+
+        assertThat(foundBook.isDeleted()).isTrue();
+        assertThat(foundBook.getIsbn()).isEqualTo(isbn);
+
+        assertThat(bookRepositoryPort.findByIdAndIsDeletedFalse(bookId))
+            .isEmpty();
+    }
+
+    @Test
+    @DisplayName("이미 논리 삭제된 도서를 다시 삭제하면 예외가 발생한다.")
+    void deleteAlreadyDeletedBook() {
+        // given
+        String isbn = "9791168945456";
+        insertBook("이미 삭제된 도서", isbn, true);
+
+        UUID bookId = jdbcTemplate.queryForObject(
+            "SELECT id FROM books WHERE isbn = ?",
+            UUID.class,
+            isbn
+        );
+
+        // when & then
+        assertThatThrownBy(() -> bookPersistenceService.deleteBook(bookId))
+            .isInstanceOf(BookException.class)
+            .hasMessage(BookErrorCode.BOOK_NOT_FOUND.getMessage());
+    }
+
+    @Test
+    @DisplayName("논리 삭제된 도서의 ISBN은 재사용할 수 없다.")
+    void cannotReuseIsbnAfterLogicalDelete() {
+        // given
+        String isbn = "9791168945456";
+        insertBook("논리 삭제할 도서", isbn);
+
+        UUID bookId = jdbcTemplate.queryForObject(
+            "SELECT id FROM books WHERE isbn = ?",
+            UUID.class,
+            isbn
+        );
+
+        // when
+        bookPersistenceService.deleteBook(bookId);
+
+        // then
+        assertThatThrownBy(() -> insertBook("새로운 도서", isbn))
+            .isInstanceOf(DataIntegrityViolationException.class);
     }
 }
