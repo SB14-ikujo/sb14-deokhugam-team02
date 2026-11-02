@@ -84,4 +84,9 @@ public class Book extends BaseEntity {
     public void increaseReviewCount() {
         this.reviewCount += 1;
     }
+
+    // 논리 삭제
+    public void delete() {
+        this.isDeleted = true;
+    }
 }
