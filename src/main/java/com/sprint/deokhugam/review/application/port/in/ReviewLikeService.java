@@ -37,6 +37,9 @@ public class ReviewLikeService implements ReviewLikeUseCase {
     @Transactional
     public ReviewLikeDto reviewLikeToggle(UUID reviewId, UUID requestUserId) {
 
+        userRepositoryPort.findByIdAndIsDeletedFalse(requestUserId)
+            .orElseThrow(() -> new ReviewException(ReviewErrorCode.REVIEW_NOT_FOUND));
+
         Optional<ReviewLike> alreadyLike = reviewLikeRepositoryPort.findByReviewIdAndUserId(reviewId, requestUserId);
 
         if (alreadyLike.isPresent()) {
