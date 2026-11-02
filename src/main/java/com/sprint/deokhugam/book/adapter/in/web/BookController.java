@@ -1,8 +1,10 @@
 package com.sprint.deokhugam.book.adapter.in.web;
 
+import java.io.IOException;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,6 +23,9 @@ import com.sprint.deokhugam.book.adapter.in.web.dto.BookDto;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookInfoDto;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookSearchRequest;
 import com.sprint.deokhugam.book.application.port.in.BookUseCase;
+import com.sprint.deokhugam.book.application.port.in.OcrUseCase;
+import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
+import com.sprint.deokhugam.book.domain.exception.BookException;
 import com.sprint.deokhugam.common.context.user.RequestUserId;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 
@@ -30,6 +35,7 @@ import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 @RequiredArgsConstructor
 public class BookController implements BookApi {
     private final BookUseCase bookUseCase;
+    private final OcrUseCase ocrUseCase;
 
     @Override
     @PostMapping(consumes = "multipart/form-data")
@@ -68,5 +74,25 @@ public class BookController implements BookApi {
             request.keyword(), request.orderBy(), request.direction(),
             request.cursor(), request.after(), request.limit()
         );
+    }
+
+    @Override
+    @PostMapping(value = "/isbn/ocr", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @ResponseStatus(HttpStatus.OK)
+    public String extractIsbn(@RequestPart("image") MultipartFile image) {
+        log.info("ISBN OCR API 요청 : fileName: {}, size: {}", image.getOriginalFilename(), image.getSize());
+
+        String isbn = ocrUseCase.extractIsbn(readBytes(image), image.getContentType());
+        log.info("ISBN OCR API 성공 : isbn: {}", isbn);
+
+        return isbn;
+    }
+
+    private byte[] readBytes(MultipartFile image) {
+        try {
+            return image.getBytes();
+        } catch (IOException ex) {
+            throw new BookException(BookErrorCode.BOOK_OCR_FAILED);
+        }
     }
 }

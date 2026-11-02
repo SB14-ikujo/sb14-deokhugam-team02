@@ -25,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookCreateRequest;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookDto;
 import com.sprint.deokhugam.book.application.port.in.BookUseCase;
+import com.sprint.deokhugam.book.application.port.in.OcrUseCase;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
 import com.sprint.deokhugam.book.domain.exception.BookException;
 import com.sprint.deokhugam.common.context.user.UserContextHolder;
@@ -38,6 +39,9 @@ class BookControllerTest {
 
     @MockitoBean
     private BookUseCase bookUseCase;
+
+    @MockitoBean
+    private OcrUseCase ocrUseCase;
 
     private final UUID userId = UUID.randomUUID();
 

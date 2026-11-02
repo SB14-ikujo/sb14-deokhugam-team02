@@ -121,4 +121,17 @@ public interface BookApi {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     CursorPageResponse<BookDto> getBooks(@ParameterObject BookSearchRequest request);
+
+    @Operation(
+        summary = "OCR 기반 ISBN 인식",
+        description = "OCR을 통해 ISBN을 인식합니다."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "ISBN 인식 성공"),
+        @ApiResponse(responseCode = "400", description = "잘못된 이미지 형식 또는 OCR 인식 실패",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    String extractIsbn(@RequestPart("image") MultipartFile image);
 }
