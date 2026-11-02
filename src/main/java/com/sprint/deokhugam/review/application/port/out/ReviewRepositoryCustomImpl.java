@@ -35,7 +35,7 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
                 keywordContains(keyword)
             )
             .fetchOne();
-
+        
         return totalCount;
     }
 
