@@ -128,7 +128,8 @@ public class GlobalExceptionController {
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
         // DB 유니크 제약을 활용해서 만든 예외 처리 라서, WARN 이 아니라 INFO 로 바꿈
-        log.info("[CONFLICT] - 동시성 충돌 혹은 중복 데이터 삽입 차단: {}", ex.getMessage());
+        log.info("[DATABASE_INTEGRITY_ERROR] - DB 제약조건 위반 발생: {}", ex.getMessage());
+        log.debug("[DATABASE_INTEGRITY_ERROR] 상세 에러 경로 추적용", ex);
         CommonErrorCode code = CommonErrorCode.ALREADY_PROCESSED;
         return ResponseEntity
             .status(code.getStatus())
