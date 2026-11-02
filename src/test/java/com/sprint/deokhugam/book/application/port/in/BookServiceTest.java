@@ -1146,6 +1146,38 @@ class BookServiceTest {
             .saveBook(any(UUID.class), any(BookCreateRequest.class), anyString(), nullable(String.class));
     }
 
+    @Test
+    @DisplayName("도서 삭제 요청을 PersistenceService에 위임한다.")
+    void deleteBookSuccess() {
+        // given
+        UUID bookId = UUID.randomUUID();
+
+        // when
+        bookService.deleteBook(bookId);
+
+        // then
+        then(bookPersistenceService).should().deleteBook(bookId);
+    }
+
+    @Test
+    @DisplayName("도서 삭제 중 예외가 발생하면 예외를 그대로 전달한다.")
+    void deleteBookThrowsException() {
+        // given
+        UUID bookId = UUID.randomUUID();
+
+        BookException exception = new BookException(BookErrorCode.BOOK_NOT_FOUND);
+
+        willThrow(exception)
+            .given(bookPersistenceService)
+            .deleteBook(bookId);
+
+        // when & then
+        assertThatThrownBy(() -> bookService.deleteBook(bookId))
+            .isSameAs(exception);
+
+        then(bookPersistenceService).should().deleteBook(bookId);
+    }
+
     private byte[] createValidPngBytes() throws IOException {
         BufferedImage image = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
 
