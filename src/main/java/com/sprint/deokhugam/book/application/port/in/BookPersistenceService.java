@@ -65,4 +65,21 @@ public class BookPersistenceService {
 
         return savedBook;
     }
+
+    @Transactional
+    public void deleteBook(UUID bookId) {
+        log.info("도서 논리 삭제 실행. bookId : {}", bookId);
+
+        // 1. 삭제되지 않은 도서 조회
+        Book book = bookRepositoryPort.findByIdAndIsDeletedFalse(bookId)
+            .orElseThrow(() -> {
+                log.warn("도서 삭제 실패 : 도서를 찾을 수 없음. bookId : {}", bookId);
+
+                return new BookException(BookErrorCode.BOOK_NOT_FOUND);
+            });
+
+        // 2. 논리 삭제 처리
+        book.delete();
+        log.info("도서 논리 삭제 성공 : bookId : {}", bookId);
+    }
 }
