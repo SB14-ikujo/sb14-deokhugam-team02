@@ -134,4 +134,31 @@ public interface BookApi {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     String extractIsbn(@RequestPart("image") MultipartFile image);
+
+    @Operation(
+        summary = "도서 삭제",
+        description = "도서를 논리 삭제합니다."
+    )
+    @Parameter(
+        name = "bookId",
+        description = "삭제할 도서 ID",
+        required = true,
+        example = "123e4567-e89b-12d3-a456-426614174000",
+        schema = @Schema(type = "string", format = "uuid")
+    )
+    @ApiResponse(
+        responseCode = "204",
+        description = "도서 삭제 성공"
+    )
+    @ApiResponse(
+        responseCode = "404",
+        description = "도서를 찾을 수 없음",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+    )
+    @ApiResponse(
+        responseCode = "500",
+        description = "서버 내부 오류",
+        content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+    )
+    void deleteBook(UUID bookId);
 }
