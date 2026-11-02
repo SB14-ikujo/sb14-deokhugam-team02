@@ -17,6 +17,8 @@ public interface BookUseCase {
 
     BookInfoDto searchBooksByIsbn(String isbn);
 
+    void deleteBook(UUID bookId);
+
     CursorPageResponse<BookDto> getBooks(
         String keyword, String orderBy, Sort.Direction direction,
         String cursor, Instant after, Integer limit);
