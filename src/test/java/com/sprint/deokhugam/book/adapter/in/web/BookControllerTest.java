@@ -211,4 +211,48 @@ class BookControllerTest {
 
         return part;
     }
+
+    @Test
+    @DisplayName("도서 삭제 요청을 전달하면 204 No Content를 반환한다.")
+    void deleteBookSuccess() throws Exception {
+        // given
+        UUID bookId = UUID.randomUUID();
+
+        // when & then
+        mockMvc.perform(delete("/api/books/{bookId}", bookId))
+            .andExpect(status().isNoContent());
+
+        then(bookUseCase).should().deleteBook(bookId);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 도서를 삭제하면 404 Not Found를 반환한다.")
+    void deleteBookNotFound() throws Exception {
+        // given
+        UUID bookId = UUID.randomUUID();
+
+        willThrow(new BookException(BookErrorCode.BOOK_NOT_FOUND))
+            .given(bookUseCase)
+            .deleteBook(bookId);
+
+        // when & then
+        mockMvc.perform(delete("/api/books/{bookId}", bookId))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.status").value(404))
+            .andExpect(jsonPath("$.message").value(
+                BookErrorCode.BOOK_NOT_FOUND.getMessage()
+            ));
+
+        then(bookUseCase).should().deleteBook(bookId);
+    }
+
+    @Test
+    @DisplayName("잘못된 도서 ID를 전달하면 400 Bad Request를 반환한다.")
+    void deleteBookInvalidId() throws Exception {
+        // when & then
+        mockMvc.perform(delete("/api/books/{bookId}", "invalid-uuid"))
+            .andExpect(status().isBadRequest());
+
+        then(bookUseCase).shouldHaveNoInteractions();
+    }
 }
