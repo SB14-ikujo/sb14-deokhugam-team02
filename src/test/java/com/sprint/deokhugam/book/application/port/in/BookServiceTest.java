@@ -798,12 +798,7 @@ class BookServiceTest {
             .upload(anyString(), any(byte[].class), anyString());
 
         then(bookPersistenceService).should(never())
-            .saveBook(
-                any(UUID.class),
-                any(BookCreateRequest.class),
-                anyString(),
-                nullable(String.class)
-            );
+            .saveBook(any(UUID.class), any(BookCreateRequest.class), anyString(), nullable(String.class));
     }
 
     @Test
@@ -827,12 +822,7 @@ class BookServiceTest {
             .upload(anyString(), any(byte[].class), anyString());
 
         then(bookPersistenceService).should(never())
-            .saveBook(
-                any(UUID.class),
-                any(BookCreateRequest.class),
-                anyString(),
-                nullable(String.class)
-            );
+            .saveBook(any(UUID.class), any(BookCreateRequest.class), anyString(), nullable(String.class));
     }
 
     @Test
@@ -860,12 +850,7 @@ class BookServiceTest {
             .upload(anyString(), any(byte[].class), anyString());
 
         then(bookPersistenceService).should(never())
-            .saveBook(
-                any(UUID.class),
-                any(BookCreateRequest.class),
-                anyString(),
-                nullable(String.class)
-            );
+            .saveBook(any(UUID.class), any(BookCreateRequest.class), anyString(), nullable(String.class));
     }
 
     @Test
@@ -1158,12 +1143,7 @@ class BookServiceTest {
             .upload(anyString(), any(byte[].class), anyString());
 
         then(bookPersistenceService).should(never())
-            .saveBook(
-                any(UUID.class),
-                any(BookCreateRequest.class),
-                anyString(),
-                nullable(String.class)
-            );
+            .saveBook(any(UUID.class), any(BookCreateRequest.class), anyString(), nullable(String.class));
     }
 
     private byte[] createValidPngBytes() throws IOException {
