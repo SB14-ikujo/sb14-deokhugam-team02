@@ -30,6 +30,7 @@ import com.sprint.deokhugam.comment.domain.Comment;
 import com.sprint.deokhugam.comment.domain.exception.CommentErrorCode;
 import com.sprint.deokhugam.comment.domain.exception.CommentException;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
+import com.sprint.deokhugam.notification.application.port.in.NotificationUseCase;
 import com.sprint.deokhugam.review.application.port.out.ReviewRepositoryPort;
 import com.sprint.deokhugam.review.domain.Review;
 import com.sprint.deokhugam.user.application.port.out.UserRepositoryPort;
@@ -39,11 +40,17 @@ import com.sprint.deokhugam.user.domain.User;
 class CommentServiceTest {
 
     @Mock
+    private NotificationUseCase notificationUseCase;
+
+    @Mock
     private CommentRepositoryPort commentRepository;
+
     @Mock
     private ReviewRepositoryPort reviewRepository;
+
     @Mock
     private UserRepositoryPort userRepository;
+
     @Spy
     private CommentMapper commentMapper = Mappers.getMapper(CommentMapper.class);
 
@@ -52,22 +59,28 @@ class CommentServiceTest {
 
     private final UUID reviewId = UUID.randomUUID();
     private final UUID userId = UUID.randomUUID();
+
     private final CommentCreateRequest request =
         new CommentCreateRequest(reviewId, userId, "좋은 리뷰네요!");
 
     @Test
-    @DisplayName("댓글 등록 성공")
+    @DisplayName("댓글 등록 성공 - 댓글 저장 후 리뷰 작성자에게 알림을 생성한다")
     void create_success() {
         Review review = mock(Review.class);
         User user = mock(User.class);
+
         given(review.isDeleted()).willReturn(false);
         given(review.getId()).willReturn(reviewId);
+
         given(user.isDeleted()).willReturn(false);
         given(user.getId()).willReturn(userId);
         given(user.getNickname()).willReturn("닉네임");
+
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
-        given(commentRepository.save(any(Comment.class))).willAnswer(inv -> inv.getArgument(0));
+
+        given(commentRepository.save(any(Comment.class)))
+            .willAnswer(inv -> inv.getArgument(0));
 
         CommentDto result = commentService.create(request);
 
@@ -75,7 +88,15 @@ class CommentServiceTest {
         assertThat(result.userId()).isEqualTo(userId);
         assertThat(result.userNickname()).isEqualTo("닉네임");
         assertThat(result.content()).isEqualTo("좋은 리뷰네요!");
+
+        // 댓글이 정상적으로 저장되었는지 확인
         verify(commentRepository).save(any(Comment.class));
+
+        // 댓글 작성자의 닉네임을 전달하여 알림 생성 메서드가 호출되었는지 확인
+        verify(notificationUseCase).createCommentNotification(
+            review,
+            user.getNickname()
+        );
     }
 
     @Test
@@ -89,6 +110,8 @@ class CommentServiceTest {
             .isEqualTo(CommentErrorCode.COMMENT_REVIEW_NOT_FOUND);
 
         verify(commentRepository, never()).save(any());
+        verify(notificationUseCase, never())
+            .createCommentNotification(any(), anyString());
     }
 
     @Test
@@ -104,6 +127,8 @@ class CommentServiceTest {
             .isEqualTo(CommentErrorCode.COMMENT_REVIEW_NOT_FOUND);
 
         verify(commentRepository, never()).save(any());
+        verify(notificationUseCase, never())
+            .createCommentNotification(any(), anyString());
     }
 
     @Test
@@ -120,6 +145,8 @@ class CommentServiceTest {
             .isEqualTo(CommentErrorCode.COMMENT_USER_NOT_FOUND);
 
         verify(commentRepository, never()).save(any());
+        verify(notificationUseCase, never())
+            .createCommentNotification(any(), anyString());
     }
 
     @Test
@@ -127,8 +154,10 @@ class CommentServiceTest {
     void create_deletedUser() {
         Review review = mock(Review.class);
         User user = mock(User.class);
+
         given(review.isDeleted()).willReturn(false);
         given(user.isDeleted()).willReturn(true);
+
         given(reviewRepository.findById(reviewId)).willReturn(Optional.of(review));
         given(userRepository.findById(userId)).willReturn(Optional.of(user));
 
@@ -138,6 +167,8 @@ class CommentServiceTest {
             .isEqualTo(CommentErrorCode.COMMENT_USER_NOT_FOUND);
 
         verify(commentRepository, never()).save(any());
+        verify(notificationUseCase, never())
+            .createCommentNotification(any(), anyString());
     }
 
     // ===== 댓글 목록 조회 =====
@@ -151,6 +182,7 @@ class CommentServiceTest {
     private Comment mockComment(UUID id, Instant createdAt, String content) {
         Review review = mock(Review.class);
         User user = mock(User.class);
+
         given(review.getId()).willReturn(reviewId);
         given(user.getId()).willReturn(userId);
         given(user.getNickname()).willReturn("닉네임");
@@ -161,6 +193,7 @@ class CommentServiceTest {
         given(comment.getContent()).willReturn(content);
         given(comment.getReview()).willReturn(review);
         given(comment.getUser()).willReturn(user);
+
         return comment;
     }
 
@@ -168,22 +201,27 @@ class CommentServiceTest {
     @DisplayName("목록 조회 - 다음 페이지가 있으면 limit개만 반환하고 마지막 댓글로 커서를 만든다")
     void getList_hasNext() {
         givenActiveReview();
+
         Instant t1 = Instant.parse("2024-01-03T00:00:00Z");
         Instant t2 = Instant.parse("2024-01-02T00:00:00Z");
+
         UUID id1 = UUID.randomUUID();
         UUID id2 = UUID.randomUUID();
-        // limit(2) + 1 = 3개를 조회해 온 상황
+
         Comment c1 = mockComment(id1, t1, "3번째");
         Comment c2 = mockComment(id2, t2, "2번째");
         Comment extra = mock(Comment.class);
+
         given(commentRepository.findByCursor(reviewId, null, null, Sort.Direction.DESC, 3))
             .willReturn(List.of(c1, c2, extra));
+
         given(commentRepository.countByReviewIdAndIsDeletedFalse(reviewId)).willReturn(5L);
 
         CursorPageResponse<CommentDto> result = commentService.getList(
             new CommentListRequest(reviewId, Sort.Direction.DESC, null, null, 2));
 
-        assertThat(result.content()).extracting(CommentDto::content).containsExactly("3번째", "2번째");
+        assertThat(result.content()).extracting(CommentDto::content)
+            .containsExactly("3번째", "2번째");
         assertThat(result.hasNext()).isTrue();
         assertThat(result.nextCursor()).isEqualTo(id2.toString());
         assertThat(result.nextAfter()).isEqualTo(t2);
@@ -195,12 +233,18 @@ class CommentServiceTest {
     @DisplayName("목록 조회 - 마지막 페이지면 hasNext=false, 커서는 null")
     void getList_lastPage() {
         givenActiveReview();
-        Comment c1 = mockComment(UUID.randomUUID(), Instant.parse("2024-01-01T00:00:00Z"), "하나");
+
+        Comment c1 = mockComment(
+            UUID.randomUUID(),
+            Instant.parse("2024-01-01T00:00:00Z"),
+            "하나"
+        );
+
         given(commentRepository.findByCursor(reviewId, null, null, Sort.Direction.DESC, 51))
             .willReturn(List.of(c1));
+
         given(commentRepository.countByReviewIdAndIsDeletedFalse(reviewId)).willReturn(1L);
 
-        // limit 미지정 → 기본값 50
         CursorPageResponse<CommentDto> result = commentService.getList(
             new CommentListRequest(reviewId, null, null, null, null));
 
@@ -215,8 +259,10 @@ class CommentServiceTest {
     @DisplayName("목록 조회 - 댓글이 없으면 빈 목록을 반환한다")
     void getList_empty() {
         givenActiveReview();
+
         given(commentRepository.findByCursor(any(), any(), any(), any(), anyInt()))
             .willReturn(List.of());
+
         given(commentRepository.countByReviewIdAndIsDeletedFalse(reviewId)).willReturn(0L);
 
         CursorPageResponse<CommentDto> result = commentService.getList(
@@ -231,10 +277,13 @@ class CommentServiceTest {
     @DisplayName("목록 조회 - cursor(댓글 ID)와 after(생성 시간)를 레포지토리에 그대로 전달한다")
     void getList_passesCursor() {
         givenActiveReview();
+
         UUID cursorId = UUID.randomUUID();
         Instant after = Instant.parse("2024-01-01T00:00:00Z");
+
         given(commentRepository.findByCursor(reviewId, after, cursorId, Sort.Direction.ASC, 11))
             .willReturn(List.of());
+
         given(commentRepository.countByReviewIdAndIsDeletedFalse(reviewId)).willReturn(0L);
 
         commentService.getList(
@@ -252,7 +301,8 @@ class CommentServiceTest {
             .extracting("errorCode")
             .isEqualTo(CommentErrorCode.COMMENT_INVALID_CURSOR);
 
-        verify(commentRepository, never()).findByCursor(any(), any(), any(), any(), anyInt());
+        verify(commentRepository, never())
+            .findByCursor(any(), any(), any(), any(), anyInt());
     }
 
     @Test
@@ -266,7 +316,8 @@ class CommentServiceTest {
             .extracting("errorCode")
             .isEqualTo(CommentErrorCode.COMMENT_REVIEW_NOT_FOUND);
 
-        verify(commentRepository, never()).findByCursor(any(), any(), any(), any(), anyInt());
+        verify(commentRepository, never())
+            .findByCursor(any(), any(), any(), any(), anyInt());
     }
 
     @Test
@@ -282,7 +333,8 @@ class CommentServiceTest {
             .extracting("errorCode")
             .isEqualTo(CommentErrorCode.COMMENT_REVIEW_NOT_FOUND);
 
-        verify(commentRepository, never()).findByCursor(any(), any(), any(), any(), anyInt());
+        verify(commentRepository, never())
+            .findByCursor(any(), any(), any(), any(), anyInt());
     }
 
     // ===== 댓글 수정 =====
@@ -293,12 +345,15 @@ class CommentServiceTest {
     private Comment givenCommentWrittenBy(UUID authorId) {
         Review review = mock(Review.class);
         User author = mock(User.class);
+
         lenient().when(review.getId()).thenReturn(reviewId);
         given(author.getId()).willReturn(authorId);
         lenient().when(author.getNickname()).thenReturn("닉네임");
 
         Comment comment = Comment.create(review, author, "수정 전");
-        given(commentRepository.findByIdAndIsDeletedFalse(commentId)).willReturn(Optional.of(comment));
+        given(commentRepository.findByIdAndIsDeletedFalse(commentId))
+            .willReturn(Optional.of(comment));
+
         return comment;
     }
 
@@ -314,13 +369,15 @@ class CommentServiceTest {
         assertThat(result.reviewId()).isEqualTo(reviewId);
         assertThat(result.userId()).isEqualTo(userId);
         assertThat(result.userNickname()).isEqualTo("닉네임");
+
         verify(commentRepository).flush();
     }
 
     @Test
     @DisplayName("댓글 수정 - 존재하지 않거나 논리 삭제된 댓글이면 COMMENT_NOT_FOUND")
     void update_commentNotFound() {
-        given(commentRepository.findByIdAndIsDeletedFalse(commentId)).willReturn(Optional.empty());
+        given(commentRepository.findByIdAndIsDeletedFalse(commentId))
+            .willReturn(Optional.empty());
 
         assertThatThrownBy(() -> commentService.update(commentId, userId, updateRequest))
             .isInstanceOf(CommentException.class)
@@ -360,7 +417,8 @@ class CommentServiceTest {
     @Test
     @DisplayName("댓글 논리 삭제 - 존재하지 않거나 이미 논리 삭제된 댓글이면 COMMENT_NOT_FOUND")
     void softDelete_commentNotFound() {
-        given(commentRepository.findByIdAndIsDeletedFalse(commentId)).willReturn(Optional.empty());
+        given(commentRepository.findByIdAndIsDeletedFalse(commentId))
+            .willReturn(Optional.empty());
 
         assertThatThrownBy(() -> commentService.softDelete(commentId, userId))
             .isInstanceOf(CommentException.class)
@@ -386,10 +444,12 @@ class CommentServiceTest {
     private Comment givenAnyCommentWrittenBy(UUID authorId) {
         Review review = mock(Review.class);
         User author = mock(User.class);
+
         given(author.getId()).willReturn(authorId);
 
         Comment comment = Comment.create(review, author, "삭제 대상");
         given(commentRepository.findById(commentId)).willReturn(Optional.of(comment));
+
         return comment;
     }
 
@@ -459,7 +519,8 @@ class CommentServiceTest {
     @Test
     @DisplayName("댓글 상세 조회 - 존재하지 않거나 논리 삭제된 댓글이면 COMMENT_NOT_FOUND")
     void getById_commentNotFound() {
-        given(commentRepository.findByIdAndIsDeletedFalse(commentId)).willReturn(Optional.empty());
+        given(commentRepository.findByIdAndIsDeletedFalse(commentId))
+            .willReturn(Optional.empty());
 
         assertThatThrownBy(() -> commentService.getById(commentId))
             .isInstanceOf(CommentException.class)
