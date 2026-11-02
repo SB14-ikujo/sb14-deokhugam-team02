@@ -150,6 +150,14 @@ public class BookService implements BookUseCase {
         return bookInfoDto;
     }
 
+    @Override
+    public void deleteBook(UUID bookId) {
+        log.info("도서 삭제 요청. bookId : {}", bookId);
+
+        bookPersistenceService.deleteBook(bookId);
+        log.info("도서 삭제 요청 처리 완료. bookId : {}", bookId);
+    }
+
     /*
      * 사용자 업로드 이미지 또는 카카오 썸네일을 저장한다.
      * 사용자 업로드 이미지가 우선순위가 높다.
