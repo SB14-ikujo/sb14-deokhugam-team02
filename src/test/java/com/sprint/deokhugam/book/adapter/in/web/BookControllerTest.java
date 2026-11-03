@@ -255,4 +255,45 @@ class BookControllerTest {
 
         then(bookUseCase).shouldHaveNoInteractions();
     }
+
+    @Test
+    @DisplayName("도서 상세 조회에 성공하면 200과 도서 정보를 반환한다.")
+    void getBookSuccess() throws Exception {
+        // given
+        UUID bookId = UUID.randomUUID();
+        BookDto response = new BookDto(
+            bookId,
+            "제목",
+            "저자",
+            "설명",
+            "출판사",
+            LocalDate.of(2023, 8, 16),
+            "9791168945456",
+            null,
+            0,
+            0.0,
+            Instant.now(),
+            Instant.now());
+        given(bookUseCase.getBook(bookId)).willReturn(response);
+
+        // when & then
+        mockMvc.perform(get("/api/books/{bookId}", bookId))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(bookId.toString()))
+            .andExpect(jsonPath("$.title").value("제목"));
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 도서를 조회하면 404를 반환한다.")
+    void getBookNotFound() throws Exception {
+        // given
+        UUID bookId = UUID.randomUUID();
+        given(bookUseCase.getBook(bookId)).willThrow(
+            new BookException(BookErrorCode.BOOK_NOT_FOUND)
+        );
+
+        // when & then
+        mockMvc.perform(get("/api/books/{bookId}", bookId))
+            .andExpect(status().isNotFound());
+    }
 }
