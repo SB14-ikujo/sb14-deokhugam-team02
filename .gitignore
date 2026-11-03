@@ -67,7 +67,6 @@ logs/
 !.env.example
 
 # 로컬 전용 더미 데이터
-application-local.yml
 local-seed.sql
 
 ### Local image storage ###
