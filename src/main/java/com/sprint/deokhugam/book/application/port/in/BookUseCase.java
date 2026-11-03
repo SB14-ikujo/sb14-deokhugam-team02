@@ -22,4 +22,6 @@ public interface BookUseCase {
     CursorPageResponse<BookDto> getBooks(
         String keyword, String orderBy, Sort.Direction direction,
         String cursor, Instant after, Integer limit);
+
+    BookDto getBook(UUID bookId);
 }

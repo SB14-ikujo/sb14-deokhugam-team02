@@ -1306,4 +1306,55 @@ class BookServiceTest {
         assertThat(response.nextCursor()).isNull();
         assertThat(response.totalElements()).isZero();
     }
+
+    @Test
+    @DisplayName("도서 상세 조회 시 논리 삭제되지 않은 도서를 BookDto로 반환한다.")
+    void getBookSuccess() {
+        // given
+        UUID bookId = UUID.randomUUID();
+        Book book = Book.create(request.title(), user, request.author(), request.description(),
+            request.publisher(), request.publishedDate(), request.isbn(), null);
+        given(bookRepositoryPort.findByIdAndIsDeletedFalse(bookId)).willReturn(Optional.of(book));
+
+        // when
+        BookDto result = bookService.getBook(bookId);
+
+        // then
+        assertThat(result.title()).isEqualTo(request.title());
+        assertThat(result.isbn()).isEqualTo(request.isbn());
+        assertThat(result.thumbnailUrl()).isNull();
+        then(bookImageStorage).should(never()).getImageUrl(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("도서 상세 조회 시 썸네일 이미지 키를 실제 이미지 URL로 바꿔 반환한다.")
+    void getBookWithThumbnail() {
+        // given
+        UUID bookId = UUID.randomUUID();
+        String imageKey = "books/thumbnail.png";
+        String imageUrl = "https://example.com/books/thumbnail.png";
+        Book book = Book.create(request.title(), user, request.author(), request.description(),
+            request.publisher(), request.publishedDate(), request.isbn(), imageKey);
+        given(bookRepositoryPort.findByIdAndIsDeletedFalse(bookId)).willReturn(Optional.of(book));
+        given(bookImageStorage.getImageUrl(imageKey, "image/png")).willReturn(imageUrl);
+
+        // when
+        BookDto result = bookService.getBook(bookId);
+
+        // then
+        assertThat(result.thumbnailUrl()).isEqualTo(imageUrl);
+    }
+
+    @Test
+    @DisplayName("존재하지 않거나 논리 삭제된 도서를 조회하면 BOOK_NOT_FOUND 예외가 발생한다.")
+    void getBookNotFound() {
+        // given
+        UUID bookId = UUID.randomUUID();
+        given(bookRepositoryPort.findByIdAndIsDeletedFalse(bookId)).willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> bookService.getBook(bookId))
+            .isInstanceOf(BookException.class)
+            .hasMessage(BookErrorCode.BOOK_NOT_FOUND.getMessage());
+    }
 }
