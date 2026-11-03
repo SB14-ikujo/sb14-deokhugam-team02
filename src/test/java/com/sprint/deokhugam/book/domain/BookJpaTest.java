@@ -25,7 +25,9 @@ import com.sprint.deokhugam.book.application.port.in.BookPersistenceService;
 import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
 import com.sprint.deokhugam.book.domain.exception.BookException;
+import com.sprint.deokhugam.comment.domain.Comment;
 import com.sprint.deokhugam.common.config.QuerydslConfig;
+import com.sprint.deokhugam.review.domain.Review;
 import com.sprint.deokhugam.user.domain.User;
 
 @DataJpaTest
@@ -301,5 +303,69 @@ class BookJpaTest {
         // then
         assertThatThrownBy(() -> insertBook("새로운 도서", isbn))
             .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
+    @Test
+    @DisplayName("도서를 물리 삭제하면 연관된 리뷰와 댓글도 함께 삭제된다.")
+    void physicallyDeleteBookWithRelatedEntities() {
+        // given
+        String isbn = "9791168945456";
+        insertBook("물리 삭제 테스트 도서", isbn);
+
+        UUID bookId = jdbcTemplate.queryForObject(
+            "SELECT id FROM books WHERE isbn = ?",
+            UUID.class,
+            isbn
+        );
+
+        Book book = bookRepositoryPort.findById(bookId)
+            .orElseThrow();
+
+        Review review = Review.create(
+            user,
+            book,
+            "물리 삭제 테스트 리뷰",
+            5
+        );
+
+        entityManager.persist(review);
+        entityManager.flush();
+
+        Comment comment = Comment.create(
+            review,
+            user,
+            "물리 삭제 테스트 댓글"
+        );
+
+        entityManager.persist(comment);
+        entityManager.flush();
+
+        UUID reviewId = review.getId();
+        UUID commentId = comment.getId();
+
+        // 삭제 전 데이터 존재 여부 확인
+        assertThat(countById("reviews", reviewId)).isEqualTo(1);
+        assertThat(countById("comments", commentId)).isEqualTo(1);
+
+        // when
+        jdbcTemplate.update(
+            "DELETE FROM books WHERE id = ?",
+            bookId
+        );
+
+        entityManager.clear();
+
+        // then
+        assertThat(countById("books", bookId)).isZero();
+        assertThat(countById("reviews", reviewId)).isZero();
+        assertThat(countById("comments", commentId)).isZero();
+    }
+
+    private int countById(String tableName, UUID id) {
+        return jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM " + tableName + " WHERE id = ?",
+            Integer.class,
+            id
+        );
     }
 }
