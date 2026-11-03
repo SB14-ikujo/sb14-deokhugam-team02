@@ -11,7 +11,10 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import com.sprint.deokhugam.book.application.port.out.BookImageStorage;
+import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
+import com.sprint.deokhugam.common.util.ContentTypeUtils;
 import com.sprint.deokhugam.common.util.SliceUtils;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookDto;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookRequest;
@@ -38,6 +41,7 @@ public class DashboardApplicationService implements DashboardUseCase {
     private final PopularBookRepositoryPort popularBookRepositoryPort;
     private final PopularReviewRepositoryPort popularReviewRepositoryPort;
     private final PowerUserRepositoryPort powerUserRepositoryPort;
+    private final BookImageStorage bookImageStorage;
 
     @Override
     @Transactional(readOnly = true)
@@ -63,7 +67,7 @@ public class DashboardApplicationService implements DashboardUseCase {
             request.direction(), parseCursor(request.cursor()), limit + 1);
 
         // 다음 페이지 판단 + DTO 변환
-        Slice<PopularBookDto> slice = SliceUtils.toSlice(rows, limit).map(dashboardMapper::toDto);
+        Slice<PopularBookDto> slice = SliceUtils.toSlice(rows, limit).map(this::toPopularBookDto);
 
         // 응답 만들기
         long total = popularBookRepositoryPort.countByPeriodAndSnapshotDate(request.period(), snapshotDate);
@@ -95,7 +99,7 @@ public class DashboardApplicationService implements DashboardUseCase {
         List<PopularReview> rows = popularReviewRepositoryPort.findPage(request.period(), snapshotDate,
             request.direction(), parseCursor(request.cursor()), limit + 1);
 
-        Slice<PopularReviewDto> slice = SliceUtils.toSlice(rows, limit).map(dashboardMapper::toDto);
+        Slice<PopularReviewDto> slice = SliceUtils.toSlice(rows, limit).map(this::toPopularReviewDto);
 
         long total = popularReviewRepositoryPort.countByPeriodAndSnapshotDate(request.period(), snapshotDate);
 
@@ -143,5 +147,24 @@ public class DashboardApplicationService implements DashboardUseCase {
         } catch (NumberFormatException ex) {
             throw new DashboardException(DashboardErrorCode.DASHBOARD_INVALID_CURSOR);
         }
+    }
+
+    private PopularBookDto toPopularBookDto(PopularBook popularBook) {
+        String thumbnailUrl = resolveThumbnailUrl(popularBook.getBook());
+        return dashboardMapper.toDto(popularBook, thumbnailUrl);
+    }
+
+    private PopularReviewDto toPopularReviewDto(PopularReview popularReview) {
+        String thumbnailUrl = resolveThumbnailUrl(popularReview.getReview().getBook());
+        return dashboardMapper.toDto(popularReview, thumbnailUrl);
+    }
+
+    // Book 썸네일 key → 실제 URL
+    private String resolveThumbnailUrl(Book book) {
+        String imageKey = book.getThumbnailUrl();
+        if (imageKey == null || imageKey.isBlank()) {
+            return null;
+        }
+        return bookImageStorage.getImageUrl(imageKey, ContentTypeUtils.resolve(imageKey));
     }
 }
