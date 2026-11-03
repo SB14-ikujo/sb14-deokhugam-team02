@@ -117,7 +117,7 @@ public class BookService implements BookUseCase {
             throw e;
         }
 
-        return toBookDto(savedBook);
+        return bookMapper.toDto(savedBook, this.resolveImageUrl(savedBook));
     }
 
     @Override
@@ -366,34 +366,17 @@ public class BookService implements BookUseCase {
     }
 
     /*
-     * Book 엔티티를 DTO로 변환하면서 실제 이미지 URL을 생성한다.
+     * Book 엔티티내 이미지 경로를 실제 이미지 URL을 생성한다.
      */
-    private BookDto toBookDto(Book book) {
-        BookDto bookDto = bookMapper.toDto(book);
-
+    private String resolveImageUrl(Book book) {
         String imageKey = book.getThumbnailUrl();
 
         if (imageKey == null || imageKey.isBlank()) {
-            return bookDto;
+            return null;
         }
 
         String contentType = resolveContentType(imageKey);
-        String imageUrl = bookImageStorage.getImageUrl(imageKey, contentType);
-
-        return new BookDto(
-            bookDto.id(),
-            bookDto.title(),
-            bookDto.author(),
-            bookDto.description(),
-            bookDto.publisher(),
-            bookDto.publishedDate(),
-            bookDto.isbn(),
-            imageUrl,
-            bookDto.reviewCount(),
-            bookDto.rating(),
-            bookDto.createdAt(),
-            bookDto.updatedAt()
-        );
+        return bookImageStorage.getImageUrl(imageKey, contentType);
     }
 
     /*
@@ -535,7 +518,7 @@ public class BookService implements BookUseCase {
 
         List<BookDto> books = bookRepositoryPort
             .findAllByCursor(keyword, orderBy, direction, cursor, after, limit)
-            .stream().map(bookMapper::toDto)
+            .stream().map(book -> bookMapper.toDto(book, this.resolveImageUrl(book)))
             .toList();
 
         Slice<BookDto> slice = SliceUtils.toSlice(books, limit);

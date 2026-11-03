@@ -11,7 +11,8 @@ import com.sprint.deokhugam.book.domain.Book;
 @Mapper(componentModel = "spring")
 public interface BookMapper {
 
-    BookDto toDto(Book book);
+    @Mapping(target = "thumbnailUrl", source = "imageUrl")
+    BookDto toDto(Book book, String imageUrl);
 
     @Mapping(
         target = "author",

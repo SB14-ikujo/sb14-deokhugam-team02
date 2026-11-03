@@ -24,7 +24,7 @@ public class LocalStorage implements BookImageStorage {
 
     private final Path uploadDir;
 
-    public LocalStorage(@Value("${deokhugam.storage.path:./uploads}") String path) {
+    public LocalStorage(@Value("${deokhugam.storage.path}") String path) {
         this.uploadDir = Path.of(path).toAbsolutePath().normalize(); // 실행 위치 기준 절대 경로로 변환 불필요 경로 제거
         init();
     }
