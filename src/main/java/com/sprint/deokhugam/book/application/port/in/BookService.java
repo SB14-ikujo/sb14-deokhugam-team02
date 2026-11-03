@@ -552,7 +552,7 @@ public class BookService implements BookUseCase {
                 log.warn("도서 상세 조회 실패 : 도서를 찾을 수 없습니다. bookId : {}", bookId);
                 return new BookException(BookErrorCode.BOOK_NOT_FOUND);
             });
-        return toBookDto(book);
+        return bookMapper.toDto(book, this.resolveImageUrl(book));
     }
 
     private void validateCursor(String orderBy, String cursor) {
