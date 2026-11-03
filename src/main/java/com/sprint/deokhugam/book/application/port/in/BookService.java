@@ -43,6 +43,7 @@ import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
 import com.sprint.deokhugam.book.domain.exception.BookException;
 import com.sprint.deokhugam.book.domain.validator.IsbnValidator;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
+import com.sprint.deokhugam.common.util.ContentTypeUtils;
 import com.sprint.deokhugam.common.util.SliceUtils;
 import com.sprint.deokhugam.user.application.port.out.UserRepositoryPort;
 import com.sprint.deokhugam.user.domain.exception.UserErrorCode;
@@ -409,27 +410,6 @@ public class BookService implements BookUseCase {
     }
 
     /*
-     * 저장된 이미지 키의 확장자를 기준으로 MIME 타입을 판별한다.
-     */
-    private String resolveContentType(String imageKey) {
-        int extensionIndex = imageKey.lastIndexOf('.');
-
-        if (extensionIndex == -1) {
-            return "application/octet-stream";
-        }
-
-        String extension = imageKey.substring(imageKey.lastIndexOf('.') + 1).toLowerCase();
-
-        return switch (extension) {
-            case "jpg", "jpeg" -> "image/jpeg";
-            case "png" -> "image/png";
-            case "webp" -> "image/webp";
-            case "gif" -> "image/gif";
-            default -> "application/octet-stream";
-        };
-    }
-
-    /*
      * Book 엔티티내 이미지 경로를 실제 이미지 URL을 생성한다.
      */
     private String resolveImageUrl(Book book) {
@@ -439,7 +419,7 @@ public class BookService implements BookUseCase {
             return null;
         }
 
-        String contentType = resolveContentType(imageKey);
+        String contentType = ContentTypeUtils.resolve(imageKey);
         return bookImageStorage.getImageUrl(imageKey, contentType);
     }
 
