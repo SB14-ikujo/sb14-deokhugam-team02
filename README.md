@@ -6,21 +6,6 @@
 좋아요와 댓글을 남길 수 있으며, 내 리뷰에 반응이 생기면 알림으로 받아볼 수 있습니다. 또한 Spring Batch 기반의 주기적인 집계로 인기 도서, 인기 리뷰, 파워 유저 순위를 일간 · 주간 · 월간 · 역대
 기간별로 대시보드에 제공합니다.
 
-![Java 17](https://img.shields.io/badge/Java_17-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
-![Spring Boot 4.1.1](https://img.shields.io/badge/Spring_Boot_4.1.1-6DB33F?style=flat-square&logo=springboot&logoColor=white)
-![PostgreSQL 15](https://img.shields.io/badge/PostgreSQL_15-4169E1?style=flat-square&logo=postgresql&logoColor=white)
-![QueryDSL 7.0](https://img.shields.io/badge/QueryDSL_7.0-3B6FD9?style=flat-square)
-![Gradle 9.7.1](https://img.shields.io/badge/Gradle_9.7.1-02303A?style=flat-square&logo=gradle&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
-
-## 팀 소개 — 코드잇 스프린트 중급 프로젝트 2팀 이쿠조
-
-|                              김양현                               |                               박성욱                               |                               김지현                                |                              이은솔                              |                              강성준                               |                            김세중                             |
-|:--------------------------------------------------------------:|:---------------------------------------------------------------:|:----------------------------------------------------------------:|:-------------------------------------------------------------:|:--------------------------------------------------------------:|:----------------------------------------------------------:|
-| <img src="docs/images/team/yyy2724.png" width="100" alt="김양현"> | <img src="docs/images/team/ziezz767.png" width="100" alt="박성욱"> | <img src="docs/images/team/kjh940222.png" width="100" alt="김지현"> | <img src="docs/images/team/eunsol.png" width="100" alt="이은솔"> | <img src="docs/images/team/sungjun.png" width="100" alt="강성준"> | <img src="docs/images/team/ksj.png" width="100" alt="김세중"> |
-|             [yyy2724](https://github.com/yyy2724)              |             [ziezz767](https://github.com/ziezz767)             |            [kjh940222](https://github.com/kjh940222)             |             [EUNSOLY](https://github.com/EUNSOLY)             |             [SungJun](https://github.com/SungJun)              |         [SB-14-KSJ](https://github.com/SB-14-KSJ)          |
-|                      대시보드·OCR<br>인기 순위 집계                      |                         리뷰·좋아요<br>리뷰 검색                         |                      도서 관리<br>카카오 책 API·S3                       |                        알림<br>자동 생성·정리                         |                        사용자<br>회원가입·로그인                         |                       댓글<br>댓글 CRUD                        |
-
 ## 기술 스택
 
 | 구분             | 기술                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 용도                                                               |
@@ -61,18 +46,30 @@
 
 ### 김양현 — 대시보드와 OCR
 
+<a href="https://github.com/yyy2724">
+    <img src="https://github.com/yyy2724.png" width="100" alt="김양현">
+  </a>
+
 - 인기 도서 · 인기 리뷰 · 파워 유저를 기간별(일간·주간·월간·역대)로 집계하고, 매일 배치로 스냅샷을 저장했습니다.
 - 인기 순위 조회 API 3개를 구현했습니다.
 - OCR: 책 사진에서 ISBN을 인식하는 기능을 담당합니다. (심화)
 
 ### 박성욱 — 리뷰와 좋아요
 
+<a href="https://github.com/ziezz767">
+  <img src="https://github.com/ziezz767.png" width="100" alt="박성욱">
+</a>
+
 - 리뷰 CRUD를 구현했습니다. (도서당 1개, 본인만 수정·삭제)
 - 논리 삭제를 기본으로 하고, 물리 삭제 시 좋아요·댓글도 함께 삭제합니다.
 - 키워드(닉네임·내용·도서 제목) 검색, 작성자·도서 필터, 정렬(작성일·평점), 커서 페이지네이션을 적용했습니다.
 - 좋아요 / 취소와 내가 좋아요 했는지 여부(`likedByMe`)를 구현했습니다.
 
-### 김지현 — 도서 관리 (OCR 제외)
+### 김지현 — 도서 관리
+
+<a href="https://github.com/pengji-dev">
+  <img src="https://github.com/pengji-dev.png" width="100" alt="김지현">
+</a>
 
 - ISBN으로 카카오 책 API를 조회해 도서를 등록합니다.
 - CRUD를 구현했습니다. (ISBN 중복 불가, ISBN 수정 불가)
@@ -82,17 +79,29 @@
 
 ### 이은솔 — 알림
 
+<a href="https://github.com/EUNSOLY">
+  <img src="https://github.com/EUNSOLY.png" width="100" alt="이은솔">
+</a>
+
 - 알림 자동 생성: 내 리뷰에 좋아요·댓글이 달렸을 때, 내 리뷰가 기간별 인기 순위 10위 안에 들었을 때
 - 목록 조회(최신순), 알림 하나 읽음, 전체 읽음을 구현했습니다.
 - 확인한 지 1주가 지난 알림을 매일 배치로 자동 삭제합니다.
 
 ### 강성준 — 사용자
 
+<a href="https://github.com/xian980">
+  <img src="https://github.com/xian980.png" width="100" alt="강성준">
+</a>
+
 - 회원가입(이메일 중복 불가), 로그인, 조회, 닉네임만 수정하는 기능을 구현했습니다.
 - 삭제: 논리 삭제 후 1일 뒤 물리 삭제합니다. (자동 삭제가 있는 유일한 도메인)
 - 물리 삭제 시 연관된 모든 데이터(리뷰·댓글·좋아요·알림)를 삭제합니다.
 
 ### 김세중 — 댓글
+
+<a href="https://github.com/SB-14-KSJ">
+  <img src="https://github.com/SB-14-KSJ.png" width="100" alt="김세중">
+</a>
 
 - 댓글 CRUD를 구현했습니다. (본인만 수정·삭제)
 - 목록은 시간순 정렬과 커서 페이지네이션으로 제공합니다.
@@ -129,7 +138,7 @@ sb14-deokhugam-team02/
 백엔드는 **헥사고날 아키텍처(포트 & 어댑터)** 로 구성합니다. 도메인마다 `adapter` / `application.port` / `domain` 으로 나누고, 의존성은 항상 바깥(adapter)에서 안쪽(
 domain)으로만 향합니다.
 
-<p align="center"><img src="docs/images/package-structure.png" alt="패키지 구조" width="100%"/></p>
+<p align="center"><img src="docs/images/package-structure2.png" alt="패키지 구조" width="100%"/></p>
 
 ```
 com.sprint.deokhugam
@@ -201,7 +210,7 @@ flowchart LR
 
 모든 테이블은 `BaseEntity` 의 `id(UUID)`, `created_at`, `updated_at` 을 공통으로 가집니다.
 
-<p align="center"><img src="docs/images/erd.png" alt="ERD" width="90%"/></p>
+<p align="center"><img src="docs/images/erd1.png" alt="ERD" width="90%"/></p>
 
 - `reviews` : `UNIQUE(user_id, book_id)` — 한 사용자는 도서당 리뷰 1개
 - 사용자 · 도서 · 리뷰 · 댓글은 `is_deleted` 로 논리 삭제
@@ -461,15 +470,15 @@ Gradle 동기화 시 `build.gradle` 이 git 훅 경로를 `.githooks` 로 자동
 ```mermaid
 flowchart LR
     A[작업 브랜치 push] --> B[PR → develop]
-    B --> C["자동 검사<br/>ci · commit-lint · issue-link"]
-    B --> R["Claude 자동 리뷰<br/>(참고용)"]
-    C --> D[팀원 리뷰 · 머지]
-    R --> D
-    D --> E["develop<br/>머지 후 ci 재검증"]
-    E --> F[PR → main]
-    F --> G["자동 검사<br/>ci · main-only-from-develop"]
-    G --> H[main 머지]
-    H -.-> I["CD (AWS 배포)<br/>준비 중"]
+B --> C["자동 검사<br/>ci · commit-lint · issue-link"]
+B --> R["Claude 자동 리뷰<br/>(참고용)"]
+C --> D[팀원 리뷰 · 머지]
+R --> D
+D --> E["develop<br/>머지 후 ci 재검증"]
+E --> F[PR → main]
+F --> G["자동 검사<br/>ci · main-only-from-develop"]
+G --> H[main 머지]
+H -.-> I["CD (AWS 배포)<br/>준비 중"]
 ```
 
 > ⚠️ CD(배포)는 아직 구성 중이라 현재 워크플로우에는 포함되어 있지 않습니다.
