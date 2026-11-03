@@ -89,4 +89,36 @@ public class Book extends BaseEntity {
     public void delete() {
         this.isDeleted = true;
     }
+
+    public void updateInfo(
+        String title,
+        String author,
+        String description,
+        String publisher,
+        LocalDate publishedDate
+    ) {
+        if (title != null) {
+            this.title = title;
+        }
+
+        if (author != null) {
+            this.author = author;
+        }
+
+        if (description != null) {
+            this.description = description;
+        }
+
+        if (publisher != null) {
+            this.publisher = publisher;
+        }
+
+        if (publishedDate != null) {
+            this.publishedDate = publishedDate;
+        }
+    }
+
+    public void updateThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
+    }
 }
