@@ -4,7 +4,7 @@ spring:
   application:
     name: deokhugam
   config:
-    import: optional:file:.env[.properties]
+    import: optional:file:.env.${spring.profiles.active:local}[.properties]
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/deokhugam}
     username: ${SPRING_DATASOURCE_USERNAME:${POSTGRES_USER:deokhugam}}
@@ -49,12 +49,6 @@ deokhugam:
   storage:
     type: ${STORAGE_TYPE:local}
     path: ${STORAGE_PATH:./uploads}
-    s3:
-      access-key: ${AWS_S3_ACCESS_KEY:}
-      secret-key: ${AWS_S3_SECRET_KEY:}
-      region: ${AWS_S3_REGION:}
-      bucket: ${AWS_S3_BUCKET:}
-      presigned-url-expiration: ${AWS_S3_PRESIGNED_URL_EXPIRATION:600} # (기본값: 10분)
   ocr:
     api-key: ${OCR_SPACE_API_KEY:}
     url: https://api.ocr.space/parse/image
