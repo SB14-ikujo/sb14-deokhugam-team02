@@ -16,6 +16,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.sprint.deokhugam.book.application.port.out.BookImageStorage;
+import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookDto;
 import com.sprint.deokhugam.dashboard.adapter.in.web.dto.PopularBookRequest;
@@ -45,6 +47,9 @@ class DashboardApplicationServiceTest {
     @Mock
     private PowerUserRepositoryPort powerUserRepositoryPort;
 
+    @Mock
+    private BookImageStorage bookImageStorage;
+
     @InjectMocks
     private DashboardApplicationService dashboardApplicationService;
 
@@ -64,11 +69,11 @@ class DashboardApplicationServiceTest {
     @DisplayName("limit 이하로 조회되면 마지막 페이지다")
     void lastPageWhenRowsWithinLimit() {
         givenSnapshot();
-        PopularBook first = mock(PopularBook.class);
+        PopularBook first = popularBookWithThumbnail(null);
         when(popularBookRepositoryPort.findPage(PeriodType.DAILY, TODAY, Direction.ASC, null, 3))
             .thenReturn(List.of(first));
         when(popularBookRepositoryPort.countByPeriodAndSnapshotDate(PeriodType.DAILY, TODAY)).thenReturn(1L);
-        when(dashboardMapper.toDto(first, "")).thenReturn(dto(1L));
+        when(dashboardMapper.toDto(first, null)).thenReturn(dto(1L));
 
         CursorPageResponse<PopularBookDto> result = dashboardApplicationService.getPopularBooks(request(null, 2));
 
@@ -83,14 +88,14 @@ class DashboardApplicationServiceTest {
     void hasNextWhenRowsExceedLimit() {
         givenSnapshot();
         Instant lastCreatedAt = Instant.parse("2026-10-19T00:00:00Z");
-        PopularBook first = mock(PopularBook.class);
-        PopularBook second = mock(PopularBook.class);
-        PopularBook extra = mock(PopularBook.class);
+        PopularBook first = popularBookWithThumbnail(null);
+        PopularBook second = popularBookWithThumbnail(null);
+        PopularBook extra = mock(PopularBook.class); // limit 초과분은 DTO로 변환되지 않는다
         when(popularBookRepositoryPort.findPage(PeriodType.DAILY, TODAY, Direction.ASC, null, 3))
             .thenReturn(List.of(first, second, extra));
         when(popularBookRepositoryPort.countByPeriodAndSnapshotDate(PeriodType.DAILY, TODAY)).thenReturn(10L);
-        when(dashboardMapper.toDto(first, "")).thenReturn(dto(1L));
-        when(dashboardMapper.toDto(second, "")).thenReturn(dto(2L, lastCreatedAt));
+        when(dashboardMapper.toDto(first, null)).thenReturn(dto(1L));
+        when(dashboardMapper.toDto(second, null)).thenReturn(dto(2L, lastCreatedAt));
 
         CursorPageResponse<PopularBookDto> result = dashboardApplicationService.getPopularBooks(request(null, 2));
 
@@ -99,6 +104,40 @@ class DashboardApplicationServiceTest {
         assertThat(result.nextCursor()).isEqualTo("2");
         assertThat(result.nextAfter()).isEqualTo(lastCreatedAt);
         assertThat(result.totalElements()).isEqualTo(10L);
+    }
+
+    @Test
+    @DisplayName("썸네일 키가 있으면 저장소에서 실제 URL로 바꿔 매퍼에 넘긴다")
+    void resolvesThumbnailKeyToUrl() {
+        givenSnapshot();
+        PopularBook first = popularBookWithThumbnail("cover.png");
+        when(popularBookRepositoryPort.findPage(PeriodType.DAILY, TODAY, Direction.ASC, null, 3))
+            .thenReturn(List.of(first));
+        when(popularBookRepositoryPort.countByPeriodAndSnapshotDate(PeriodType.DAILY, TODAY)).thenReturn(1L);
+        when(bookImageStorage.getImageUrl("cover.png", "image/png")).thenReturn("/api/images/cover.png");
+        when(dashboardMapper.toDto(first, "/api/images/cover.png")).thenReturn(dto(1L));
+
+        CursorPageResponse<PopularBookDto> result = dashboardApplicationService.getPopularBooks(request(null, 2));
+
+        assertThat(result.content()).hasSize(1);
+        verify(bookImageStorage).getImageUrl("cover.png", "image/png");
+        verify(dashboardMapper).toDto(first, "/api/images/cover.png");
+    }
+
+    @Test
+    @DisplayName("썸네일 키가 비어 있으면 저장소를 호출하지 않고 URL 없이 넘긴다")
+    void skipsStorageWhenThumbnailBlank() {
+        givenSnapshot();
+        PopularBook first = popularBookWithThumbnail("  ");
+        when(popularBookRepositoryPort.findPage(PeriodType.DAILY, TODAY, Direction.ASC, null, 3))
+            .thenReturn(List.of(first));
+        when(popularBookRepositoryPort.countByPeriodAndSnapshotDate(PeriodType.DAILY, TODAY)).thenReturn(1L);
+        when(dashboardMapper.toDto(first, null)).thenReturn(dto(1L));
+
+        dashboardApplicationService.getPopularBooks(request(null, 2));
+
+        verifyNoInteractions(bookImageStorage);
+        verify(dashboardMapper).toDto(first, null);
     }
 
     @Test
@@ -206,6 +245,15 @@ class DashboardApplicationServiceTest {
 
     private PowerUserDto powerUserDto(long rank, Instant createdAt) {
         return new PowerUserDto(UUID.randomUUID(), "닉네임", PeriodType.DAILY, createdAt, rank, 1.0, 1.0, 1L, 1L);
+    }
+
+    // 서비스가 popularBook.getBook().getThumbnailUrl() 을 읽으므로 Book 목까지 연결해 둔다
+    private PopularBook popularBookWithThumbnail(String thumbnailKey) {
+        Book book = mock(Book.class);
+        when(book.getThumbnailUrl()).thenReturn(thumbnailKey);
+        PopularBook popularBook = mock(PopularBook.class);
+        when(popularBook.getBook()).thenReturn(book);
+        return popularBook;
     }
 
     private void givenSnapshot() {
