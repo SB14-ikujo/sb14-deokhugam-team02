@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookCreateRequest;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookDto;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookInfoDto;
+import com.sprint.deokhugam.book.adapter.in.web.dto.BookUpdateRequest;
 import com.sprint.deokhugam.book.adapter.in.web.mapper.BookMapper;
 import com.sprint.deokhugam.book.application.dto.BookSearchResult;
 import com.sprint.deokhugam.book.application.dto.DownloadedThumbnail;
@@ -152,10 +153,73 @@ public class BookService implements BookUseCase {
 
     @Override
     public void deleteBook(UUID bookId) {
-        log.info("도서 삭제 요청. bookId : {}", bookId);
+        log.info("도서 삭제 요청 : bookId : {}", bookId);
 
         bookPersistenceService.deleteBook(bookId);
-        log.info("도서 삭제 요청 처리 완료. bookId : {}", bookId);
+        log.info("도서 삭제 요청 처리 완료 : bookId : {}", bookId);
+    }
+
+    @Override
+    public BookDto updateBook(UUID bookId, BookUpdateRequest request, MultipartFile thumbnailImage) {
+        log.info("도서 수정 요청 : bookId : {}", bookId);
+
+        // 1. 수정 요청 검증
+        validateUpdateRequest(request);
+
+        // 2. 수정 대상 도서 조회
+        Book existingBook = bookRepositoryPort.findByIdAndIsDeletedFalse(bookId)
+            .orElseThrow(() -> {
+                log.warn("도서 수정 실패 : 도서를 찾을 수 없음. bookId : {}", bookId);
+
+                return new BookException(BookErrorCode.BOOK_NOT_FOUND);
+            });
+
+        // 기존 이미지 키 보관
+        String oldImageKey = existingBook.getThumbnailUrl();
+
+        // 3. 새 썸네일 이미지가 첨부된 경우 업로드
+        StoredThumbnail thumbnail = null;
+
+        if (thumbnailImage != null) {
+            thumbnail = storeUpdateThumbnail(thumbnailImage);
+        }
+
+        String newImageKey = thumbnail == null ? null : thumbnail.imageKey();
+
+        try {
+            // 4. DB 수정
+            Book updatedBook = bookPersistenceService.updateBook(
+                bookId,
+                request,
+                newImageKey
+            );
+
+            // 5. 기존 이미지 삭제
+            if (newImageKey != null
+                && oldImageKey != null
+                && !oldImageKey.equals(newImageKey)) {
+                try {
+                    bookImageStorage.delete(oldImageKey);
+                } catch (RuntimeException e) {
+                    log.error("도서 수정 성공 후 기존 썸네일 삭제 실패 : imageKey : {}", oldImageKey, e);
+                }
+            }
+
+            log.info("도서 수정 성공 : bookId : {}", bookId);
+
+            return bookMapper.toDto(updatedBook, resolveImageUrl(updatedBook));
+        } catch (RuntimeException e) {
+            // DB 수정 실패 시 새로 업로드한 이미지 삭제
+            if (newImageKey != null) {
+                try {
+                    bookImageStorage.delete(newImageKey);
+                } catch (RuntimeException cleanException) {
+                    log.error("도서 수정 실패 후 썸네일 삭제 실패 : imageKey : {}", newImageKey, cleanException);
+                }
+            }
+
+            throw e;
+        }
     }
 
     /*
@@ -502,6 +566,26 @@ public class BookService implements BookUseCase {
         throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
     }
 
+    /*
+     * 수정 요청 검증 메서드
+     */
+    private void validateUpdateRequest(BookUpdateRequest request) {
+        if (request.title() == null
+            && request.author() == null
+            && request.description() == null
+            && request.publisher() == null
+            && request.publishedDate() == null) {
+            throw new BookException(BookErrorCode.BOOK_INVALID_UPDATE);
+        }
+
+        if (isBlank(request.title())
+            || isBlank(request.author())
+            || isBlank(request.description())
+            || isBlank(request.publisher())) {
+            throw new BookException(BookErrorCode.BOOK_INVALID_UPDATE);
+        }
+    }
+
     @Override
     @Transactional(readOnly = true)
     public CursorPageResponse<BookDto> getBooks(
@@ -555,6 +639,51 @@ public class BookService implements BookUseCase {
         return bookMapper.toDto(book, this.resolveImageUrl(book));
     }
 
+    /*
+     * 수정 전용 썸네일 업로드 메서드
+     */
+    private StoredThumbnail storeUpdateThumbnail(MultipartFile thumbnailImage) {
+        if (thumbnailImage.isEmpty()) {
+            throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
+        }
+
+        byte[] imageBytes;
+
+        try {
+            imageBytes = thumbnailImage.getBytes();
+        } catch (IOException e) {
+            throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
+        }
+
+        String contentType = thumbnailImage.getContentType();
+        String originalFilename = thumbnailImage.getOriginalFilename();
+
+        if (contentType == null || contentType.isBlank()) {
+            throw new BookException(BookErrorCode.BOOK_INVALID_THUMBNAIL);
+        }
+
+        if (originalFilename == null || originalFilename.isBlank()) {
+            originalFilename = "thumbnail";
+        }
+
+        // 기존 이미지 검증 로직 재사용
+        validateImageBytes(imageBytes, contentType);
+
+        // 확장자 보정
+        originalFilename = ensureFileExtension(originalFilename, contentType);
+
+        // 이미지 저장
+        String imageKey = bookImageStorage.generateImageKey(originalFilename);
+
+        String savedImageKey = bookImageStorage.upload(
+            imageKey,
+            imageBytes,
+            contentType
+        );
+
+        return new StoredThumbnail(savedImageKey, contentType);
+    }
+
     private void validateCursor(String orderBy, String cursor) {
         if (cursor == null) {
             return;
@@ -571,5 +700,9 @@ public class BookService implements BookUseCase {
             log.warn("도서 목록 조회 실패 : 잘못된 cursor - orderBy: {}, cursor: {}", orderBy, cursor);
             throw new BookException(BookErrorCode.BOOK_INVALID_CURSOR);
         }
+    }
+
+    private boolean isBlank(String value) {
+        return value != null && value.isBlank();
     }
 }
