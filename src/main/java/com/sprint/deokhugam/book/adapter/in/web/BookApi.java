@@ -27,6 +27,7 @@ import com.sprint.deokhugam.book.adapter.in.web.dto.BookCreateRequest;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookDto;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookInfoDto;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookSearchRequest;
+import com.sprint.deokhugam.book.adapter.in.web.dto.BookUpdateMultipartRequest;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookUpdateRequest;
 import com.sprint.deokhugam.common.context.user.RequestUserId;
 import com.sprint.deokhugam.common.exception.ErrorResponse;
@@ -189,22 +190,34 @@ public interface BookApi {
         summary = "도서 수정",
         description = "등록된 도서 정보를 수정합니다. ISBN은 수정할 수 없습니다."
     )
+    @RequestBody(
+        description = "수정할 도서 정보 및 썸네일 이미지",
+        required = true,
+        content = @Content(
+            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE,
+            schema = @Schema(implementation = BookUpdateMultipartRequest.class),
+            encoding = @Encoding(
+                name = "bookData",
+                contentType = MediaType.APPLICATION_JSON_VALUE
+            )
+        )
+    )
     @ApiResponses({
-        @ApiResponse(
-            responseCode = "200",
-            description = "도서 수정 성공"
-        ),
+        @ApiResponse(responseCode = "200", description = "도서 수정 성공"),
         @ApiResponse(
             responseCode = "400",
-            description = "잘못된 수정 요청"
+            description = "잘못된 수정 요청",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
         ),
         @ApiResponse(
             responseCode = "404",
-            description = "도서를 찾을 수 없음"
+            description = "도서를 찾을 수 없음",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
         ),
         @ApiResponse(
             responseCode = "500",
-            description = "서버 내부 오류"
+            description = "서버 내부 오류",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
         )
     })
     @PatchMapping(
@@ -218,10 +231,8 @@ public interface BookApi {
         @RequestPart("bookData")
         @Valid BookUpdateRequest request,
 
-        @RequestPart(
-            value = "thumbnailImage",
-            required = false
-        )
+        @RequestPart(value = "thumbnailImage", required = false)
         MultipartFile thumbnailImage
     );
+
 }
