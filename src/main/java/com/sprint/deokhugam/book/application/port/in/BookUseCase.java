@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookCreateRequest;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookDto;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookInfoDto;
+import com.sprint.deokhugam.book.adapter.in.web.dto.BookUpdateRequest;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
 
 public interface BookUseCase {
@@ -18,6 +19,8 @@ public interface BookUseCase {
     BookInfoDto searchBooksByIsbn(String isbn);
 
     void deleteBook(UUID bookId);
+
+    BookDto updateBook(UUID bookId, BookUpdateRequest request, MultipartFile thumbnailImage);
 
     CursorPageResponse<BookDto> getBooks(
         String keyword, String orderBy, Sort.Direction direction,
