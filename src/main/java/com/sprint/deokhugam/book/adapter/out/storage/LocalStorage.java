@@ -20,7 +20,7 @@ import com.sprint.deokhugam.book.application.port.out.BookImageStorage;
 @Component
 @ConditionalOnProperty(name = "deokhugam.storage.type", havingValue = "local", matchIfMissing = true)
 public class LocalStorage implements BookImageStorage {
-    private static final String URL_PATH = "/api/images"; // 로컬 이미지 URL prefix
+    private static final String URL_PATH = "/api/images";
 
     private final Path uploadDir;
 

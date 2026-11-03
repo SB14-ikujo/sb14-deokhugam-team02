@@ -15,17 +15,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 @ConditionalOnProperty(name = "deokhugam.storage.type", havingValue = "local", matchIfMissing = true)
 public class LocalImageWebConfig implements WebMvcConfigurer {
-    static final String URL_PATTERN = "/api/images/**"; // LocalStorage 의 URL prefix 와 같아야 한다
+    static final String URL_PATTERN = "/api/images/**"; // LocalStorage 의 URL_PATH 와 같아야 한다
 
     private final Path uploadDir;
 
     public LocalImageWebConfig(@Value("${deokhugam.storage.path}") String path) {
-        this.uploadDir = Path.of(path).toAbsolutePath().normalize(); // LocalStorage 와 같은 방식으로 변환
+        this.uploadDir = Path.of(path).toAbsolutePath().normalize();
     }
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler(URL_PATTERN)
-            .addResourceLocations(uploadDir.toUri().toString()); // file:/.../uploads/ (끝 슬래시 포함)
+            .addResourceLocations(uploadDir.toUri().toString());
     }
 }
