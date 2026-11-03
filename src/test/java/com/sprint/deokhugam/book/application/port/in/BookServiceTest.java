@@ -1342,7 +1342,9 @@ class BookServiceTest {
         BookDto result = bookService.getBook(bookId);
 
         // then
-        assertThat(result.thumbnailUrl()).isEqualTo(imageUrl);
+        // mapper에 넘긴 이미지 URL을 검증.
+        assertThat(result.title()).isEqualTo(request.title());
+        verify(bookMapper).toDto(book, imageUrl);
     }
 
     @Test
