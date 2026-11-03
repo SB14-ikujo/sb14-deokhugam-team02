@@ -33,6 +33,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookCreateRequest;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookDto;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookInfoDto;
+import com.sprint.deokhugam.book.adapter.in.web.dto.BookUpdateRequest;
 import com.sprint.deokhugam.book.adapter.in.web.mapper.BookMapper;
 import com.sprint.deokhugam.book.application.dto.BookSearchResult;
 import com.sprint.deokhugam.book.application.dto.DownloadedThumbnail;
@@ -1179,6 +1180,346 @@ class BookServiceTest {
             .isSameAs(exception);
 
         then(bookPersistenceService).should().deleteBook(bookId);
+    }
+
+    @Test
+    @DisplayName("정상적인 요청이면 도서 정보를 수정하고 DTO를 반환한다.")
+    void updateBookSuccess() {
+        // given
+        UUID bookId = UUID.randomUUID();
+
+        Book existingBook = Book.create(
+            "기존 제목",
+            user,
+            "기존 저자",
+            "기존 설명",
+            "기존 출판사",
+            LocalDate.of(2026, 11, 2),
+            "9791168945456",
+            null
+        );
+
+        ReflectionTestUtils.setField(existingBook, "id", bookId);
+
+        BookUpdateRequest updateRequest = new BookUpdateRequest(
+            "수정 제목",
+            "수정 저자",
+            "수정 설명",
+            "수정 출판사",
+            LocalDate.of(2026, 11, 3)
+        );
+
+        given(bookRepositoryPort.findByIdAndIsDeletedFalse(bookId))
+            .willReturn(Optional.of(existingBook));
+
+        given(bookPersistenceService.updateBook(bookId, updateRequest, null))
+            .willAnswer(invocation -> {
+                existingBook.updateInfo(
+                    updateRequest.title(),
+                    updateRequest.author(),
+                    updateRequest.description(),
+                    updateRequest.publisher(),
+                    updateRequest.publishedDate()
+                );
+                return existingBook;
+            });
+
+        // when
+        BookDto result = bookService.updateBook(bookId, updateRequest, null);
+
+        // then
+        assertThat(result.title()).isEqualTo("수정 제목");
+        assertThat(result.author()).isEqualTo("수정 저자");
+        assertThat(result.description()).isEqualTo("수정 설명");
+        assertThat(result.publisher()).isEqualTo("수정 출판사");
+
+        verify(bookRepositoryPort).findByIdAndIsDeletedFalse(bookId);
+        verify(bookPersistenceService).updateBook(bookId, updateRequest, null);
+
+        verify(bookImageStorage, never()).upload(
+            anyString(),
+            any(byte[].class),
+            anyString()
+        );
+
+        verify(bookImageStorage, never()).delete(anyString());
+    }
+
+    @Test
+    @DisplayName("새로운 썸네일 이미지가 전달되면 기존 이미지를 교체한다.")
+    void updateBookWithThumbnail() throws IOException {
+        // given
+        UUID bookId = UUID.randomUUID();
+
+        String oldImageKey = "old-thumbnail.png";
+        String newImageKey = "new-thumbnail.png";
+
+        Book existingBook = Book.create(
+            "기존 제목",
+            user,
+            "기존 저자",
+            "기존 설명",
+            "기존 출판사",
+            LocalDate.of(2026, 11, 2),
+            "9791168945456",
+            oldImageKey
+        );
+
+        ReflectionTestUtils.setField(existingBook, "id", bookId);
+
+        BookUpdateRequest updateRequest = new BookUpdateRequest(
+            "수정 제목",
+            null,
+            null,
+            null,
+            null
+        );
+
+        MockMultipartFile thumbnailImage = new MockMultipartFile(
+            "thumbnailImage",
+            "thumbnail.png",
+            "image/png",
+            createValidPngBytes()
+        );
+
+        given(bookRepositoryPort.findByIdAndIsDeletedFalse(bookId))
+            .willReturn(Optional.of(existingBook));
+
+        given(bookImageStorage.generateImageKey("thumbnail.png"))
+            .willReturn(newImageKey);
+
+        given(bookImageStorage.upload(
+            eq(newImageKey),
+            any(byte[].class),
+            eq("image/png")
+        )).willReturn(newImageKey);
+
+        given(bookPersistenceService.updateBook(
+            bookId,
+            updateRequest,
+            newImageKey
+        )).willAnswer(invocation -> {
+            existingBook.updateInfo(
+                updateRequest.title(),
+                updateRequest.author(),
+                updateRequest.description(),
+                updateRequest.publisher(),
+                updateRequest.publishedDate()
+            );
+            existingBook.updateThumbnailUrl(newImageKey);
+            return existingBook;
+        });
+
+        given(bookImageStorage.getImageUrl(newImageKey, "image/png"))
+            .willReturn("/api/images/" + newImageKey);
+
+        // when
+        BookDto result = bookService.updateBook(
+            bookId,
+            updateRequest,
+            thumbnailImage
+        );
+
+        // then
+        assertThat(result.title()).isEqualTo("수정 제목");
+
+        verify(bookImageStorage).upload(
+            eq(newImageKey),
+            any(byte[].class),
+            eq("image/png")
+        );
+
+        verify(bookPersistenceService).updateBook(
+            bookId,
+            updateRequest,
+            newImageKey
+        );
+
+        verify(bookImageStorage).delete(oldImageKey);
+    }
+
+    @Test
+    @DisplayName("썸네일 이미지가 전달되지 않으면 기존 이미지를 유지한다.")
+    void updateBookWithoutThumbnail() {
+        // given
+        UUID bookId = UUID.randomUUID();
+        String oldImageKey = "old-thumbnail.png";
+
+        Book existingBook = Book.create(
+            "기존 제목",
+            user,
+            "기존 저자",
+            "기존 설명",
+            "기존 출판사",
+            LocalDate.of(2026, 11, 2),
+            "9791168945456",
+            oldImageKey
+        );
+
+        ReflectionTestUtils.setField(existingBook, "id", bookId);
+
+        BookUpdateRequest updateRequest = new BookUpdateRequest(
+            "수정 제목",
+            null,
+            null,
+            null,
+            null
+        );
+
+        given(bookRepositoryPort.findByIdAndIsDeletedFalse(bookId))
+            .willReturn(Optional.of(existingBook));
+
+        given(bookPersistenceService.updateBook(bookId, updateRequest, null))
+            .willAnswer(invocation -> {
+                existingBook.updateInfo(
+                    updateRequest.title(),
+                    null,
+                    null,
+                    null,
+                    null
+                );
+                return existingBook;
+            });
+
+        // when
+        BookDto result = bookService.updateBook(bookId, updateRequest, null);
+
+        // then
+        assertThat(result.title()).isEqualTo("수정 제목");
+        assertThat(existingBook.getThumbnailUrl()).isEqualTo(oldImageKey);
+
+        verify(bookPersistenceService).updateBook(bookId, updateRequest, null);
+        verify(bookImageStorage, never()).delete(oldImageKey);
+        verify(bookImageStorage, never()).upload(
+            anyString(),
+            any(byte[].class),
+            anyString()
+        );
+    }
+
+    @Test
+    @DisplayName("DB 수정에 실패하면 새로 업로드한 이미지를 삭제한다.")
+    void updateBookDeletesNewThumbnailWhenUpdateFails() throws IOException {
+        // given
+        UUID bookId = UUID.randomUUID();
+
+        String oldImageKey = "old-thumbnail.png";
+        String newImageKey = "new-thumbnail.png";
+
+        Book existingBook = Book.create(
+            "기존 제목",
+            user,
+            "기존 저자",
+            "기존 설명",
+            "기존 출판사",
+            LocalDate.of(2026, 11, 2),
+            "9791168945456",
+            oldImageKey
+        );
+
+        ReflectionTestUtils.setField(existingBook, "id", bookId);
+
+        BookUpdateRequest updateRequest = new BookUpdateRequest(
+            "수정 제목",
+            null,
+            null,
+            null,
+            null
+        );
+
+        MockMultipartFile thumbnailImage = new MockMultipartFile(
+            "thumbnailImage",
+            "thumbnail.png",
+            "image/png",
+            createValidPngBytes()
+        );
+
+        given(bookRepositoryPort.findByIdAndIsDeletedFalse(bookId))
+            .willReturn(Optional.of(existingBook));
+
+        given(bookImageStorage.generateImageKey("thumbnail.png"))
+            .willReturn(newImageKey);
+
+        given(bookImageStorage.upload(
+            eq(newImageKey),
+            any(byte[].class),
+            eq("image/png")
+        )).willReturn(newImageKey);
+
+        RuntimeException exception = new RuntimeException("DB 수정 실패");
+
+        willThrow(exception)
+            .given(bookPersistenceService)
+            .updateBook(bookId, updateRequest, newImageKey);
+
+        // when & then
+        assertThatThrownBy(() -> bookService.updateBook(bookId, updateRequest, thumbnailImage))
+            .isSameAs(exception);
+
+        verify(bookImageStorage).delete(newImageKey);
+        verify(bookImageStorage, never()).delete(oldImageKey);
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 도서를 수정하면 예외가 발생한다.")
+    void updateBookNotFound() {
+        // given
+        UUID bookId = UUID.randomUUID();
+
+        BookUpdateRequest updateRequest = new BookUpdateRequest(
+            "수정 제목",
+            null,
+            null,
+            null,
+            null
+        );
+
+        given(bookRepositoryPort.findByIdAndIsDeletedFalse(bookId))
+            .willReturn(Optional.empty());
+
+        // when & then
+        assertThatThrownBy(() -> bookService.updateBook(bookId, updateRequest, null))
+            .isInstanceOf(BookException.class)
+            .hasMessage(BookErrorCode.BOOK_NOT_FOUND.getMessage());
+
+        verify(bookPersistenceService, never()).updateBook(
+            any(UUID.class),
+            any(BookUpdateRequest.class),
+            nullable(String.class)
+        );
+
+        verify(bookImageStorage, never()).upload(
+            anyString(),
+            any(byte[].class),
+            anyString()
+        );
+    }
+
+    @Test
+    @DisplayName("수정할 정보가 없으면 예외가 발생한다.")
+    void updateBookWithEmptyRequest() {
+        // given
+        UUID bookId = UUID.randomUUID();
+
+        BookUpdateRequest invalidRequest = new BookUpdateRequest(
+            null,
+            null,
+            null,
+            null,
+            null
+        );
+
+        // when & then
+        assertThatThrownBy(() -> bookService.updateBook(bookId, invalidRequest, null))
+            .isInstanceOf(BookException.class)
+            .hasMessage(BookErrorCode.BOOK_INVALID_UPDATE.getMessage());
+
+        verify(bookRepositoryPort, never()).findByIdAndIsDeletedFalse(any(UUID.class));
+        verify(bookPersistenceService, never()).updateBook(
+            any(UUID.class),
+            any(BookUpdateRequest.class),
+            nullable(String.class)
+        );
     }
 
     private byte[] createValidPngBytes() throws IOException {
