@@ -45,7 +45,7 @@ public class OcrSpaceClient implements OcrClient {
     @Override
     public String readText(byte[] image, String contentType) {
         if (properties.getApiKey() == null || properties.getApiKey().isBlank()) {
-            log.error("OCR Space API 키가 설정되지 않았습니다. .env의 OCR_SPACE_API_KEY를 확인하세요.");
+            log.error("OCR Space API 키가 설정되지 않았습니다. .env.local(운영은 .env.prod)의 OCR_SPACE_API_KEY를 확인하세요.");
             throw new BookException(BookErrorCode.BOOK_OCR_FAILED);
         }
 

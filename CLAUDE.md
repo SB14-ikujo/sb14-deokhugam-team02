@@ -12,11 +12,13 @@
 
 ## 로컬 실행
 
-1. `.env.example`을 `.env`로 복사하고 값 채우기 (`.env`는 커밋 금지)
+1. `.env.example`을 `.env.local`로 복사하고 값 채우기 (운영 값은 `.env.prod`, 둘 다 커밋 금지)
+    - 앱은 활성 프로필에 맞는 `.env.{프로필}`을 읽는다 (프로필이 없으면 `local`)
 2. Docker Desktop 실행
 3. IntelliJ 실행 또는 `./gradlew bootRun` → postgres가 자동 기동됨
 
-- 전체 (앱+ELK): `docker compose -f docker-compose-logging-pipeline.yml --profile full up -d --build`
+- 전체 (앱+ELK): `docker compose -f docker-compose-logging-pipeline.yml --env-file .env.local --profile full up -d --build`
+    - compose는 기본으로 `.env`만 읽으므로 `--env-file`을 직접 지정해야 한다 (앱 실행·테스트는 `application-local.yml`이 자동 지정)
 
 ## 빌드 / 테스트
 
@@ -39,7 +41,7 @@
 
 ## 비밀값
 
-- 비밀번호·키는 `.env`로만. 코드·yml에 하드코딩 금지, 기본값도 두지 않음
+- 비밀번호·키는 `.env.local` / `.env.prod`로만. 코드·yml에 하드코딩 금지, 기본값도 두지 않음
 
 ## 로깅
 
