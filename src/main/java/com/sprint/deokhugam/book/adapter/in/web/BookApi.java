@@ -3,6 +3,9 @@ package com.sprint.deokhugam.book.adapter.in.web;
 import java.util.UUID;
 
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +27,7 @@ import com.sprint.deokhugam.book.adapter.in.web.dto.BookCreateRequest;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookDto;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookInfoDto;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookSearchRequest;
+import com.sprint.deokhugam.book.adapter.in.web.dto.BookUpdateRequest;
 import com.sprint.deokhugam.common.context.user.RequestUserId;
 import com.sprint.deokhugam.common.exception.ErrorResponse;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
@@ -180,4 +184,44 @@ public interface BookApi {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     })
     BookDto getBook(UUID bookId);
+
+    @Operation(
+        summary = "도서 수정",
+        description = "등록된 도서 정보를 수정합니다. ISBN은 수정할 수 없습니다."
+    )
+    @ApiResponses({
+        @ApiResponse(
+            responseCode = "200",
+            description = "도서 수정 성공"
+        ),
+        @ApiResponse(
+            responseCode = "400",
+            description = "잘못된 수정 요청"
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "도서를 찾을 수 없음"
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "서버 내부 오류"
+        )
+    })
+    @PatchMapping(
+        value = "/{bookId}",
+        consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    BookDto updateBook(
+        @Parameter(description = "수정할 도서 ID")
+        @PathVariable UUID bookId,
+
+        @RequestPart("bookData")
+        @Valid BookUpdateRequest request,
+
+        @RequestPart(
+            value = "thumbnailImage",
+            required = false
+        )
+        MultipartFile thumbnailImage
+    );
 }
