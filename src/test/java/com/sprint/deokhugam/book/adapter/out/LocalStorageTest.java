@@ -12,6 +12,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import com.sprint.deokhugam.book.adapter.out.exception.StorageErrorCode;
 import com.sprint.deokhugam.book.adapter.out.exception.StorageException;
+import com.sprint.deokhugam.book.adapter.out.storage.LocalStorage;
 
 class LocalStorageTest {
 
