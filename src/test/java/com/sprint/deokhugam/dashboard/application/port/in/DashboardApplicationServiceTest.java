@@ -68,7 +68,7 @@ class DashboardApplicationServiceTest {
         when(popularBookRepositoryPort.findPage(PeriodType.DAILY, TODAY, Direction.ASC, null, 3))
             .thenReturn(List.of(first));
         when(popularBookRepositoryPort.countByPeriodAndSnapshotDate(PeriodType.DAILY, TODAY)).thenReturn(1L);
-        when(dashboardMapper.toDto(first)).thenReturn(dto(1L));
+        when(dashboardMapper.toDto(first, "")).thenReturn(dto(1L));
 
         CursorPageResponse<PopularBookDto> result = dashboardApplicationService.getPopularBooks(request(null, 2));
 
@@ -89,8 +89,8 @@ class DashboardApplicationServiceTest {
         when(popularBookRepositoryPort.findPage(PeriodType.DAILY, TODAY, Direction.ASC, null, 3))
             .thenReturn(List.of(first, second, extra));
         when(popularBookRepositoryPort.countByPeriodAndSnapshotDate(PeriodType.DAILY, TODAY)).thenReturn(10L);
-        when(dashboardMapper.toDto(first)).thenReturn(dto(1L));
-        when(dashboardMapper.toDto(second)).thenReturn(dto(2L, lastCreatedAt));
+        when(dashboardMapper.toDto(first, "")).thenReturn(dto(1L));
+        when(dashboardMapper.toDto(second, "")).thenReturn(dto(2L, lastCreatedAt));
 
         CursorPageResponse<PopularBookDto> result = dashboardApplicationService.getPopularBooks(request(null, 2));
 
