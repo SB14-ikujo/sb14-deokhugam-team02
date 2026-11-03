@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockPart;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,6 +25,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookCreateRequest;
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookDto;
+import com.sprint.deokhugam.book.adapter.in.web.dto.BookUpdateRequest;
 import com.sprint.deokhugam.book.application.port.in.BookUseCase;
 import com.sprint.deokhugam.book.application.port.in.OcrUseCase;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
@@ -295,5 +297,240 @@ class BookControllerTest {
         part.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
         return part;
+    }
+
+    @Test
+    @DisplayName("유효한 도서 정보를 전달하면 도서가 수정되고 200 응답을 반환한다.")
+    void updateBookSuccess() throws Exception {
+        // given
+        UUID bookId = UUID.randomUUID();
+
+        String requestJson = """
+            {
+                "title": "수정된 제목",
+                "author": "수정된 저자",
+                "description": "수정된 설명",
+                "publisher": "수정된 출판사",
+                "publishedDate": "2026-11-02"
+            }
+            """;
+
+        BookDto response = new BookDto(
+            bookId,
+            "수정된 제목",
+            "수정된 저자",
+            "수정된 설명",
+            "수정된 출판사",
+            LocalDate.of(2026, 11, 2),
+            "9791168945456",
+            "https://example.com/thumbnail.png",
+            0,
+            0.0,
+            Instant.now(),
+            Instant.now()
+        );
+
+        MockMultipartFile thumbnailImage = new MockMultipartFile(
+            "thumbnailImage",
+            "thumbnail.png",
+            MediaType.IMAGE_PNG_VALUE,
+            new byte[] {1, 2, 3}
+        );
+
+        given(bookUseCase.updateBook(
+            eq(bookId),
+            any(BookUpdateRequest.class),
+            any(MultipartFile.class)
+        )).willReturn(response);
+
+        // when & then
+        mockMvc.perform(multipart("/api/books/{bookId}", bookId)
+                .file(thumbnailImage)
+                .part(createJsonPart(requestJson))
+                .with(request -> {
+                    request.setMethod("PATCH");
+                    return request;
+                }))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.id").value(bookId.toString()))
+            .andExpect(jsonPath("$.title").value("수정된 제목"))
+            .andExpect(jsonPath("$.author").value("수정된 저자"))
+            .andExpect(jsonPath("$.publisher").value("수정된 출판사"))
+            .andExpect(jsonPath("$.isbn").value("9791168945456"));
+
+        then(bookUseCase).should().updateBook(
+            eq(bookId),
+            any(BookUpdateRequest.class),
+            any(MultipartFile.class)
+        );
+    }
+
+    @Test
+    @DisplayName("썸네일 이미지 없이 도서 정보를 수정할 수 있다.")
+    void updateBookWithoutThumbnail() throws Exception {
+        // given
+        UUID bookId = UUID.randomUUID();
+
+        String requestJson = """
+                {
+                    "title": "수정된 제목",
+                    "author": "수정된 저자",
+                    "description": "수정된 설명",
+                    "publisher": "수정된 출판사",
+                    "publishedDate": "2026-11-02"
+                }
+            """;
+
+        BookDto response = new BookDto(
+            bookId,
+            "수정된 제목",
+            "수정된 저자",
+            "수정된 설명",
+            "수정된 출판사",
+            LocalDate.of(2026, 11, 2),
+            "9791168945456",
+            null,
+            0,
+            0.0,
+            Instant.now(),
+            Instant.now()
+        );
+
+        given(bookUseCase.updateBook(
+            eq(bookId),
+            any(BookUpdateRequest.class),
+            nullable(MultipartFile.class)
+        )).willReturn(response);
+
+        // when & then
+        mockMvc.perform(multipart("/api/books/{bookId}", bookId)
+                .part(createJsonPart(requestJson))
+                .with(request -> {
+                    request.setMethod("PATCH");
+                    return request;
+                }))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.title").value("수정된 제목"))
+            .andExpect(jsonPath("$.author").value("수정된 저자"));
+
+        then(bookUseCase).should().updateBook(
+            eq(bookId),
+            any(BookUpdateRequest.class),
+            nullable(MultipartFile.class)
+        );
+    }
+
+    @Test
+    @DisplayName("존재하지 않는 도서를 수정하면 404 Not Found를 반환한다.")
+    void updateBookNotFound() throws Exception {
+        // given
+        UUID bookId = UUID.randomUUID();
+
+        String requestJson = """
+                {
+                    "title": "수정된 제목",
+                    "author": "수정된 저자",
+                    "description": "수정된 설명",
+                    "publisher": "수정된 출판사",
+                    "publishedDate": "2026-11-02"
+                }
+            """;
+
+        willThrow(new BookException(BookErrorCode.BOOK_NOT_FOUND))
+            .given(bookUseCase)
+            .updateBook(
+                eq(bookId),
+                any(BookUpdateRequest.class),
+                nullable(MultipartFile.class)
+            );
+
+        // when & then
+        mockMvc.perform(multipart("/api/books/{bookId}", bookId)
+                .part(createJsonPart(requestJson))
+                .with(request -> {
+                    request.setMethod("PATCH");
+                    return request;
+                }))
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.status").value(404))
+            .andExpect(jsonPath("$.message").value(
+                BookErrorCode.BOOK_NOT_FOUND.getMessage()
+            ));
+
+        then(bookUseCase).should().updateBook(
+            eq(bookId),
+            any(BookUpdateRequest.class),
+            nullable(MultipartFile.class)
+        );
+    }
+
+    @Test
+    @DisplayName("수정할 정보가 없으면 400 Bad Request를 반환한다.")
+    void updateBookInvalidRequest() throws Exception {
+        // given
+        UUID bookId = UUID.randomUUID();
+
+        String requestJson = """
+                {
+                    "title": null,
+                    "author": null,
+                    "description": null,
+                    "publisher": null,
+                    "publishedDate": null
+                }
+            """;
+
+        willThrow(new BookException(BookErrorCode.BOOK_INVALID_UPDATE))
+            .given(bookUseCase)
+            .updateBook(
+                eq(bookId),
+                any(BookUpdateRequest.class),
+                nullable(MultipartFile.class)
+            );
+
+        // when & then
+        mockMvc.perform(multipart("/api/books/{bookId}", bookId)
+                .part(createJsonPart(requestJson))
+                .with(request -> {
+                    request.setMethod("PATCH");
+                    return request;
+                }))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.status").value(400))
+            .andExpect(jsonPath("$.message").value(
+                BookErrorCode.BOOK_INVALID_UPDATE.getMessage()
+            ));
+
+        then(bookUseCase).should().updateBook(
+            eq(bookId),
+            any(BookUpdateRequest.class),
+            nullable(MultipartFile.class)
+        );
+    }
+
+    @Test
+    @DisplayName("잘못된 도서 ID를 전달하면 400 Bad Request를 반환한다.")
+    void updateBookInvalidId() throws Exception {
+        // given
+        String requestJson = """
+                {
+                    "title": "수정된 제목",
+                    "author": "수정된 저자",
+                    "description": "수정된 설명",
+                    "publisher": "수정된 출판사",
+                    "publishedDate": "2026-11-02"
+                }
+            """;
+
+        // when & then
+        mockMvc.perform(multipart("/api/books/{bookId}", "invalid-uuid")
+                .part(createJsonPart(requestJson))
+                .with(request -> {
+                    request.setMethod("PATCH");
+                    return request;
+                }))
+            .andExpect(status().isBadRequest());
+
+        then(bookUseCase).shouldHaveNoInteractions();
     }
 }
