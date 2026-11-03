@@ -161,4 +161,23 @@ public interface BookApi {
         content = @Content(schema = @Schema(implementation = ErrorResponse.class))
     )
     void deleteBook(UUID bookId);
+
+    @Operation(
+        summary = "도서 상세 정보 조회",
+        description = "도서 ID로 상세 정보를 조회합니다."
+    )
+    @Parameter(
+        name = "bookId", description = "도서 ID",
+        in = ParameterIn.PATH, required = true,
+        example = "123e4567-e89b-12d3-a456-426614174000"
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "도서 정보 조회 성공",
+            content = @Content(schema = @Schema(implementation = BookDto.class))),
+        @ApiResponse(responseCode = "404", description = "도서 정보 없음",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class))),
+        @ApiResponse(responseCode = "500", description = "서버 내부 오류",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    BookDto getBook(UUID bookId);
 }

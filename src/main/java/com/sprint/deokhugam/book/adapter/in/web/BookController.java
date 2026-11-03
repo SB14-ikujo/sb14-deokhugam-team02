@@ -98,6 +98,18 @@ public class BookController implements BookApi {
         return isbn;
     }
 
+    @Override
+    @GetMapping("/{bookId}")
+    @ResponseStatus(HttpStatus.OK)
+    public BookDto getBook(@PathVariable UUID bookId) {
+        log.info("도서 상세 조회 API 요청 : bookId : {}", bookId);
+
+        BookDto bookDto = bookUseCase.getBook(bookId);
+        log.info("도서 상세 조회 API 성공 : bookId : {}", bookDto.id());
+
+        return bookDto;
+    }
+
     private byte[] readBytes(MultipartFile image) {
         try {
             return image.getBytes();
