@@ -45,6 +45,12 @@ springdoc:
     tags-sorter: alpha
     operations-sorter: method
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics   # 이 두 개만 열기, Spring Batch 관련
+
 deokhugam:
   storage:
     type: ${STORAGE_TYPE:local}
@@ -53,17 +59,6 @@ deokhugam:
     api-key: ${OCR_SPACE_API_KEY:}
     url: https://api.ocr.space/parse/image
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health, metrics   # 이 두 개만 열기, Spring Batch 관련
-
-deokhugam:
-  ocr:
-    api-key: ${OCR_SPACE_API_KEY:}
-    url: https://api.ocr.space/parse/image
-    
 kakao:
   book:
     base-url: https://dapi.kakao.com
