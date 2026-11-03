@@ -543,6 +543,11 @@ public class BookService implements BookUseCase {
         );
     }
 
+    @Override
+    public BookDto getBook(UUID bookId) {
+        return null;
+    }
+
     private void validateCursor(String orderBy, String cursor) {
         if (cursor == null) {
             return;
