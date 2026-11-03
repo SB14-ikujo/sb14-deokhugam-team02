@@ -10,9 +10,9 @@ import com.sprint.deokhugam.review.domain.Review;
 public interface ReviewMapper {
     @Mapping(target = "bookId", source = "review.book.id")
     @Mapping(target = "bookTitle", source = "review.book.title")
-    @Mapping(target = "bookThumbnailUrl", source = "review.book.thumbnailUrl")
+    @Mapping(target = "bookThumbnailUrl", source = "thumbnailUrl")
     @Mapping(target = "userId", source = "review.user.id")
     @Mapping(target = "userNickname", source = "review.user.nickname")
     @Mapping(target = "likedByMe", source = "likedByMe")
-    ReviewDto toDto(Review review, boolean likedByMe);
+    ReviewDto toDto(Review review, boolean likedByMe, String thumbnailUrl);
 }
