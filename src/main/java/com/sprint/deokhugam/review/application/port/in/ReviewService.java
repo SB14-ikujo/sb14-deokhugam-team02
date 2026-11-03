@@ -11,11 +11,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 
+import com.sprint.deokhugam.book.application.port.out.BookImageStorage;
 import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
 import com.sprint.deokhugam.book.domain.exception.BookException;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
+import com.sprint.deokhugam.common.util.ContentTypeUtils;
 import com.sprint.deokhugam.common.util.SliceUtils;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
@@ -41,6 +43,7 @@ public class ReviewService implements ReviewUseCase {
     private final ReviewLikeRepositoryPort reviewLikeRepositoryPort;
     private final UserRepositoryPort userRepositoryPort;
     private final BookRepositoryPort bookRepositoryPort;
+    private final BookImageStorage bookImageStorage;
     private final ReviewMapper reviewMapper;
 
     // 리뷰 생성 (도서 별 1개의 리뷰만 등록할 수 있음)
@@ -75,7 +78,7 @@ public class ReviewService implements ReviewUseCase {
         Review createReview = Review.create(requestUser, targetBook, content, rating);
         try {
             Review createdReview = reviewRepositoryPort.save(createReview);
-            return reviewMapper.toDto(createdReview, false);
+            return this.toReviewDto(createdReview, false);
         } catch (DataIntegrityViolationException e) {
             throw new ReviewException(ReviewErrorCode.REVIEW_DUPLICATE);
         }
@@ -119,7 +122,6 @@ public class ReviewService implements ReviewUseCase {
         if (wrappedUser.isEmpty()) {
             throw new UserException(UserErrorCode.USER_NOT_FOUND);
         }
-
         // 해당 리뷰 찾기 (유저와 도서를 패치조인해서 한번에 가져옴)
         Review review = reviewRepositoryPort.findByFetchJoin(reviewId)
             .orElseThrow(() -> new ReviewException(ReviewErrorCode.REVIEW_NOT_FOUND));
@@ -128,7 +130,7 @@ public class ReviewService implements ReviewUseCase {
         boolean likedByMe = reviewLikeRepositoryPort.existsByReviewIdAndUserId(reviewId, requestUserId);
 
         // 반환
-        return reviewMapper.toDto(review, likedByMe);
+        return this.toReviewDto(review, likedByMe);
     }
 
     // 리뷰 수정 (본인이 작성한 리뷰만 수정할 수 있습니다.)
@@ -152,7 +154,7 @@ public class ReviewService implements ReviewUseCase {
         boolean likedByMe = reviewLikeRepositoryPort.existsByReviewIdAndUserId(reviewId, requestUserId);
 
         // 반환
-        return reviewMapper.toDto(review, likedByMe);
+        return this.toReviewDto(review, likedByMe);
     }
 
     // 리뷰 목록 조회
@@ -200,7 +202,7 @@ public class ReviewService implements ReviewUseCase {
         List<ReviewDto> reviews = reviewEntities.stream()
             .map(review -> {
                 boolean isLikedByMe = likedReviewIds.contains(review.getId());
-                return reviewMapper.toDto(review, isLikedByMe);
+                return this.toReviewDto(review, isLikedByMe);
             })
             .toList();
 
@@ -248,5 +250,17 @@ public class ReviewService implements ReviewUseCase {
 
         // 검증이 완료된 cursor를 반환
         return cursor;
+    }
+
+    private ReviewDto toReviewDto(Review review, boolean likedByMe) {
+        String thumbnailUrl = resolveThumbnailUrl(review.getBook().getThumbnailUrl());
+        return reviewMapper.toDto(review, likedByMe, thumbnailUrl);
+    }
+
+    private String resolveThumbnailUrl(String imageKey) {
+        if (imageKey == null || imageKey.isBlank()) {
+            return null;
+        }
+        return bookImageStorage.getImageUrl(imageKey, ContentTypeUtils.resolve(imageKey));
     }
 }
