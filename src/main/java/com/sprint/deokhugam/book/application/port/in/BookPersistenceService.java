@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import com.sprint.deokhugam.book.adapter.in.web.dto.BookCreateRequest;
+import com.sprint.deokhugam.book.adapter.in.web.dto.BookUpdateRequest;
 import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
@@ -81,5 +82,37 @@ public class BookPersistenceService {
         // 2. 논리 삭제 처리
         book.delete();
         log.info("도서 논리 삭제 성공 : bookId : {}", bookId);
+    }
+
+    @Transactional
+    public Book updateBook(
+        UUID bookId,
+        BookUpdateRequest request,
+        String thumbnailUrl
+    ) {
+        log.info("도서 수정 실행. bookId : {}", bookId);
+
+        Book book = bookRepositoryPort.findByIdAndIsDeletedFalse(bookId)
+            .orElseThrow(() -> {
+                log.warn("도서 수정 실패 : 도서을 찾을 수 없음. bookId : {}", bookId);
+
+                return new BookException(BookErrorCode.BOOK_NOT_FOUND);
+            });
+
+        book.updateInfo(
+            request.title(),
+            request.author(),
+            request.description(),
+            request.publisher(),
+            request.publishedDate()
+        );
+
+        if (thumbnailUrl != null) {
+            book.updateThumbnailUrl(thumbnailUrl);
+        }
+
+        log.info("도서 수정 성공. bookId : {}", bookId);
+
+        return book;
     }
 }
