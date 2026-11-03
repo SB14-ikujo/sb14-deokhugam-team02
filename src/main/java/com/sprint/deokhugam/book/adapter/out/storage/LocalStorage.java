@@ -1,4 +1,4 @@
-package com.sprint.deokhugam.book.adapter.out;
+package com.sprint.deokhugam.book.adapter.out.storage;
 
 import java.io.IOException;
 import java.nio.file.Files;

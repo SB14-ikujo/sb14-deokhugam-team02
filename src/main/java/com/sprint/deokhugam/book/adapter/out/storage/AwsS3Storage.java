@@ -1,4 +1,4 @@
-package com.sprint.deokhugam.book.adapter.out;
+package com.sprint.deokhugam.book.adapter.out.storage;
 
 import java.time.Duration;
 import java.util.UUID;
