@@ -21,6 +21,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import jakarta.persistence.EntityManager;
 
+import com.sprint.deokhugam.book.adapter.in.web.dto.BookUpdateRequest;
 import com.sprint.deokhugam.book.application.port.in.BookPersistenceService;
 import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.exception.BookErrorCode;
@@ -367,5 +368,158 @@ class BookJpaTest {
             Integer.class,
             id
         );
+    }
+
+    @Test
+    @DisplayName("도서 정보를 수정하면 변경 사항이 DB에 반영된다.")
+    void updateBook() {
+        // given
+        String isbn = "9791168945456";
+        insertBook("수정 전 제목", isbn);
+
+        UUID bookId = jdbcTemplate.queryForObject(
+            "SELECT id FROM books WHERE isbn = ?",
+            UUID.class,
+            isbn
+        );
+
+        BookUpdateRequest request = new BookUpdateRequest(
+            "수정 후 제목",
+            "수정 후 저자",
+            "수정 후 설명",
+            "수정 후 출판사",
+            LocalDate.of(2026, 11, 2)
+        );
+
+        String thumbnailUrl = "books/updated-thumbnail.png";
+
+        // when
+        bookPersistenceService.updateBook(bookId, request, thumbnailUrl);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // then
+        Book updatedBook = bookRepositoryPort.findById(bookId)
+            .orElseThrow();
+
+        assertThat(updatedBook.getTitle()).isEqualTo("수정 후 제목");
+        assertThat(updatedBook.getAuthor()).isEqualTo("수정 후 저자");
+        assertThat(updatedBook.getDescription()).isEqualTo("수정 후 설명");
+        assertThat(updatedBook.getPublisher()).isEqualTo("수정 후 출판사");
+        assertThat(updatedBook.getPublishedDate()).isEqualTo(LocalDate.of(2026, 11, 2));
+        assertThat(updatedBook.getThumbnailUrl()).isEqualTo(thumbnailUrl);
+
+        // ISBN은 수정되지 않아야 한다.
+        assertThat(updatedBook.getIsbn()).isEqualTo(isbn);
+    }
+
+    @Test
+    @DisplayName("일부 도서 정보만 수정하면 나머지 필드는 기존 값이 유지된다.")
+    void updateBookPartially() {
+        // given
+        String isbn = "9791168945456";
+        insertBook("기존 제목", isbn);
+
+        UUID bookId = jdbcTemplate.queryForObject(
+            "SELECT id FROM books WHERE isbn = ?",
+            UUID.class,
+            isbn
+        );
+
+        BookUpdateRequest request = new BookUpdateRequest(
+            "변경된 제목",
+            null,
+            null,
+            null,
+            null
+        );
+
+        // when
+        bookPersistenceService.updateBook(bookId, request, null);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // then
+        Book updatedBook = bookRepositoryPort.findById(bookId)
+            .orElseThrow();
+
+        assertThat(updatedBook.getTitle()).isEqualTo("변경된 제목");
+        assertThat(updatedBook.getAuthor()).isEqualTo("테스트 저자");
+        assertThat(updatedBook.getDescription()).isEqualTo("테스트 테스트");
+        assertThat(updatedBook.getPublisher()).isEqualTo("테스트 출판사");
+        assertThat(updatedBook.getPublishedDate()).isEqualTo(LocalDate.of(2026, 10, 22));
+
+        // 썸네일을 전달하지 않았으므로 기존 null 유지
+        assertThat(updatedBook.getThumbnailUrl()).isNull();
+
+        // ISBN도 유지
+        assertThat(updatedBook.getIsbn()).isEqualTo(isbn);
+    }
+
+    @Test
+    @DisplayName("썸네일 경로를 수정하면 DB에 변경 사항이 반영된다.")
+    void updateBookThumbnail() {
+        // given
+        String isbn = "9791168945456";
+        insertBook("썸네일 수정 테스트", isbn);
+
+        UUID bookId = jdbcTemplate.queryForObject(
+            "SELECT id FROM books WHERE isbn = ?",
+            UUID.class,
+            isbn
+        );
+
+        String thumbnailUrl = "books/new-thumbnail.png";
+
+        BookUpdateRequest request = new BookUpdateRequest(
+            null,
+            null,
+            null,
+            null,
+            null
+        );
+
+        // when
+        bookPersistenceService.updateBook(bookId, request, thumbnailUrl);
+
+        entityManager.flush();
+        entityManager.clear();
+
+        // then
+        Book updatedBook = bookRepositoryPort.findById(bookId)
+            .orElseThrow();
+
+        assertThat(updatedBook.getThumbnailUrl()).isEqualTo(thumbnailUrl);
+        assertThat(updatedBook.getTitle()).isEqualTo("썸네일 수정 테스트");
+        assertThat(updatedBook.getIsbn()).isEqualTo(isbn);
+    }
+
+    @Test
+    @DisplayName("논리 삭제된 도서를 수정하면 예외가 발생한다.")
+    void updateDeletedBook() {
+        // given
+        String isbn = "9791168945456";
+        insertBook("논리 삭제된 도서", isbn, true);
+
+        UUID bookId = jdbcTemplate.queryForObject(
+            "SELECT id FROM books WHERE isbn = ?",
+            UUID.class,
+            isbn
+        );
+
+        BookUpdateRequest request = new BookUpdateRequest(
+            "수정된 제목",
+            null,
+            null,
+            null,
+            null
+        );
+
+        // when & then
+        assertThatThrownBy(() -> bookPersistenceService.updateBook(bookId, request, null))
+            .isInstanceOf(BookException.class)
+            .hasMessage(BookErrorCode.BOOK_NOT_FOUND.getMessage());
     }
 }
