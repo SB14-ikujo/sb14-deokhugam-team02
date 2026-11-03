@@ -114,7 +114,7 @@ class BookServiceTest {
         );
 
         // 목 매퍼는 기본적으로 null을 반환하므로, 목록 조회 테스트에서 실제 매핑처럼 동작하도록 스텁한다
-        lenient().when(bookMapper.toDto(any(Book.class)))
+        lenient().when(bookMapper.toDto(any(Book.class), any()))
             .thenAnswer(invocation -> toDto(invocation.getArgument(0)));
     }
 
@@ -175,7 +175,7 @@ class BookServiceTest {
 
         givenBookPersistenceSave(request, request.isbn());
 
-        when(bookMapper.toDto(any(Book.class)))
+        when(bookMapper.toDto(any(Book.class), any()))
             .thenReturn(expectedDto);
 
         // when
@@ -199,7 +199,7 @@ class BookServiceTest {
 
         assertThat(thumbnailCaptor.getValue()).isNull();
 
-        verify(bookMapper).toDto(any(Book.class));
+        verify(bookMapper).toDto(any(Book.class), any());
     }
 
     @Test
@@ -300,7 +300,7 @@ class BookServiceTest {
 
         givenBookPersistenceSave(hyphenatedRequest, normalizedIsbn);
 
-        when(bookMapper.toDto(any(Book.class)))
+        when(bookMapper.toDto(any(Book.class), any()))
             .thenReturn(expectedDto);
 
         // when
@@ -425,7 +425,7 @@ class BookServiceTest {
 
         givenBookPersistenceSave(request, request.isbn());
 
-        when(bookMapper.toDto(any(Book.class)))
+        when(bookMapper.toDto(any(Book.class), any()))
             .thenReturn(expectedDto);
 
         // when
@@ -436,7 +436,9 @@ class BookServiceTest {
         );
 
         // then
-        assertThat(result.thumbnailUrl()).isEqualTo("/api/images/generated_thumbnail.png");
+        // 매퍼는 목이므로 DTO 값이 아니라 매퍼에 넘긴 이미지 URL을 검증한다
+        assertThat(result).isEqualTo(expectedDto);
+        verify(bookMapper).toDto(any(Book.class), eq("/api/images/generated_thumbnail.png"));
 
         verify(bookPersistenceService).saveBook(
             userId,
@@ -512,15 +514,16 @@ class BookServiceTest {
 
         givenBookPersistenceSave(request, request.isbn());
 
-        when(bookMapper.toDto(any(Book.class)))
+        when(bookMapper.toDto(any(Book.class), any()))
             .thenReturn(expectedDto);
 
         // when
         BookDto result = bookService.createBook(userId, request, null);
 
         // then
-        assertThat(result.thumbnailUrl())
-            .isEqualTo("/api/images/generated_kakao-thumbnail.png");
+        // 매퍼는 목이므로 DTO 값이 아니라 매퍼에 넘긴 이미지 URL을 검증한다
+        assertThat(result).isEqualTo(expectedDto);
+        verify(bookMapper).toDto(any(Book.class), eq("/api/images/generated_kakao-thumbnail.png"));
 
         verify(bookPersistenceService).saveBook(
             userId,
@@ -596,7 +599,7 @@ class BookServiceTest {
 
         givenBookPersistenceSave(request, request.isbn());
 
-        when(bookMapper.toDto(any(Book.class)))
+        when(bookMapper.toDto(any(Book.class), any()))
             .thenReturn(expectedDto);
 
         // when
@@ -650,7 +653,7 @@ class BookServiceTest {
 
         givenBookPersistenceSave(request, request.isbn());
 
-        when(bookMapper.toDto(any(Book.class)))
+        when(bookMapper.toDto(any(Book.class), any()))
             .thenReturn(expectedDto);
 
         // when
@@ -704,7 +707,7 @@ class BookServiceTest {
 
         givenBookPersistenceSave(request, request.isbn());
 
-        given(bookMapper.toDto(any(Book.class)))
+        given(bookMapper.toDto(any(Book.class), any()))
             .willReturn(expectedDto);
 
         // when
@@ -760,7 +763,7 @@ class BookServiceTest {
 
         givenBookPersistenceSave(request, request.isbn());
 
-        given(bookMapper.toDto(any(Book.class)))
+        given(bookMapper.toDto(any(Book.class), any()))
             .willReturn(expectedDto);
 
         // when
@@ -1098,7 +1101,7 @@ class BookServiceTest {
 
         givenBookPersistenceSave(request, request.isbn());
 
-        when(bookMapper.toDto(any(Book.class)))
+        when(bookMapper.toDto(any(Book.class), any()))
             .thenReturn(expectedDto);
 
         // when
