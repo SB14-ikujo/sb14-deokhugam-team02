@@ -201,17 +201,6 @@ class BookControllerTest {
             .andExpect(jsonPath("$.message").value(CommonErrorCode.INVALID_INPUT.getMessage()));
     }
 
-    private MockPart createJsonPart(String json) {
-        MockPart part = new MockPart(
-            "bookData",
-            json.getBytes(StandardCharsets.UTF_8)
-        );
-
-        part.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-
-        return part;
-    }
-
     @Test
     @DisplayName("도서 삭제 요청을 전달하면 204 No Content를 반환한다.")
     void deleteBookSuccess() throws Exception {
@@ -295,5 +284,16 @@ class BookControllerTest {
         // when & then
         mockMvc.perform(get("/api/books/{bookId}", bookId))
             .andExpect(status().isNotFound());
+    }
+
+    private MockPart createJsonPart(String json) {
+        MockPart part = new MockPart(
+            "bookData",
+            json.getBytes(StandardCharsets.UTF_8)
+        );
+
+        part.getHeaders().setContentType(MediaType.APPLICATION_JSON);
+
+        return part;
     }
 }
