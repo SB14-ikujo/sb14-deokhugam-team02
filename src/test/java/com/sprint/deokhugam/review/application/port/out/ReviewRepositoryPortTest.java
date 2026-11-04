@@ -324,4 +324,59 @@ class ReviewRepositoryPortTest {
         long countZero = reviewRepository.countByConditions(null, book.getId(), "치킨");
         org.assertj.core.api.Assertions.assertThat(countZero).isEqualTo(0L);
     }
+
+    @Test
+    @DisplayName("모든 필터(유저, 도서, 키워드)를 동시에 걸었을 때 정확히 매칭되는 개수를 센다")
+    void countByConditions_AllFilters() {
+        // given
+        User user = createMockUser();
+        Book book = createMockBook(user);
+        Review review = Review.create(user, book, "완벽한 매칭 리뷰", 5);
+        reviewRepository.saveAndFlush(review);
+        entityManager.clear();
+
+        // when
+        long count = reviewRepository.countByConditions(user.getId(), book.getId(), "완벽한");
+
+        // then
+        assertThat(count).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("유저 닉네임으로 키워드 검색 시 정확하게 카운트된다")
+    void countByConditions_KeywordNickname() {
+        // given
+        User user = User.create("nickname-test@naver.com", "특별한닉네임수달", "password1234!");
+        userRepository.saveAndFlush(user);
+        Book book = createMockBook(user);
+        Review review = Review.create(user, book, "평범한 내용", 4);
+        reviewRepository.saveAndFlush(review);
+        entityManager.clear();
+
+        // when
+        long count = reviewRepository.countByConditions(null, null, "특별한");
+
+        // then
+        assertThat(count).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("무의미한 빈 검색어가 들어왔을 때 동적 쿼리가 무시하고 전체 조회하는지 검증한다")
+    void getReviewList_WithEmptyKeyword() {
+        // given
+        User user = createMockUser();
+        Book book = createMockBook(user);
+        Review review = Review.create(user, book, "테스트", 5);
+        reviewRepository.saveAndFlush(review);
+        entityManager.clear();
+
+        // when
+        List<Review> resultWithBlank = reviewRepository.getReviewList(
+            null, null, "   ", "createdAt", null, null, org.springframework.data.domain.Sort.Direction.DESC, 10
+        );
+
+        // then
+        assertThat(resultWithBlank).isNotEmpty();
+    }
+
 }
