@@ -14,7 +14,9 @@
 | 프레임워크          | ![Spring Boot 4.1.1](https://img.shields.io/badge/Spring_Boot_4.1.1-6DB33F?style=flat-square&logo=springboot&logoColor=white) ![Spring Web MVC](https://img.shields.io/badge/Spring_Web_MVC-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Validation](https://img.shields.io/badge/Validation-6DB33F?style=flat-square&logo=spring&logoColor=white)                                                                                                                                                                                                                      | REST API, 요청 검증, 정적 웹 화면 제공                                      |
 | 데이터 접근         | ![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=flat-square&logo=spring&logoColor=white) ![QueryDSL 7.0](https://img.shields.io/badge/QueryDSL_7.0-3B6FD9?style=flat-square)                                                                                                                                                                                                                                                                                                                                                                          | 엔티티 관리, 동적 검색·정렬, 커서 페이지네이션                                      |
 | 데이터베이스         | ![PostgreSQL 15](https://img.shields.io/badge/PostgreSQL_15-4169E1?style=flat-square&logo=postgresql&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                              | 사용자·도서·리뷰·댓글·알림·랭킹 스냅샷 저장                                        |
+| 외부 API | ![Kakao Book API](https://img.shields.io/badge/Kakao_Book_API-FFCD00?style=flat-square&logo=kakaotalk&logoColor=black) ![OCR.space](https://img.shields.io/badge/OCR.space-0057B8?style=flat-square) | 도서 정보 조회(ISBN), 이미지 OCR 로 ISBN 인식 |
 | 스토리지           | ![AWS S3 SDK v2](https://img.shields.io/badge/AWS_S3_SDK_v2-569A31?style=flat-square&logo=amazons3&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 도서 표지 이미지 저장 (Presigned URL / 로컬 파일, `STORAGE_TYPE=local \| s3`) |
+| 배치 · 모니터링 | ![Spring Batch](https://img.shields.io/badge/Spring_Batch-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Actuator](https://img.shields.io/badge/Actuator-6DB33F?style=flat-square&logo=spring&logoColor=white) | 랭킹 집계 배치 실행 기록(BATCH_* 테이블), health · metrics 노출 |
 | 스케줄링           | ![Spring Scheduler](https://img.shields.io/badge/Spring_Scheduler-6DB33F?style=flat-square&logo=spring&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                            | 랭킹 집계, 인기 리뷰 알림, 읽은 알림 정리                                        |
 | 매핑             | ![MapStruct 1.6.3](https://img.shields.io/badge/MapStruct_1.6.3-12A594?style=flat-square) ![Lombok](https://img.shields.io/badge/Lombok-CF3030?style=flat-square)                                                                                                                                                                                                                                                                                                                                                                                                                  | DTO 변환, 반복 코드 축소                                                 |
 | 보안             | ![spring-security-crypto](https://img.shields.io/badge/spring--security--crypto-6DB33F?style=flat-square&logo=springsecurity&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                      | BCrypt 비밀번호 해시                                                   |
@@ -226,8 +228,6 @@ flowchart LR
 <details>
 <summary>기능별 OpenAPI Docs · 서비스 화면 보기</summary>
 
-> 📸 이미지는 추후 첨부 예정입니다. `docs/images/features/<기능>-api.png`(OpenAPI Docs), `<기능>-screen.png`(서비스 화면)를 같은 이름으로 덮어쓰면 됩니다.
-
 | 기능   | OpenAPI Docs                                                                               | 서비스 화면                                                                                           |
 |------|--------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
 | 사용자  | <img src="docs/images/features/users-api.png" width="320" alt="users api">                 | <img src="docs/images/features/users-screen.png" width="320" alt="users screen">                 |
@@ -263,7 +263,7 @@ cd sb14-deokhugam-team02
 
 ### 3. 환경변수 설정
 
-[.env.example](.env.example) 을 복사한 뒤 값을 채웁니다. `.env` 는 커밋하지 않습니다.
+[.env.example](.env.example) 을 복사한 뒤 값을 채웁니다. `.env` 는 커밋하지 않습니다. 카카오·OCR.space 키가 없으면 도서 등록과 OCR 기능을 사용할 수 없습니다.
 
 ```bash
 cp .env.example .env
@@ -272,21 +272,35 @@ cp .env.example .env
 ```properties
 POSTGRES_DB=deokhugam
 POSTGRES_USER=deokhugam
-POSTGRES_PASSWORD=your_database_password
+POSTGRES_PASSWORD=change-me
+
+# 도서 정보 조회 (카카오 책 검색 API)
+KAKAO_REST_API_KEY=
+
+# 이미지 저장소 (local | s3)
+STORAGE_TYPE=local
+STORAGE_PATH=./uploads
+
+# AWS S3 (STORAGE_TYPE=s3 일 때만 필요)
 AWS_S3_ACCESS_KEY=
 AWS_S3_SECRET_KEY=
 AWS_S3_REGION=
 AWS_S3_BUCKET=
 AWS_S3_PRESIGNED_URL_EXPIRATION=600
-STORAGE_TYPE=local
+
+# OCR.space (ISBN 이미지 인식)
+OCR_SPACE_API_KEY=
 ```
 
 | 변수                                                                      | 설명                               |
 |-------------------------------------------------------------------------|----------------------------------|
 | `POSTGRES_DB` `POSTGRES_USER` `POSTGRES_PASSWORD`                       | DB 접속 정보                         |
+| `KAKAO_REST_API_KEY`                                                    | 카카오 책 검색 API 키 (도서 등록에 필요)      |
+| `STORAGE_TYPE`                                                          | 이미지 저장소 `local` \| `s3` (기본값 `local`) |
+| `STORAGE_PATH`                                                          | 로컬 이미지 저장 경로 (기본값 `./uploads`)    |
 | `AWS_S3_ACCESS_KEY` `AWS_S3_SECRET_KEY` `AWS_S3_REGION` `AWS_S3_BUCKET` | S3 설정 (`STORAGE_TYPE=s3` 일 때 필요) |
 | `AWS_S3_PRESIGNED_URL_EXPIRATION`                                       | Presigned URL 만료(초)              |
-| `STORAGE_TYPE`                                                          | 이미지 저장소 `local` \| `s3`          |
+| `OCR_SPACE_API_KEY`                                                     | OCR.space API 키 (ISBN 이미지 인식에 필요) |
 
 > 비밀번호·키는 `.env` 로만 관리하며 코드·yml 에 하드코딩하지 않습니다.
 
@@ -307,7 +321,7 @@ STORAGE_TYPE=local
 docker compose -f docker-compose-logging-pipeline.yml --profile full up -d --build
 ```
 
-현재 JPA 설정은 `ddl-auto: create` 이며, 애플리케이션을 실행할 때마다 테이블을 새로 만듭니다.
+현재 JPA 설정은 `ddl-auto: create` 이며, 애플리케이션을 실행할 때마다 테이블을 새로 만듭니다. 운영 환경에서는 데이터가 사라지므로 `validate` 또는 `none` 으로 바꿔야 합니다.
 
 ### 5. 빌드와 검사
 
@@ -330,11 +344,16 @@ docker compose -f docker-compose-logging-pipeline.yml --profile full up -d --bui
 |------|--------------------------|---------------------------------------|------------------------|
 | 사용자  | `POST`                   | `/api/users`                          | 회원가입                   |
 | 사용자  | `POST`                   | `/api/users/login`                    | 로그인                    |
-| 사용자  | `GET`, `PATCH`, `DELETE` | `/api/users/{userId}`                 | 조회, 닉네임 수정, 삭제         |
+| 사용자  | `GET`, `PATCH`, `DELETE` | `/api/users/{userId}`                 | 조회, 닉네임 수정, 논리 삭제      |
+| 사용자  | `DELETE`                 | `/api/users/{userId}/hard`            | 물리 삭제                  |
 | 도서   | `POST`, `GET`            | `/api/books`                          | 도서 등록, 목록 조회(검색·정렬·커서) |
+| 도서   | `GET`, `DELETE`          | `/api/books/{bookId}`                 | 상세 조회, 삭제              |
+| 도서   | `GET`                    | `/api/books/info`                     | ISBN 으로 외부 도서 정보 조회    |
+| 도서   | `POST`                   | `/api/books/isbn/ocr`                 | 이미지에서 ISBN 인식 (OCR)    |
 | 리뷰   | `POST`                   | `/api/reviews`                        | 리뷰 작성                  |
 | 리뷰   | `GET`, `PATCH`, `DELETE` | `/api/reviews/{reviewId}`             | 상세 조회, 수정, 논리 삭제       |
 | 리뷰   | `DELETE`                 | `/api/reviews/{reviewId}/hard`        | 물리 삭제                  |
+| 리뷰   | `POST`                   | `/api/reviews/{reviewId}/like`        | 좋아요 / 취소               |
 | 댓글   | `POST`, `GET`            | `/api/comments`                       | 댓글 등록, 목록 조회(커서)       |
 | 댓글   | `GET`, `PATCH`, `DELETE` | `/api/comments/{commentId}`           | 상세 조회, 수정, 논리 삭제       |
 | 댓글   | `DELETE`                 | `/api/comments/{commentId}/hard`      | 물리 삭제                  |
@@ -370,7 +389,7 @@ docker compose -f docker-compose-logging-pipeline.yml --profile full up -d --bui
 |-------|--------------------------|
 | 인기 도서 | 리뷰 수 × 0.4 + 평점 × 0.6    |
 | 인기 리뷰 | 댓글 수 × 0.7 + 좋아요 수 × 0.3 |
-| 파워 유저 | 리뷰 점수 합 · 좋아요 · 댓글 기반    |
+| 파워 유저 | 리뷰 점수 합 × 0.5 + 좋아요 수 × 0.2 + 댓글 수 × 0.3 |
 
 - `PeriodType`(일간 · 주간 · 월간 · 역대)별로 집계 결과를 **스냅샷 테이블** 에 저장하고, 조회 API 는 최신 스냅샷을 읽어 응답합니다.
 - `(period, snapshot_date, rank)` 등에 유니크 제약을 두어 같은 날짜 · 기간에 순위가 중복되지 않도록 보장합니다.
@@ -397,6 +416,16 @@ docker compose -f docker-compose-logging-pipeline.yml --profile full up -d --bui
 
 - `IsbnValidator` 로 ISBN 형식을 검증하고, ISBN 중복 등록과 ISBN 수정을 막아 도서 식별의 일관성을 유지합니다.
 - 이미지에서 ISBN 을 인식하지 못한 경우를 위한 전용 에러 코드(`BOOK_OCR_FAILED`)가 정의되어 있습니다.
+
+### OCR 기반 ISBN 인식 · 도서 등록 흐름
+
+```
+책 표지 · 바코드 이미지 ─▶ POST /api/books/isbn/ocr (OCR.space) ─▶ ISBN 추출
+                         ─▶ GET /api/books/info (카카오 책 API) ─▶ POST /api/books 로 도서 등록
+```
+
+- `OcrClient` 포트의 구현체(`OcrSpaceClient`)가 OCR.space API 를 호출하고, 서비스는 포트만 알기 때문에 OCR 제공자를 교체해도 로직은 유지됩니다.
+- 인식한 ISBN 은 `IsbnValidator` 로 검증한 뒤 카카오 책 API 로 도서 정보를 조회하고, 표지 이미지는 스토리지(`local` / `s3`)에 저장합니다.
 
 ### 통일된 예외 응답
 
