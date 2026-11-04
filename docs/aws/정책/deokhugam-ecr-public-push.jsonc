@@ -1,0 +1,34 @@
+// [목적] GitHub Actions가 빌드한 Docker 이미지를 ECR Public 저장소(deokhugam)에 올릴 수 있게 한다
+// [붙는 곳] IAM 역할 deokhugam-github-actions (deploy.yml 의 이미지 빌드·푸시 단계)
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        // ECR Public 로그인용 토큰을 받을 수 있다 (docker login 에 필요)
+        "ecr-public:GetAuthorizationToken",
+        // 위 토큰을 받을 때 STS가 요구하는 권한이다
+        "sts:GetServiceBearerToken"
+      ],
+      // 리소스 단위 제한을 지원하지 않아 "*" 가 필요하다
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        // 이미 올라간 레이어인지 확인 (중복 업로드 방지)
+        "ecr-public:BatchCheckLayerAvailability",
+        // 레이어 업로드 시작
+        "ecr-public:InitiateLayerUpload",
+        // 레이어를 조각조각 업로드
+        "ecr-public:UploadLayerPart",
+        // 업로드 완료 처리
+        "ecr-public:CompleteLayerUpload",
+        // 이미지(태그) 최종 등록
+        "ecr-public:PutImage"
+      ],
+      "Resource": "arn:aws:ecr-public::<AWS계정번호>:repository/deokhugam"
+    }
+  ]
+}

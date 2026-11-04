@@ -1,0 +1,234 @@
+{
+  // ECS에 등록된 앱 서비스(deokhugam-app-service)의 태스크 정의 (콘솔/CLI export, 리비전 14)
+  // 참고용 기록이다. 실제 배포(deploy.yml)는 이 파일이 아니라 ECS에 등록된 최신 리비전을 기준으로 한다
+  // 태스크 하나에 컨테이너 3개: init-logs -> deokhugam-app -> logstash
+  "taskDefinitionArn": "arn:aws:ecs:ap-northeast-2:<AWS계정번호>:task-definition/deokhugam-app:14",
+  "containerDefinitions": [
+    {
+      // 로그 디렉터리 권한 준비용 일회성 컨테이너. 앱과 logstash의 실행 유저가 달라 쓰기/읽기 권한 문제가 나는 것을 막는다
+      // essential=false 라서 끝나도(정상 종료) 태스크가 내려가지 않는다
+      "name": "init-logs",
+      "image": "public.ecr.aws/docker/library/busybox:stable",
+      "cpu": 0,
+      "memory": 64,
+      "portMappings": [],
+      "essential": false,
+      "command": [
+        "sh",
+        "-c",
+        "chmod 777 /app/logs"
+      ],
+      "environment": [],
+      "mountPoints": [
+        {
+          "sourceVolume": "app-logs",
+          "containerPath": "/app/logs"
+        }
+      ],
+      "volumesFrom": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/deokhugam",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "init-logs"
+        }
+      },
+      "systemControls": []
+    },
+    {
+      // Spring 앱 컨테이너. 이미지 태그는 커밋 SHA이며 배포 때마다 deploy.yml이 교체한다
+      "name": "deokhugam-app",
+      "image": "public.ecr.aws/<ECR퍼블릭별칭>/deokhugam:<커밋해시>",
+      "cpu": 0,
+      "memory": 1536,
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 8080,
+          "protocol": "tcp"
+        }
+      ],
+      // true: 이 컨테이너가 죽으면 태스크 전체가 종료되고 ECS가 새로 띄운다
+      "essential": true,
+      // 평문으로 노출되어도 되는 값만 둔다 (비밀값은 아래 secrets)
+      "environment": [
+        {
+          "name": "AWS_S3_REGION",
+          "value": "ap-northeast-2"
+        },
+        {
+          "name": "AWS_S3_BUCKET",
+          "value": "<S3버킷이름>"
+        },
+        {
+          "name": "DEOKHUGAM_STORAGE_TYPE",
+          "value": "s3"
+        },
+        {
+          "name": "SPRING_DATASOURCE_URL",
+          "value": "jdbc:postgresql://<RDS엔드포인트>:5432/deokhugam"
+        },
+        {
+          "name": "SPRING_PROFILES_ACTIVE",
+          "value": "prod"
+        }
+      ],
+      "mountPoints": [
+        {
+          "sourceVolume": "app-logs",
+          "containerPath": "/app/logs"
+        }
+      ],
+      "volumesFrom": [],
+      // 비밀값은 값이 아니라 Parameter Store ARN만 적는다. 태스크 시작 때 실행 역할이 읽어서 환경변수로 주입한다
+      // 값을 바꿔도 실행 중인 태스크에는 반영되지 않으므로 재배포(재시작)가 필요하다
+      "secrets": [
+        {
+          "name": "SPRING_DATASOURCE_USERNAME",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:<AWS계정번호>:parameter/deokhugam/db-username"
+        },
+        {
+          "name": "SPRING_DATASOURCE_PASSWORD",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:<AWS계정번호>:parameter/deokhugam/db-password"
+        },
+        {
+          "name": "AWS_S3_ACCESS_KEY",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:<AWS계정번호>:parameter/deokhugam/s3-access-key"
+        },
+        {
+          "name": "AWS_S3_SECRET_KEY",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:<AWS계정번호>:parameter/deokhugam/s3-secret-key"
+        },
+        {
+          "name": "KAKAO_REST_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:<AWS계정번호>:parameter/deokhugam/kakao-api-key"
+        },
+        {
+          "name": "OCR_SPACE_API_KEY",
+          "valueFrom": "arn:aws:ssm:ap-northeast-2:<AWS계정번호>:parameter/deokhugam/ocr-space-api-key"
+        }
+      ],
+      // init-logs가 성공(SUCCESS)한 뒤에 앱을 시작한다
+      "dependsOn": [
+        {
+          "containerName": "init-logs",
+          "condition": "SUCCESS"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/deokhugam",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "app"
+        }
+      },
+      "systemControls": []
+    },
+    {
+      // 사이드카: 같은 태스크의 공유 볼륨(app-logs)에서 앱 로그 파일을 읽어 Elasticsearch로 보낸다
+      // 앱과는 네트워크가 아니라 볼륨으로 연결된다. essential=false 라서 logstash가 죽어도 앱은 계속 동작한다
+      "name": "logstash",
+      "image": "docker.elastic.co/logstash/logstash:8.11.0",
+      "cpu": 0,
+      "memory": 1024,
+      "portMappings": [],
+      "essential": false,
+      // logstash 파이프라인을 설정 파일 없이 한 줄로 전달한다 (-e). 저장소의 logstash.conf와 같은 내용이다
+      // grok 패턴을 바꾸면 logback-spring.xml, logstash.conf, 여기까지 세 곳을 함께 수정해야 한다
+      "command": [
+        "-e",
+        "input { file { path => \"/var/log/app/app*.log\" start_position => \"beginning\" sincedb_path => \"/usr/share/logstash/data/sincedb-app\" codec => multiline { pattern => \"^\\d{4}-\\d{2}-\\d{2}\" negate => \"true\" what => \"previous\" auto_flush_interval => 5 } } } filter { grok { match => { \"message\" => \"(?m)%{TIMESTAMP_ISO8601:log_time}\\s+\\[%{DATA:thread}\\]\\s+%{LOGLEVEL:log_level}\\s+\\[%{DATA:logger}\\]\\s+\\[%{DATA:client_ip}\\]\\s+\\[%{DATA:user_id}\\]\\s+\\[%{DATA:request_method}\\]\\s+\\[%{DATA:request_url}\\]\\s+-\\s+%{GREEDYDATA:log_message}\" } } date { match => [ \"log_time\", \"yyyy-MM-dd HH:mm:ss.SSS\" ] timezone => \"Asia/Seoul\" target => \"@timestamp\" } mutate { gsub => [ \"log_message\", \"\\r\", \"\" ] } mutate { remove_field => [ \"event\", \"host\", \"@version\", \"log\" ] } if \"_grokparsefailure\" not in [tags] { mutate { remove_field => [ \"message\" ] } } } output { elasticsearch { hosts => [\"http://${ES_HOST}:9200\"] index => \"spring-logs-%{+YYYY.MM.dd}\" } }"
+      ],
+      "environment": [
+        {
+          // Service Connect 별칭. ELK 서비스(Elasticsearch 포트 이름 es)를 이름으로 찾는다. IP를 적지 않는다
+          "name": "ES_HOST",
+          "value": "elasticsearch"
+        },
+        {
+          "name": "LS_JAVA_OPTS",
+          "value": "-Xms256m -Xmx256m"
+        }
+      ],
+      "mountPoints": [
+        {
+          "sourceVolume": "app-logs",
+          // 앱이 /app/logs 에 쓴 파일을 여기서 읽기 전용으로 본다
+          "containerPath": "/var/log/app",
+          "readOnly": true
+        }
+      ],
+      "volumesFrom": [],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/deokhugam",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "logstash"
+        }
+      },
+      "systemControls": []
+    }
+  ],
+  "family": "deokhugam-app",
+  // 태스크 시작 전에 ECS가 쓰는 역할: 이미지 받기, 로그 전송, Parameter Store 비밀값 읽기
+  // (실행 중인 앱 코드용 Task Role은 아직 없다. S3는 SSM에 둔 키로 접근한다)
+  "executionRoleArn": "arn:aws:iam::<AWS계정번호>:role/deokhugam-ecsTaskExecutionRole",
+  // Fargate 필수. 태스크마다 자체 IP(ENI)와 보안그룹(app-sg)을 갖는다
+  "networkMode": "awsvpc",
+  "revision": 14,
+  // 태스크 안의 컨테이너끼리 공유하는 임시 볼륨. 태스크가 내려가면 로그 파일도 사라진다
+  "volumes": [
+    {
+      "name": "app-logs",
+      "host": {}
+    }
+  ],
+  "status": "ACTIVE",
+  "requiresAttributes": [
+    {
+      "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+    },
+    {
+      "name": "ecs.capability.execution-role-awslogs"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+    },
+    {
+      "name": "ecs.capability.container-ordering"
+    },
+    {
+      "name": "ecs.capability.secrets.ssm.environment-variables"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+    },
+    {
+      "name": "ecs.capability.task-eni"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
+    }
+  ],
+  "placementConstraints": [],
+  "compatibilities": [
+    "EC2",
+    "FARGATE",
+    "MANAGED_INSTANCES"
+  ],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  // 태스크 전체 자원: 1 vCPU / 3GB. 컨테이너별 memory(64 + 1536 + 1024 MB)의 합 이상이어야 한다
+  "cpu": "1024",
+  "memory": "3072",
+  "registeredAt": "2026-11-02T05:04:01.157Z",
+  "registeredBy": "arn:aws:iam::<AWS계정번호>:user/<관리자IAM사용자이름>",
+  "tags": []
+}

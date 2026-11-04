@@ -1,0 +1,29 @@
+// [목적] 신뢰 정책: 역할 deokhugam-github-actions 를 "누가" 맡을 수 있는지 정한다
+//        (이 저장소의 main 브랜치에서 도는 GitHub Actions 만, OIDC 토큰으로)
+//        이 역할로 "무엇을 할 수 있는지"는 ecr-public-push, ecs-deploy, ecs-passrole 정책이 정한다
+// [붙는 곳] 역할 deokhugam-github-actions 의 신뢰 관계 탭
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        // 신뢰하는 주체: GitHub OIDC 공급자 (IAM > 자격 증명 공급자에 등록된 것)
+        "Federated": "arn:aws:iam::<AWS계정번호>:oidc-provider/token.actions.githubusercontent.com"
+      },
+      // 장기 키 없이 GitHub가 발급한 OIDC 토큰으로 역할을 맡는다
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringEquals": {
+          // 토큰 대상(audience)이 AWS STS인 경우만 허용
+          "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+        },
+        "StringLike": {
+          // 이 저장소의 main 브랜치에서 실행된 워크플로만 허용 (다른 저장소/브랜치는 거부)
+          // 테스트용 브랜치(chore/infra-setup)를 쓸 때는 해당 ref를 임시로 추가하고, 끝나면 제거한다
+          "token.actions.githubusercontent.com:sub": "repo:<GitHub조직이름>@<GitHub조직번호>/<GitHub레포지토리이름>@<GitHub레포지토리번호>:ref:refs/heads/main"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  // ECS에 등록된 ELK 서비스의 태스크 정의 (리비전 1). 참고용 기록이며 앱 배포(deploy.yml)와는 별개로 관리한다
+  // 컨테이너 2개: elasticsearch, kibana. logstash는 앱 태스크 쪽 사이드카로 들어 있다
+  "taskDefinitionArn": "arn:aws:ecs:ap-northeast-2:<AWS계정번호>:task-definition/deokhugam-elk:1",
+  "containerDefinitions": [
+    {
+      "name": "elasticsearch",
+      "image": "docker.elastic.co/elasticsearch/elasticsearch:8.11.0",
+      "cpu": 0,
+      "memory": 1536,
+      "portMappings": [
+        {
+          "containerPort": 9200,
+          "hostPort": 9200,
+          "protocol": "tcp",
+          // Service Connect가 이 이름의 포트를 서비스로 노출한다. 서비스 설정의 별칭(elasticsearch:9200)이 이 이름을 가리킨다
+          "name": "es"
+        }
+      ],
+      // true: Elasticsearch가 죽으면 태스크 전체를 다시 띄운다
+      "essential": true,
+      "environment": [
+        {
+          // 노드 1개로 단독 실행 (클러스터 구성 안 함)
+          "name": "discovery.type",
+          "value": "single-node"
+        },
+        {
+          // JVM 힙 512MB 고정. 컨테이너 memory(1536MB)보다 충분히 작게 둔다
+          "name": "ES_JAVA_OPTS",
+          "value": "-Xms512m -Xmx512m"
+        },
+        {
+          // 보안 기능 끔 (인증/TLS 없음). 내부 통신 전용이므로 ES 보안그룹은 앱 보안그룹에서만 9200을 허용해야 한다
+          "name": "xpack.security.enabled",
+          "value": "false"
+        },
+        {
+          // Fargate에서는 vm.max_map_count 를 올릴 수 없어 mmap 을 끈다
+          "name": "node.store.allow_mmap",
+          "value": "false"
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      // 열 수 있는 파일 수 상한. Elasticsearch 권장값(65535)
+      "ulimits": [
+        {
+          "name": "nofile",
+          "softLimit": 65535,
+          "hardLimit": 65535
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/deokhugam",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "elasticsearch"
+        }
+      },
+      // 클러스터 상태가 yellow 이상이면 정상. kibana가 HEALTHY 를 기다린다
+      // 단일 노드는 replica 를 둘 곳이 없어 green 이 아니라 yellow 가 정상이다
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -fs 'http://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' || exit 1"
+        ],
+        "interval": 15,
+        "timeout": 10,
+        "retries": 10,
+        "startPeriod": 60
+      },
+      "systemControls": []
+    },
+    {
+      // 로그 조회 UI(5601). essential=false 라서 kibana가 죽어도 Elasticsearch는 유지된다
+      "name": "kibana",
+      "image": "docker.elastic.co/kibana/kibana:8.11.0",
+      "cpu": 0,
+      "memory": 1536,
+      "portMappings": [
+        {
+          "containerPort": 5601,
+          "hostPort": 5601,
+          "protocol": "tcp",
+          "name": "kibana"
+        }
+      ],
+      "essential": false,
+      "environment": [
+        {
+          // 같은 태스크 안이라 localhost 로 접근된다 (awsvpc 에서 컨테이너끼리 IP 를 공유)
+          "name": "ELASTICSEARCH_HOSTS",
+          "value": "http://localhost:9200"
+        }
+      ],
+      "mountPoints": [],
+      "volumesFrom": [],
+      // Elasticsearch 헬스체크가 통과한 뒤에 시작
+      "dependsOn": [
+        {
+          "containerName": "elasticsearch",
+          "condition": "HEALTHY"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/deokhugam",
+          "awslogs-create-group": "true",
+          "awslogs-region": "ap-northeast-2",
+          "awslogs-stream-prefix": "kibana"
+        }
+      },
+      "systemControls": []
+    }
+  ],
+  "family": "deokhugam-elk",
+  "executionRoleArn": "arn:aws:iam::<AWS계정번호>:role/deokhugam-ecsTaskExecutionRole",
+  "networkMode": "awsvpc",
+  "revision": 1,
+  "volumes": [],
+  "status": "ACTIVE",
+  "requiresAttributes": [
+    {
+      "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
+    },
+    {
+      "name": "ecs.capability.execution-role-awslogs"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+    },
+    {
+      "name": "ecs.capability.container-health-check"
+    },
+    {
+      "name": "ecs.capability.container-ordering"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+    },
+    {
+      "name": "ecs.capability.task-eni"
+    },
+    {
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
+    }
+  ],
+  "placementConstraints": [],
+  "compatibilities": [
+    "EC2",
+    "FARGATE",
+    "MANAGED_INSTANCES"
+  ],
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  // 태스크 전체 자원: 1 vCPU / 3GB (elasticsearch 1536MB + kibana 1536MB)
+  "cpu": "1024",
+  "memory": "3072",
+  "registeredAt": "2026-10-30T15:18:17.000Z",
+  "registeredBy": "arn:aws:iam::<AWS계정번호>:user/<관리자IAM사용자이름>",
+  "tags": []
+}
