@@ -316,13 +316,13 @@ class ReviewRepositoryPortTest {
 
         // When & Then
         long countStrict = reviewRepository.countByConditions(null, book.getId(), "재밌네요");
-        org.assertj.core.api.Assertions.assertThat(countStrict).isEqualTo(1L);
+        assertThat(countStrict).isEqualTo(1L);
 
         long countWithBookTitle = reviewRepository.countByConditions(null, book.getId(), "스프링");
-        org.assertj.core.api.Assertions.assertThat(countWithBookTitle).isEqualTo(3L);
+        assertThat(countWithBookTitle).isEqualTo(3L);
 
         long countZero = reviewRepository.countByConditions(null, book.getId(), "치킨");
-        org.assertj.core.api.Assertions.assertThat(countZero).isEqualTo(0L);
+        assertThat(countZero).isEqualTo(0L);
     }
 
     @Test

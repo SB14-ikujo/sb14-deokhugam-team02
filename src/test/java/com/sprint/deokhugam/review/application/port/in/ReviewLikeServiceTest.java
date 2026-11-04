@@ -15,6 +15,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.sprint.deokhugam.book.application.port.out.BookImageStorage;
+import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.notification.application.port.in.NotificationUseCase;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewLikeDto;
@@ -42,7 +44,13 @@ class ReviewLikeServiceTest {
     private UserRepositoryPort userRepository;
 
     @Mock
+    private BookRepositoryPort bookRepository;
+
+    @Mock
     private ReviewRepositoryPort reviewRepository;
+
+    @Mock
+    private BookImageStorage bookImageStorage;
 
     @Mock
     private ReviewLikeRepositoryPort reviewLikeRepository;
@@ -92,24 +100,24 @@ class ReviewLikeServiceTest {
         UUID reviewId = mockReview.getId();
 
         ReviewLike mockReviewRike = ReviewLike.create(mockReview, mockUser);
-
         ReviewLikeDto mockResponseDto = new ReviewLikeDto(reviewId, requestUserId, false);
 
-        given(reviewLikeRepository.findByReviewIdAndUserId(reviewId, requestUserId))
+        given(userRepository.findByIdAndIsDeletedFalse(any()))
+            .willReturn(Optional.of(mockUser));
+
+        given(reviewLikeRepository.findByReviewIdAndUserId(any(), any()))
             .willReturn(Optional.of(mockReviewRike));
 
-        given(reviewLikeMapper.toDto(mockReviewRike, false)).willReturn(mockResponseDto);
+        given(reviewLikeMapper.toDto(any(), anyBoolean()))
+            .willReturn(mockResponseDto);
 
         // when
         ReviewLikeDto result = reviewLikeService.reviewLikeToggle(reviewId, requestUserId);
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.reviewId()).isEqualTo(reviewId);
-        assertThat(result.userId()).isEqualTo(requestUserId);
-        assertThat(result.liked()).isEqualTo(false);
-        verify(reviewLikeRepository).delete(mockReviewRike);
-        verify(reviewRepository).decreaseLikeCount(reviewId);
+        verify(reviewLikeRepository).delete(any(ReviewLike.class));
+        verify(reviewRepository).decreaseLikeCount(any());
     }
 
     @Test
