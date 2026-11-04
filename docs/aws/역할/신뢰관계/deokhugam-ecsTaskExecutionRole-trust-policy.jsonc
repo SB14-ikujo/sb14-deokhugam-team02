@@ -1,0 +1,18 @@
+// [목적] 신뢰 정책: 역할 deokhugam-ecsTaskExecutionRole 을 "누가" 맡을 수 있는지 정한다 (ECS 태스크만)
+//        이 역할로 "무엇을 할 수 있는지"는 별도의 권한 정책(AmazonECSTaskExecutionRolePolicy, SSM 읽기)이 정한다
+// [붙는 곳] 역할 deokhugam-ecsTaskExecutionRole 의 신뢰 관계 탭
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        // 이 역할을 빌려 쓸 수 있는 주체: ECS 태스크 (콘솔에서 "Elastic Container Service Task" 선택 시 자동 생성)
+        "Service": "ecs-tasks.amazonaws.com"
+      },
+      // 임시 자격증명을 발급받아 역할을 맡는다
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}

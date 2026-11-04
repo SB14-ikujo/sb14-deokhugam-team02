@@ -1,0 +1,22 @@
+// [목적] 배포 시 새 태스크 정의를 등록하려면 태스크 실행 역할(deokhugam-ecsTaskExecutionRole)을
+//        ECS 태스크에 "넘겨줄(PassRole)" 권한이 필요하다. 그 권한을 이 역할 하나, ECS 태스크 용도로만 허용한다
+// [붙는 곳] IAM 역할 deokhugam-github-actions
+// [없으면] RegisterTaskDefinition 에서 "not authorized to perform: iam:PassRole" 오류가 난다
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      // 새 태스크 정의를 등록할 때 "이 역할을 태스크에 붙여도 된다"는 허가
+      "Action": "iam:PassRole",
+      // 태스크 실행 역할 하나만 넘길 수 있다
+      "Resource": "arn:aws:iam::<AWS계정번호>:role/deokhugam-ecsTaskExecutionRole",
+      "Condition": {
+        "StringEquals": {
+          // 넘기는 대상이 ECS 태스크일 때만 허용
+          "iam:PassedToService": "ecs-tasks.amazonaws.com"
+        }
+      }
+    }
+  ]
+}

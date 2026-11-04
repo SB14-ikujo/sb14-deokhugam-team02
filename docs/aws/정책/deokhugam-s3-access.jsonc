@@ -1,0 +1,28 @@
+// [목적] Spring 앱이 도서 이미지 전용 S3 버킷에 업로드·조회·삭제·목록 조회를 할 수 있게 한다
+// [붙는 곳] IAM 사용자 <S3접근IAM사용자이름> (액세스 키는 Parameter Store 에 두고 태스크 secrets 로 주입)
+// [참고] 앱 코드용 Task Role 로 전환하면 이 정책을 그 역할에 붙이고 키 주입은 없앤다 (디벨롭 사항)
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        // 도서 이미지를 업로드할 수 있다
+        "s3:PutObject",
+        // 이미지를 조회할 수 있다 (presigned URL 발급에도 필요)
+        "s3:GetObject",
+        // 이미지를 삭제할 수 있다
+        "s3:DeleteObject"
+      ],
+      // 객체 단위 동작이라 버킷 이름 뒤에 /* 를 붙인다
+      "Resource": "arn:aws:s3:::<S3버킷이름>/*"
+    },
+    {
+      "Effect": "Allow",
+      // 버킷 안의 객체 목록을 조회할 수 있다
+      "Action": "s3:ListBucket",
+      // 버킷 단위 동작이라 /* 없이 버킷 ARN 자체를 지정한다
+      "Resource": "arn:aws:s3:::<S3버킷이름>"
+    }
+  ]
+}
