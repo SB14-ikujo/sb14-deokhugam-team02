@@ -1,0 +1,31 @@
+// [목적] GitHub Actions가 새 이미지로 앱 서비스(deokhugam-app-service)를 재배포할 수 있게 한다
+//        (태스크 정의 조회·새 리비전 등록 + 서비스 갱신·상태 확인)
+// [붙는 곳] IAM 역할 deokhugam-github-actions (deploy.yml 의 배포 단계)
+// [함께 필요] 새 리비전 등록 시 실행 역할을 넘기는 권한은 deokhugam-ecs-passrole 이 따로 담당한다
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        // 현재 태스크 정의를 조회할 수 있다 (deploy.yml이 describe-task-definition 으로 내려받을 때 필요)
+        "ecs:DescribeTaskDefinition",
+        // 새 리비전을 등록할 수 있다 (이미지 주소만 바꿔 올릴 때 필요)
+        "ecs:RegisterTaskDefinition"
+      ],
+      // 이 두 동작은 리소스 단위 제한을 지원하지 않아 "*" 가 필요하다
+      "Resource": "*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        // 서비스를 새 리비전으로 갱신할 수 있다 (롤링 배포를 시작할 때 필요)
+        "ecs:UpdateService",
+        // 서비스 상태를 조회할 수 있다 (배포가 안정화될 때까지 기다리는 wait-for-service-stability 에 필요)
+        "ecs:DescribeServices"
+      ],
+      // 앱 서비스 하나로만 제한. ELK 서비스는 건드릴 수 없다
+      "Resource": "arn:aws:ecs:ap-northeast-2:<AWS계정번호>:service/deokhugam-cluster/deokhugam-app-service"
+    }
+  ]
+}

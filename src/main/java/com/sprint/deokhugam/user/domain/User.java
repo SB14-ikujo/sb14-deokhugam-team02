@@ -1,0 +1,83 @@
+package com.sprint.deokhugam.user.domain;
+
+import org.hibernate.annotations.ColumnDefault;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import com.sprint.deokhugam.common.domain.BaseEntity;
+import com.sprint.deokhugam.user.domain.exception.UserErrorCode;
+import com.sprint.deokhugam.user.domain.exception.UserException;
+
+@Getter
+@Entity
+@Table(name = "users",
+    uniqueConstraints = {
+        @UniqueConstraint(name = User.EMAIL_UNIQUE_CONSTRAINT, columnNames = "email"),
+        @UniqueConstraint(name = User.NICKNAME_UNIQUE_CONSTRAINT, columnNames = "nickname")
+    })
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class User extends BaseEntity {
+
+    public static final String EMAIL_UNIQUE_CONSTRAINT = "uk_users_email";
+    public static final String NICKNAME_UNIQUE_CONSTRAINT = "uk_users_nickname";
+
+    private static final int NICKNAME_MIN_LENGTH = 2;
+    private static final int NICKNAME_MAX_LENGTH = 20;
+
+    @Column(nullable = false)
+    private String email;
+
+    @Column(nullable = false, length = NICKNAME_MAX_LENGTH)
+    private String nickname;
+
+    @Column(nullable = false)
+    private String password;
+
+    @ColumnDefault("false")
+    @Column(nullable = false)
+    private boolean isDeleted;
+
+    private User(String email, String nickname, String password) {
+        this.email = email;
+        this.nickname = nickname;
+        this.password = password;
+    }
+
+    public static User create(String email, String nickname, String password) {
+        validateNickname(nickname);
+        return new User(email, nickname, password);
+    }
+
+    private static void validateNickname(String nickname) {
+        if (nickname == null || nickname.isBlank()) {
+            throw new UserException(UserErrorCode.USER_NICKNAME_INVALID);
+        }
+        if (nickname.length() < NICKNAME_MIN_LENGTH || nickname.length() > NICKNAME_MAX_LENGTH) {
+            throw new UserException(UserErrorCode.USER_NICKNAME_INVALID);
+        }
+    }
+
+    public void changeNickname(String nickname) {
+        validateNotDeleted();
+        validateNickname(nickname);   // 검증 먼저
+        this.nickname = nickname;      // 통과했을 때만 대입
+    }
+
+    public void delete() {
+        this.isDeleted = true;
+    }
+
+    private void validateNotDeleted() {
+        if (isDeleted) {
+            // 삭제된 사용자는 "없는 사용자"로 취급
+            throw new UserException(UserErrorCode.USER_NOT_FOUND);
+        }
+    }
+
+}

@@ -1,0 +1,220 @@
+package com.sprint.deokhugam.user.application.port.out;
+
+import static org.assertj.core.api.Assertions.*;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+
+import org.hibernate.exception.ConstraintViolationException;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
+
+import jakarta.persistence.EntityManager;
+
+import com.sprint.deokhugam.book.domain.Book;
+import com.sprint.deokhugam.comment.domain.Comment;
+import com.sprint.deokhugam.common.config.JpaConfig;
+import com.sprint.deokhugam.common.config.QuerydslConfig;
+import com.sprint.deokhugam.review.domain.Review;
+import com.sprint.deokhugam.review.domain.ReviewLike;
+import com.sprint.deokhugam.user.domain.User;
+
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import({JpaConfig.class, QuerydslConfig.class})
+class UserRepositoryPortTest {
+    @Autowired
+    private UserRepositoryPort userRepository;
+
+    @Autowired
+    private EntityManager entityManager;
+
+    @Test
+    @DisplayName("이미 가입된 이메일이면 true를 반환한다.")
+    void existsByEmail() {
+        // given
+        userRepository.saveAndFlush(User.create("user@naver.com", "닉네임", "encoded"));
+
+        // when & then
+        assertThat(userRepository.existsByEmail("user@naver.com")).isTrue();
+        assertThat(userRepository.existsByEmail("other@naver.com")).isFalse();
+    }
+
+    @Test
+    @DisplayName("논리 삭제된 사용자는 ID로 조회되지 않는다.")
+    void findByIdAndIsDeletedFalse() {
+        // given
+        User activeUser = userRepository.saveAndFlush(User.create("a@naver.com", "활성", "encoded"));
+        User deletedUser = User.create("d@naver.com", "삭제", "encoded");
+        deletedUser.delete();
+        userRepository.saveAndFlush(deletedUser);
+
+        // when & then
+        assertThat(userRepository.findByIdAndIsDeletedFalse(activeUser.getId())).isPresent();
+        assertThat(userRepository.findByIdAndIsDeletedFalse(deletedUser.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("논리 삭제된 사용자는 이메일로 조회되지 않는다.")
+    void findByEmailAndIsDeletedFalse() {
+        // given
+        User deletedUser = User.create("d@naver.com", "삭제", "encoded");
+        deletedUser.delete();
+        userRepository.saveAndFlush(deletedUser);
+
+        // when & then
+        assertThat(userRepository.findByEmailAndIsDeletedFalse("d@naver.com")).isEmpty();
+    }
+
+    @Test
+    @DisplayName("사용자를 논리 삭제하면 update_at이 갱신된다.")
+    void delete_updatesUpdatedAt() {
+        // given
+        User user = userRepository.saveAndFlush(User.create("delete@naver.com", "탈퇴합니다", "encoded"));
+        Instant beforeDelete = user.getUpdatedAt();
+
+        // when
+        user.delete();
+        userRepository.saveAndFlush(user);
+
+        // then
+        assertThat(user.getUpdatedAt()).isAfter(beforeDelete);
+    }
+
+    @Test
+    @DisplayName("사용자를 물리 삭제하면 그 사용자의 리뷰는 함께 삭제되고, 등록한 도서는 등록자만 비워진 채 남는다.")
+    void delete_cascadesReviewAndKeepsBook() {
+        // given
+        User user = userRepository.saveAndFlush(User.create("hard@naver.com", "물리삭제", "encoded"));
+        Book book = persistBook(user, "user-hard-delete-isbn");
+        Review review = Review.create(user, book, "리뷰 내용", 5);
+        entityManager.persist(review);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        userRepository.deleteById(user.getId());
+        entityManager.flush();
+        entityManager.clear();
+
+        // then
+        assertThat(entityManager.find(Review.class, review.getId())).isNull();
+        Book foundBook = entityManager.find(Book.class, book.getId());
+        assertThat(foundBook).isNotNull();
+        assertThat(foundBook.getUser()).isNull();
+    }
+
+    @Test
+    @DisplayName("사용자를 물리 삭제하면 다른 사람 리뷰에 남긴 댓글과 좋아요는 삭제되고, 그 리뷰는 남는다.")
+    void delete_cascadesCommentAndLikeOnOthersReview() {
+        // given
+        User writer = userRepository.saveAndFlush(User.create("writer@naver.com", "작성자", "encoded"));
+        User leaver = userRepository.saveAndFlush(User.create("leaver@naver.com", "탈퇴자", "encoded"));
+        Book book = persistBook(writer, "user-hard-delete-isbn");
+        Review review = Review.create(writer, book, "리뷰 내용", 5);
+        entityManager.persist(review);
+        Comment comment = Comment.create(review, leaver, "댓글 내용");
+        entityManager.persist(comment);
+        ReviewLike like = ReviewLike.create(review, leaver);
+        entityManager.persist(like);
+        entityManager.flush();
+        entityManager.clear();
+
+        // when
+        userRepository.deleteById(leaver.getId());
+        entityManager.flush();
+        entityManager.clear();
+
+        // then
+        assertThat(entityManager.find(Comment.class, comment.getId())).isNull();
+        assertThat(entityManager.find(ReviewLike.class, like.getId())).isNull();
+        assertThat(entityManager.find(Review.class, review.getId())).isNotNull();
+    }
+
+    private Book persistBook(User registrant, String isbn) {
+        Book book = Book.create("도서", registrant, "저자", "설명", "출판사",
+            LocalDate.of(2026, 1, 1), isbn, null);
+        entityManager.persist(book);
+        return book;
+    }
+
+    @Test
+    @DisplayName("논리 삭제 후 기준 시각이 지난 사용자만 물리 삭제하고, 삭제한 수를 반환한다.")
+    void deleteSoftDeletedUsersBefore() {
+        // given
+        Instant now = Instant.now();
+        Instant cutoff = now.minus(1, ChronoUnit.DAYS);
+
+        User expired = User.create("expired@naver.com", "만료", "encoded");
+        expired.delete();
+        userRepository.saveAndFlush(expired);
+
+        User recentlyDeleted = User.create("recent@naver.com", "최근탈퇴", "encoded");
+        recentlyDeleted.delete();
+        userRepository.saveAndFlush(recentlyDeleted);
+
+        User active = userRepository.saveAndFlush(User.create("active@naver.com", "활성", "encoded"));
+
+        changeUpdatedAt(expired.getId(), now.minus(2, ChronoUnit.DAYS));
+        changeUpdatedAt(recentlyDeleted.getId(), now.minus(1, ChronoUnit.HOURS));
+        changeUpdatedAt(active.getId(), now.minus(2, ChronoUnit.DAYS));
+        entityManager.clear();
+
+        // when
+        int deletedCount = userRepository.deleteSoftDeletedUsersBefore(cutoff);
+
+        // then
+        assertThat(deletedCount).isEqualTo(1);
+        assertThat(userRepository.findById(expired.getId())).isEmpty();
+        assertThat(userRepository.findById(recentlyDeleted.getId())).isPresent();
+        assertThat(userRepository.findById(active.getId())).isPresent();
+    }
+
+    private void changeUpdatedAt(UUID userId, Instant updatedAt) {
+        entityManager.createNativeQuery("update users set updated_at = ? where id = ?")
+            .setParameter(1, updatedAt)
+            .setParameter(2, userId)
+            .executeUpdate();
+    }
+
+    @Test
+    @DisplayName("같은 이메일로 저장하면 이메일 유니크 제약(uk_users_email) 위반으로 실패한다.")
+    void saveDuplicateEmail_violatesEmailConstraint() {
+        // given
+        userRepository.saveAndFlush(User.create("dup@naver.com", "닉네임1", "encoded"));
+        User duplicate = User.create("dup@naver.com", "닉네임2", "encoded");
+
+        // when & then
+        assertThatThrownBy(() -> userRepository.saveAndFlush(duplicate))
+            .isInstanceOf(DataIntegrityViolationException.class)
+            .satisfies(e -> assertThat(e.getCause())
+                .isInstanceOfSatisfying(ConstraintViolationException.class, cause -> {
+                    assertThat(cause.getKind()).isEqualTo(ConstraintViolationException.ConstraintKind.UNIQUE);
+                    assertThat(cause.getConstraintName()).isEqualTo("uk_users_email");
+                }));
+    }
+
+    @Test
+    @DisplayName("같은 닉네임으로 저장하면 닉네임 유니크 제약(uk_users_nickname) 위반으로 실패한다.")
+    void saveDuplicateNickname_violatesNicknameConstraint() {
+        // given
+        userRepository.saveAndFlush(User.create("first@naver.com", "중복닉네임", "encoded"));
+        User duplicate = User.create("second@naver.com", "중복닉네임", "encoded");
+
+        // when & then
+        assertThatThrownBy(() -> userRepository.saveAndFlush(duplicate))
+            .isInstanceOf(DataIntegrityViolationException.class)
+            .satisfies(e -> assertThat(e.getCause())
+                .isInstanceOfSatisfying(ConstraintViolationException.class, cause -> {
+                    assertThat(cause.getKind()).isEqualTo(ConstraintViolationException.ConstraintKind.UNIQUE);
+                    assertThat(cause.getConstraintName()).isEqualTo("uk_users_nickname");
+                }));
+    }
+}

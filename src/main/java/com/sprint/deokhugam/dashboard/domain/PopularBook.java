@@ -1,0 +1,95 @@
+package com.sprint.deokhugam.dashboard.domain;
+
+import java.time.LocalDate;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import com.sprint.deokhugam.book.domain.Book;
+import com.sprint.deokhugam.common.domain.BaseEntity;
+
+@Entity
+@Table(name = "popular_books",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uk_popular_books_period_date_book",
+            columnNames = {"period", "snapshot_date", "book_id"}
+        ),
+        @UniqueConstraint(
+            name = "uk_popular_books_period_date_rank",
+            columnNames = {"period", "snapshot_date", "rank"}
+        )
+    })
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class PopularBook extends BaseEntity {
+
+    private static final double REVIEW_COUNT_WEIGHT = 0.4;
+    private static final double RATING_WEIGHT = 0.6;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "book_id", nullable = false)
+    private Book book;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private PeriodType period;
+
+    @Column(nullable = false)
+    private Long rank;
+
+    @Column(nullable = false)
+    private double score;
+
+    @Column(nullable = false)
+    private Long reviewCount;
+
+    @Column(nullable = false)
+    private double rating;
+
+    @Column(name = "snapshot_date", nullable = false)
+    private LocalDate snapshotDate;
+
+    private PopularBook(Book book, PeriodType period, Long rank, double score,
+        Long reviewCount, double rating, LocalDate snapshotDate) {
+        this.book = book;
+        this.period = period;
+        this.rank = rank;
+        this.score = score;
+        this.reviewCount = reviewCount;
+        this.rating = rating;
+        this.snapshotDate = snapshotDate;
+    }
+
+    public static PopularBook create(Book book, PeriodType period, Long rank, double score,
+        Long reviewCount, double rating, LocalDate snapshotDate) {
+
+        return new PopularBook(book, period, rank, score, reviewCount, rating, snapshotDate);
+    }
+
+    public static PopularBook candidate(Book book, PeriodType period, Long reviewCount,
+        double rating, LocalDate snapshotDate) {
+        double score = reviewCount * REVIEW_COUNT_WEIGHT + rating * RATING_WEIGHT;
+        return new PopularBook(book, period, null, score, reviewCount, rating, snapshotDate);
+    }
+
+    public void assignRank(long rank) {
+        if (this.rank != null) {
+            throw new IllegalStateException("순위는 한 번만 배정할 수 있습니다.");
+        }
+        if (rank < 1) {
+            throw new IllegalArgumentException("순위는 1 이상이어야 합니다.");
+        }
+        this.rank = rank;
+    }
+}

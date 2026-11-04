@@ -1,21 +1,48 @@
 spring:
+  profiles:
+    default: local
   application:
     name: deokhugam
   config:
-    import: optional:file:.env[.properties]
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/deokhugam}
-    username: ${SPRING_DATASOURCE_USERNAME:${POSTGRES_USER:deokhugam}}
-    password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD}}
+    import: optional:file:.env.${spring.profiles.active:local}[.properties]
   jpa:
     open-in-view: false
-  docker:
-    compose:
-      file: docker-compose-logging-pipeline.yml   # 기본 이름(compose.yaml)이 아니라서 지정
-      lifecycle-management: start-only           # 앱 꺼져도 DB는 유지
-      skip:
-        in-tests: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  batch:
+    jdbc:
+      initialize-schema: always   # 실행 기록 테이블(BATCH_*)을 자동 생성
+    job:
+      enabled: false              # 앱 켤 때 Job 자동 실행 끄기
 
 logging:
   file:
     path: ${LOG_PATH:logs}
+  level:
+    root: info
+
+springdoc:
+  swagger-ui:
+    tags-sorter: alpha
+    operations-sorter: method
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics   # 이 두 개만 열기, Spring Batch 관련
+
+deokhugam:
+  storage:
+    type: ${STORAGE_TYPE:local}
+    path: ${STORAGE_PATH:./uploads}
+  ocr:
+    api-key: ${OCR_SPACE_API_KEY:}
+    url: https://api.ocr.space/parse/image
+
+kakao:
+  book:
+    base-url: https://dapi.kakao.com
+    rest-api-key: ${KAKAO_REST_API_KEY:}

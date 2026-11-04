@@ -1,0 +1,43 @@
+name: Claude Mention
+
+# ⚠️ issue_comment 이벤트는 기본 브랜치(develop)에 머지된 이 파일로만 동작함
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+concurrency:
+  group: claude-mention-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  claude:
+    if: |                                 # PR 위 코멘트 · @claude 포함 · 봇 제외 · 팀원만
+      github.event.comment.user.type != 'Bot' &&
+      contains(github.event.comment.body, '@claude') &&
+      contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+      (github.event_name == 'pull_request_review_comment' || github.event.issue.pull_request)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read                      # 주의: GITHUB_TOKEN만 제한함. 실제 차단은 아래 disallowedTools
+      pull-requests: write
+      issues: write                       # PR 대화 탭 코멘트는 issues API 사용
+      id-token: write
+      actions: read                       # CI 결과 읽기
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          additional_permissions: |
+            actions: read
+          claude_args: |
+            --max-turns 20
+            --allowedTools "Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*)"
+            --disallowedTools "Edit,Write,MultiEdit,NotebookEdit,Bash(git add:*),Bash(git commit:*),Bash(git push:*),Bash(git rm:*),Bash(*/scripts/git-push.sh:*),mcp__github_file_ops__commit_files,mcp__github_file_ops__delete_files"
+            --append-system-prompt "이 저장소에서는 코드를 수정하거나 커밋하지 않는다. 질문에 한국어로 답하거나 리뷰 의견만 코멘트로 남긴다."

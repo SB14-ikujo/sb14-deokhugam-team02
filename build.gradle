@@ -2,6 +2,8 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.1.1'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'checkstyle'
+    id 'jacoco'
 }
 
 group = 'com.sprint'
@@ -32,12 +34,122 @@ dependencies {
 
     developmentOnly 'org.springframework.boot:spring-boot-devtools'
     testAndDevelopmentOnly 'org.springframework.boot:spring-boot-docker-compose'
+
+    // querydsl
+    implementation 'io.github.openfeign.querydsl:querydsl-jpa:7.0'
+    annotationProcessor 'io.github.openfeign.querydsl:querydsl-apt:7.0:jpa'
+    annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
+    annotationProcessor 'jakarta.annotation:jakarta.annotation-api'
+
+    //mapstruct
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+    testAnnotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
+    implementation 'org.mapstruct:mapstruct:1.6.3'
+
+    // swagger
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.1.1'
+
+    // valid
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // password hash
+    implementation 'org.springframework.security:spring-security-crypto'
+
+    // aws
+    implementation 'software.amazon.awssdk:s3:2.31.7'
+
+    // Spring Batch
+    implementation 'org.springframework.boot:spring-boot-starter-batch-jdbc'
+    testImplementation 'org.springframework.batch:spring-batch-test'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // WebP 디코딩 의존성 추가
+    implementation 'com.twelvemonkeys.imageio:imageio-webp:3.15.3'
 }
 
 jar {
     enabled = false
 }
 
+checkstyle {
+    maxWarnings = 0 // 규칙이 어긋나는 코드가 하나라도 있을 경우 빌드 fail을 내고 싶다면 이 선언을 추가한다.
+    configFile = file("${rootDir}/rule-config/checkstyle-rules.xml")
+    configProperties = ["suppressionFile": "${rootDir}/rule-config/checkstyle-suppressions.xml"]
+    toolVersion = "12.3.0"
+}
+
 tasks.named('test') {
     useJUnitPlatform()
+    finalizedBy 'jacocoTestReport'
+}
+
+// Jacoco 관련 설정
+jacoco {
+    toolVersion = '0.8.13'
+}
+
+def jacocoIncludes = [
+    '**/common/util/**',
+    '**/common/**/CursorPageResponse*'
+]
+
+def jacocoExcludes = [
+    '**/*Application*',
+    '**/*Exception*',
+    '**/*ErrorCode*',
+    '**/*Request*',
+    '**/*Response*',
+    '**/*Dto*',
+    '**/common/**',
+    '**/domain/Q*.class',
+    '**/*MapperImpl*'
+]
+
+// Jacoco - report 생성
+jacocoTestReport {
+    dependsOn test // 리포트 생성 전 테스트 실행
+    reports {
+        xml.required = true // XML 리포트 - actions에서 사용을 위해
+        csv.required = false // csv 리포트 X
+        html.outputLocation = layout.buildDirectory.dir('jacocoHtml') // HTML은 build/jacocoHtml/ 생성
+    }
+    afterEvaluate { // Gradle 빌드 평가가 끝난 후 실행되는 블록
+        // JaCoCo 커버리지 리포트에 포함될 클래스 파일 디렉토리 설정
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: jacocoExcludes) + fileTree(dir: it, include: jacocoIncludes)
+        }))
+    }
+}
+
+// 테스트 커버리지 기준 검증
+jacocoTestCoverageVerification {
+    violationRules {
+        /**
+         * 프로젝트 전체 운영 코드를 줄 단위로 세어,
+         * 테스트 실행 시 지나간 줄의 비율이 80% 이상이여야 빌드 성공
+         */
+        rule {
+            // 검증 대상 설정
+            element = "BUNDLE"  // 프로젝트 전체 기준
+
+            // 커버리지 기준 설정
+            limit {
+                counter = 'LINE'        // 커버리지 측정 단위 : 운영 코드의 줄(line) 기준
+                value = 'COVEREDRATIO'  // 비교할 값 : 운영 코드 중 테스트 실행 시 지나간 줄의 비율
+                minimum = 0.80          // 커버리지 값의 최소 허용 값 : 80% 만족(지정한 커버리지가 충족되지 않으면 빌드 실패)
+            }
+        }
+
+    }
+    afterEvaluate {
+        classDirectories.setFrom(files(classDirectories.files.collect {
+            fileTree(dir: it, exclude: jacocoExcludes) + fileTree(dir: it, include: jacocoIncludes)
+        }))
+    }
+}
+
+// Gradle이 실행될 때(IntelliJ 동기화 포함) git 훅 경로를 자동 설정
+if (file('.git').exists()) {
+    providers.exec { commandLine 'git', 'config', 'core.hooksPath', '.githooks' }.result.get()
 }

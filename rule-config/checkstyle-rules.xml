@@ -1,0 +1,397 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
+        "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
+
+<module name="Checker">
+    <!-- 파일 공통 (Checker 레벨) -->
+    <property name="severity" value="warning"/>
+    <property name="fileExtensions" value="java"/>
+
+    <!-- [encoding-utf8] 소스 파일 인코딩 UTF-8 -->
+    <property name="charset" value="UTF-8"/>
+
+    <!-- [newline-lf] 줄바꿈은 LF만 허용 (CRLF 금지) -->
+    <module name="RegexpMultiline">
+        <property name="format" value="\r\n"/>
+        <property name="message" value="[newline-lf] Line must end with LF, not CRLF"/>
+    </module>
+
+    <!-- [newline-eof] 파일 끝은 줄바꿈(LF)으로 끝나야 함 -->
+    <module name="NewlineAtEndOfFile">
+        <property name="lineSeparator" value="lf"/>
+    </module>
+
+    <!-- [no-trailing-spaces] 줄 끝 공백 금지 -->
+    <module name="RegexpSingleline">
+        <property name="format" value="^(?!\s+\* $).*?\s+$"/>
+        <property name="message" value="[no-trailing-spaces] Line has trailing spaces."/>
+    </module>
+
+    <!-- [indentation-space] 탭 문자 금지, 스페이스만 사용 -->
+    <module name="FileTabCharacter">
+        <property name="eachLine" value="true"/>
+        <message key="containsTab"
+                 value="[indentation-space] Indent must use space characters, not tabs."/>
+    </module>
+
+    <!-- Indentation (들여쓰기) -->
+    <property name="tabWidth" value="4"/>
+
+    <!-- [line-length-120] 한 줄 최대 120자 (package/import/URL 줄 제외) -->
+    <module name="LineLength">
+        <property name="max" value="120"/>
+        <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
+        <message key="maxLineLen"
+                 value="[line-length-120] Line is longer than {0,number,integer} characters (found {1,number,integer})"/>
+    </module>
+
+    <module name="TreeWalker">
+
+        <!-- Naming (이름 규칙) -->
+        <!-- [list-uppercase-abbr] 이름 속 대문자 연속 2개까지 (getHTTP 위반, getHttp OK). DAO, BO 예외 -->
+        <module name="AbbreviationAsWordInName">
+            <property name="ignoreFinal" value="false"/>
+            <property name="allowedAbbreviationLength" value="1"/>
+            <message key="abbreviation.as.word"
+                     value="[list-uppercase-abbr] Abbreviation in name ''{0}'' must contain no more than {1}"/>
+            <property name="allowedAbbreviations" value="DAO,BO"/>
+        </module>
+
+        <!-- [package-lowercase] 패키지명은 소문자/숫자만 -->
+        <module name="PackageName">
+            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+            <message key="name.invalidPattern"
+                     value="[package-lowercase] Package name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+
+        <!-- [class-interface-lower-camelcase] 클래스/인터페이스명은 UpperCamelCase -->
+        <module name="TypeName">
+            <message key="name.invalidPattern"
+                     value="[class-interface-lower-camelcase] Type name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+
+        <!-- [method-lower-camelcase] 메서드명은 lowerCamelCase, 최소 2글자 -->
+        <module name="MethodName">
+            <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9_]*$"/>
+            <message key="name.invalidPattern"
+                     value="[method-lower-camelcase] Method name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+
+        <!-- [var-lower-camelcase] 필드/파라미터명은 lowerCamelCase, 최소 2글자 -->
+        <module name="MemberName">
+            <property name="format" value="^[a-z][a-zA-Z0-9][a-zA-Z0-9]*$"/>
+            <message key="name.invalidPattern"
+                     value="[var-lower-camelcase] Member name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+        <!-- [var-lower-camelcase] 필드/파라미터명은 lowerCamelCase, 최소 2글자 -->
+        <module name="ParameterName">
+            <property name="format" value="^[a-z][a-zA-Z0-9][a-zA-Z0-9]*$"/>
+            <message key="name.invalidPattern"
+                     value="[var-lower-camelcase] Parameter name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+
+        <!-- [var-lower-camelcase][avoid-1-char-var] 지역 변수명은 lowerCamelCase, 한 글자 금지 (for문 카운터 예외) -->
+        <module name="LocalVariableName">
+            <property name="tokens" value="VARIABLE_DEF"/>
+            <property name="format" value="^[a-z][a-zA-Z0-9][a-zA-Z0-9]*$"/>
+            <property name="allowOneCharVarInForLoop" value="true"/>
+            <message key="name.invalidPattern"
+                     value="[var-lower-camelcase][avoid-1-char-var] Local variable name ''{0}'' must match pattern ''{1}''."/>
+        </module>
+
+        <!-- Declarations (선언부) -->
+        <!-- [1-top-level-class] 파일당 최상위 클래스 1개 -->
+        <module name="OneTopLevelClass">
+            <message key="one.top.level.class"
+                     value="[1-top-level-class] Top-level class {0} has to reside in its own source file."/>
+        </module>
+
+        <!-- [avoid-star-import] import a.b.* 금지 (static import는 허용) -->
+        <module name="AvoidStarImport">
+            <property name="allowStaticMemberImports" value="true"/>
+            <message key="import.avoidStar"
+                     value="[avoid-star-import] Using the ''.*'' form of import should be avoided - {0}."/>
+        </module>
+
+        <!-- [modifier-order] 제어자 순서는 JLS 권장 순서, 어노테이션이 제어자보다 앞 -->
+        <module name="ModifierOrder">
+            <message key="mod.order"
+                     value="[modifier-order] ''{0}'' modifier out of order with the JLS suggestions."/>
+            <message key="annotation.order"
+                     value="[modifier-order] ''{0}'' annotation modifier does not precede non-annotation modifiers."/>
+        </module>
+
+        <!-- [newline-after-annotation] 어노테이션은 단독 줄에 (파라미터 없는 어노테이션 1개는 같은 줄 허용) -->
+        <module name="AnnotationLocation">
+            <property name="tokens" value="CLASS_DEF, INTERFACE_DEF, ENUM_DEF, METHOD_DEF, CTOR_DEF"/>
+            <property name="allowSamelineSingleParameterlessAnnotation" value="true"/>
+            <message key="annotation.location.alone"
+                     value="[newline-after-annotation] Annotation ''{0}'' should be alone on line."/>
+        </module>
+
+        <!-- [1-state-per-line] 한 줄에 문장 하나 (a = 1; b = 2; 금지) -->
+        <module name="OneStatementPerLine">
+            <message key="multiple.statements.line"
+                     value="[1-state-per-line] Only one statement per line allowed."/>
+        </module>
+
+        <!-- [1-var-per-declaration] 변수 선언은 하나씩 (int a, b; 금지) -->
+        <module name="MultipleVariableDeclarations">
+            <message key="multiple.variable.declarations"
+                     value="[1-var-per-declaration] Only one variable definition per line allowed."/>
+            <message key="multiple.variable.declarations.comma"
+                     value="[1-var-per-declaration] Each variable declaration must be in its own statement."/>
+        </module>
+
+        <!-- [array-square-after-type] 배열 괄호는 타입 뒤에 (String[] args) -->
+        <module name="ArrayTypeStyle">
+            <message key="array.type.style"
+                     value="[array-square-after-type] Array brackets at illegal position."/>
+        </module>
+
+        <!-- [long-value-suffix] long 접미사는 대문자 L -->
+        <module name="UpperEll">
+            <message key="upperEll" value="[long-value-suffix] Should use uppercase ''L''."/>
+        </module>
+
+        <!-- [special-escape] 특수문자는 8진수/유니코드 대신 \n, \t 같은 이스케이프 시퀀스로 -->
+        <module name="IllegalTokenText">
+            <property name="tokens" value="STRING_LITERAL, CHAR_LITERAL"/>
+            <property name="format"
+                      value="\\u00(08|09|0(a|A)|0(c|C)|0(d|D)|22|27|5(C|c))|\\(0(10|11|12|14|15|42|47)|134)"/>
+            <property name="message" value="[special-escape] Avoid using corresponding octal or Unicode escape."/>
+        </module>
+
+        <!-- Braces (중괄호) -->
+        <!-- [braces-knr-style] 여는 { 는 줄 끝에 (K&R 스타일) -->
+        <module name="LeftCurly">
+            <message key="line.break.after"
+                     value="[braces-knr-style] ''{0}'' at column {1} should have line break after."/>
+            <message key="line.new"
+                     value="[braces-knr-style] ''{0}'' at column {1} should be on a new line."/>
+            <message key="line.previous"
+                     value="[braces-knr-style] ''{0}'' at column {1} should be on the previous line."/>
+        </module>
+        <!-- [braces-knr-style] 클래스/메서드/생성자/for/while/초기화 블록의 닫는 } 는 단독 줄에 -->
+        <module name="RightCurly">
+            <property name="option" value="alone"/>
+            <property name="tokens"
+                      value="CLASS_DEF, METHOD_DEF, CTOR_DEF, LITERAL_FOR, LITERAL_WHILE, STATIC_INIT, INSTANCE_INIT"/>
+            <message key="line.alone"
+                     value="[braces-knr-style] ''{0}'' at column {1} should be alone on a line."/>
+            <message key="line.break.before"
+                     value="[braces-knr-style] =''{0}'' at column {1} should have line break before."/>
+            <message key="line.new"
+                     value="[braces-knr-style] ''{0}'' at column {1} should be on a new line."/>
+        </module>
+
+        <!-- [sub-flow-after-brace] } else {, } catch (e) {, } finally { 처럼 같은 줄에 -->
+        <module name="RightCurly">
+            <property name="option" value="same"/>
+            <property name="tokens"
+                      value="LITERAL_TRY, LITERAL_CATCH, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE, LITERAL_DO"/>
+            <message key="line.same"
+                     value="[sub-flow-after-brace] ''{0}'' at column {1} should be on the same line as the next part of a multi-block statement (one that directly contains multiple blocks: if/else-if/else or try/catch/finally)."/>
+            <message key="line.break.before"
+                     value="[sub-flow-after-brace] ''{0}'' at column {1} should have line break before."/>
+        </module>
+
+        <!-- [need-braces] if/for/while 본문이 한 줄이어도 {} 필수 -->
+        <module name="NeedBraces">
+            <message key="needBraces"
+                     value="[need-braces] ''{0}'' statement must use '''{}'''s."/>
+        </module>
+
+        <!-- Line-wrapping (줄바꿈) -->
+        <!-- [1-line-package-import] package/import 문은 줄바꿈 금지 -->
+        <module name="NoLineWrap">
+            <property name="tokens" value="PACKAGE_DEF, IMPORT"/>
+            <message key="no.line.wrap"
+                     value="[1-line-package-import] {0} statement should not be line-wrapped."/>
+        </module>
+
+        <!-- [block-indentation][indentation-after-line-wrapping] 들여쓰기 4칸 (블록, case, throws, 줄바꿈 이어지는 줄, 배열 초기화) -->
+        <module name="Indentation">
+            <property name="basicOffset" value="4"/>
+            <property name="braceAdjustment" value="0"/>
+            <property name="caseIndent" value="4"/>
+            <property name="throwsIndent" value="4"/>
+            <property name="lineWrappingIndentation" value="4"/>
+            <property name="arrayInitIndent" value="4"/>
+        </module>
+
+        <!-- [line-wrapping-position] 줄바꿈 시 쉼표(,)는 줄 끝에 -->
+        <module name="SeparatorWrap">
+            <property name="tokens" value="COMMA"/>
+            <property name="option" value="EOL"/>
+            <message key="line.previous"
+                     value="[line-wrapping-position] ''{0}'' should be on the previous line."/>
+        </module>
+        <!-- [line-wrapping-position] 줄바꿈 시 점(.)은 새 줄 앞에 -->
+        <module name="SeparatorWrap">
+            <property name="tokens" value="DOT"/>
+            <property name="option" value="NL"/>
+            <message key="line.new"
+                     value="[line-wrapping-position] ''{0}'' should be on a new line."/>
+        </module>
+        <!-- [line-wrapping-position] 줄바꿈 시 연산자는 새 줄 앞에 -->
+        <module name="OperatorWrap">
+            <property name="option" value="NL"/>
+            <property name="tokens"
+                      value="BAND, BOR, BSR, BXOR, DIV, EQUAL, GE, GT, LAND, LE, LITERAL_INSTANCEOF, LOR, LT, MINUS, MOD, NOT_EQUAL, PLUS, QUESTION, SL, SR, STAR "/>
+            <message key="line.new"
+                     value="[line-wrapping-position] ''{0}'' should be on a new line."/>
+        </module>
+
+        <!-- Blank lines (빈 줄) -->
+        <!-- [import-grouping] import 순서: static, java, javax, org, net, com, 기타, com.sprint.deokhugam (그룹 사이 빈 줄, 그룹 안 알파벳순) -->
+        <module name="ImportOrder">
+            <property name="groups"
+                      value="java., javax., org., net., /com\.(?!sprint\.deokhugam)/, /(?!java\.|javax\.|com\.|org\.|net\.)/, com.sprint.deokhugam."/>
+            <property name="ordered" value="true"/>
+            <property name="separated" value="true"/>
+            <property name="option" value="top"/>
+            <property name="sortStaticImportsAlphabetically" value="true"/>
+            <message key="import.groups.separated.internally"
+                     value="[import-grouping] Extra separation in import group before ''{0}''"/>
+            <message key="import.ordering"
+                     value="[import-grouping] Wrong order for ''{0}'' import."/>
+            <message key="import.separation"
+                     value="[import-grouping] ''{0}'' should be separated from previous imports."/>
+        </module>
+
+        <!-- [blankline-between-methods] 메서드 사이에 빈 줄 -->
+        <module name="EmptyLineSeparator">
+            <property name="tokens" value="METHOD_DEF"/>
+            <message key="empty.line.separator"
+                     value="[blankline-between-methods] ''{0}'' should be separated from previous statement."/>
+        </module>
+
+        <!-- Whitespace (공백) -->
+        <!-- [space-around-brace] { } 앞뒤 공백 (빈 생성자/메서드/반복문 {} 는 허용) -->
+        <module name="WhitespaceAround">
+            <property name="allowEmptyConstructors" value="true"/>
+            <property name="allowEmptyMethods" value="true"/>
+            <property name="allowEmptyLoops" value="true"/>
+            <property name="tokens" value="LCURLY, RCURLY, SLIST"/>
+            <message key="ws.notFollowed"
+                     value="[space-around-brace] ''{0}'' is not followed by whitespace."/>
+            <message key="ws.notPreceded"
+                     value="[space-around-brace] ''{0}'' is not preceded with whitespace."/>
+        </module>
+
+        <!-- [space-between-keyword-parentheses] if, for, while, catch 등 키워드 뒤 공백 (if (x)) -->
+        <module name="WhitespaceAround">
+            <property name="tokens" value="
+             DO_WHILE, LITERAL_ASSERT, LITERAL_CATCH, LITERAL_DO, LITERAL_ELSE, LITERAL_FINALLY, LITERAL_FOR, LITERAL_IF, LITERAL_RETURN,
+             LITERAL_SWITCH, LITERAL_SYNCHRONIZED, LITERAL_TRY, LITERAL_WHILE,"
+            />
+            <message key="ws.notFollowed"
+                     value="[space-between-keyword-parentheses] ''{0}'' is not followed by whitespace."/>
+            <message key="ws.notPreceded"
+                     value="[space-between-keyword-parentheses] ''{0}'' is not preceded with whitespace."/>
+        </module>
+
+        <!-- [no-space-between-identifier-parentheses] 메서드명과 ( 사이 공백 금지 (foo()) -->
+        <module name="MethodParamPad">
+            <message key="line.previous"
+                     value="[no-space-between-identifier-parentheses] ''{0}'' should be on the previous line."/>
+            <message key="ws.preceded"
+                     value="[no-space-between-identifier-parentheses] ''{0}'' is preceded with whitespace."/>
+        </module>
+
+        <!-- [no-space-typecasting] 형변환 괄호 안쪽 공백 금지 ((int)x) -->
+        <module name="TypecastParenPad">
+            <property name="tokens" value="RPAREN,TYPECAST"/>
+            <message key="ws.followed"
+                     value="[no-space-typecasting] ''{0}'' is followed by whitespace."/>
+            <message key="ws.preceded"
+                     value="[no-space-typecasting] ''{0}'' is preceded with whitespace."/>
+        </module>
+
+        <!-- [generic-whitespace] 제네릭 <> 주변 공백 금지 (List<String>) -->
+        <module name="GenericWhitespace">
+            <message key="ws.followed"
+                     value="[generic-whitespace] ''{0}'' is followed by whitespace."/>
+            <message key="ws.preceded"
+                     value="[generic-whitespace] ''{0}'' is preceded with whitespace."/>
+            <message key="ws.illegalFollow"
+                     value="[generic-whitespace] ''{0}'' should followed by whitespace."/>
+            <message key="ws.notPreceded"
+                     value="[generic-whitespace] ''{0}'' is not preceded with whitespace."/>
+        </module>
+
+        <!-- [space-after-comma-semicolon] 쉼표/세미콜론 뒤 공백 -->
+        <module name="WhitespaceAfter">
+            <property name="tokens" value="COMMA,SEMI"/>
+            <message key="ws.notFollowed"
+                     value="[space-after-comma-semicolon]: ''{0}'' is not followed by whitespace."/>
+        </module>
+        <!-- [space-after-comma-semicolon] 쉼표/세미콜론 앞 공백 금지 -->
+        <module name="NoWhitespaceBefore">
+            <property name="tokens" value="COMMA,SEMI"/>
+            <message key="ws.preceded"
+                     value="[space-after-comma-semicolon] ''{0}'' is preceded with whitespace."/>
+        </module>
+
+        <!-- [space-around-colon] 콜론 앞뒤 공백 (for (A a : list), a ? b : c) -->
+        <module name="WhitespaceAround">
+            <property name="tokens" value="COLON"/>
+            <property name="ignoreEnhancedForColon" value="false"/>
+            <message key="ws.notFollowed"
+                     value="[space-around-colon] ''{0}'' is not followed by whitespace."/>
+            <message key="ws.notPreceded"
+                     value="[space-around-colon] ''{0}'' is not preceded with whitespace."/>
+        </module>
+
+        <!-- [no-space-unary-operator] 후위 증감 연산자(i++ 등) 앞 공백 금지 -->
+        <module name="NoWhitespaceBefore">
+            <property name="tokens" value="POST_INC, POST_DEC"/>
+            <message key="ws.preceded"
+                     value="[no-space-unary-operator] ''{0}'' is preceded with whitespace."/>
+        </module>
+        <!-- [no-space-unary-operator] ++i, -x, !flag 등 단항 연산자 뒤 공백 금지 -->
+        <module name="NoWhitespaceAfter">
+            <property name="tokens" value="INC, DEC, UNARY_MINUS, UNARY_PLUS, BNOT, LNOT"/>
+            <message key="ws.followed"
+                     value="[no-space-unary-operator] whitespace ''{0}'' is followed by whitespace."/>
+        </module>
+
+        <!-- [space-around-binary-ternary-operator] 이항/삼항/대입 연산자 앞뒤 공백 (a + b, x = y) -->
+        <module name="WhitespaceAround">
+            <property name="tokens" value="ASSIGN, BAND, BAND_ASSIGN, BOR, BOR_ASSIGN, BSR, BSR_ASSIGN, BXOR, BXOR_ASSIGN, DIV,
+              DIV_ASSIGN, EQUAL, GE, GT, LAND, LE, LOR, LT, MINUS, MINUS_ASSIGN, MOD, MOD_ASSIGN, NOT_EQUAL,
+              PLUS, PLUS_ASSIGN, QUESTION, SL, SL_ASSIGN, SR, SR_ASSIGN, STAR, STAR_ASSIGN, TYPE_EXTENSION_AND"/>
+            <message key="ws.notFollowed"
+                     value="[space-around-binary-ternary-operator] ''{0}'' is not followed by whitespace."/>
+            <message key="ws.notPreceded"
+                     value="[space-around-binary-ternary-operator] ''{0}'' is not preceded with whitespace."/>
+        </module>
+
+        <!-- 예외 처리 -->
+        <!-- // @checkstyle:off ~ // @checkstyle:on 사이는 검사 제외 -->
+        <module name="SuppressionCommentFilter">
+            <property name="offCommentFormat" value="@checkstyle:off"/>
+            <property name="onCommentFormat" value="@checkstyle:on"/>
+        </module>
+        <!-- // @checkstyle:ignore 주석이 달린 줄은 검사 제외 -->
+        <module name="SuppressWithNearbyCommentFilter">
+            <property name="commentFormat" value="@checkstyle:ignore"/>
+            <property name="checkFormat" value=".*"/>
+            <property name="influenceFormat" value="0"/>
+        </module>
+    </module>
+
+    <!-- suppressions 파일(${suppressionFile})로 파일/규칙 단위 예외 등록, 파일 없으면 무시 -->
+    <module name="SuppressionFilter">
+        <property name="file" value="${suppressionFile}"/>
+        <property name="optional" value="true"/>
+    </module>
+
+    <!-- module-info.java는 검사 제외 -->
+    <module name="BeforeExecutionExclusionFileFilter">
+        <property name="fileNamePattern" value="module\-info\.java$"/>
+    </module>
+
+</module>
