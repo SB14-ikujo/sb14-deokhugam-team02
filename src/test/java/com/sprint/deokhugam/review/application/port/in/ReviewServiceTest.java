@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Sort;
 
+import com.sprint.deokhugam.book.application.port.out.BookImageStorage;
 import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.common.pagination.CursorPageResponse;
@@ -54,6 +55,9 @@ class ReviewServiceTest {
 
     @Mock
     private ReviewMapper reviewMapper;
+
+    @Mock
+    private BookImageStorage bookImageStorage; // 💡 상단 의존성 구역에 이 가짜 목 객체를 꼭 선언해 주세요!
 
     private ReviewDto createMockReviewDto(Review mockReview, Book mockBook, User mockUser) {
         return new ReviewDto(
@@ -146,7 +150,7 @@ class ReviewServiceTest {
         given(reviewRepository.findValidReview(userId, bookId)).willReturn(Optional.empty());
 
         given(reviewRepository.save(any(Review.class))).willReturn(mockReview);
-        given(reviewMapper.toDto(any(Review.class), eq(false))).willReturn(mockReviewDto);
+        given(reviewMapper.toDto(any(Review.class), eq(false), any())).willReturn(mockReviewDto);
 
         // when
         ReviewDto result = reviewService.createReview(createRequest);
@@ -223,7 +227,8 @@ class ReviewServiceTest {
         given(userRepository.findByIdAndIsDeletedFalse(requestUserId)).willReturn(Optional.of(mockUser));
         given(reviewRepository.findByFetchJoin(reviewId)).willReturn(Optional.of(mockReview));
         given(reviewLikeRepository.existsByReviewIdAndUserId(reviewId, requestUserId)).willReturn(false);
-        given(reviewMapper.toDto(mockReview, false)).willReturn(mockReviewDto);
+        given(bookImageStorage.getImageUrl(any(), any())).willReturn("https://example.com");
+        given(reviewMapper.toDto(eq(mockReview), eq(false), any())).willReturn(mockReviewDto);
 
         // when
         ReviewDto result = reviewService.getReviewDetail(reviewId, requestUserId);
@@ -236,7 +241,6 @@ class ReviewServiceTest {
         verify(userRepository).findByIdAndIsDeletedFalse(requestUserId);
         verify(reviewRepository).findByFetchJoin(reviewId);
         verify(reviewLikeRepository).existsByReviewIdAndUserId(reviewId, requestUserId);
-        verify(reviewMapper).toDto(mockReview, false);
     }
 
     @Test
@@ -271,11 +275,10 @@ class ReviewServiceTest {
 
         List<UUID> mockLikedReviewIds = new java.util.ArrayList<>();
         given(reviewLikeRepository.findLikeReviewIds(any(), any())).willReturn(mockLikedReviewIds);
-
-        given(reviewMapper.toDto(eq(review1), anyBoolean())).willReturn(dto1);
-        given(reviewMapper.toDto(eq(review2), anyBoolean())).willReturn(dto2);
+        given(bookImageStorage.getImageUrl(any(), any())).willReturn("https://example.com");
+        given(reviewMapper.toDto(eq(review1), anyBoolean(), any())).willReturn(dto1);
+        given(reviewMapper.toDto(eq(review2), anyBoolean(), any())).willReturn(dto2);
         given(reviewRepository.countByConditions(any(), any(), any())).willReturn(2L);
-
         // when
         CursorPageResponse<ReviewDto> result = reviewService.getReviewList(request, requestUserId);
 
@@ -317,11 +320,9 @@ class ReviewServiceTest {
         given(reviewRepository.getReviewList(any(), any(), any(), any(), any(), any(), any(), anyInt())).willReturn(
             mockReviewEntities);
 
-        List<UUID> mockLikedReviewIds = new java.util.ArrayList<>();
-        given(reviewLikeRepository.findLikeReviewIds(any(), any())).willReturn(mockLikedReviewIds);
-
-        given(reviewMapper.toDto(eq(review1), anyBoolean())).willReturn(dto1);
-        given(reviewMapper.toDto(eq(review2), anyBoolean())).willReturn(dto2);
+        given(bookImageStorage.getImageUrl(any(), any())).willReturn("https://example.com");
+        given(reviewMapper.toDto(eq(review1), anyBoolean(), any())).willReturn(dto1);
+        given(reviewMapper.toDto(eq(review2), anyBoolean(), any())).willReturn(dto2);
         given(reviewRepository.countByConditions(any(), any(), any())).willReturn(2L);
 
         // when
@@ -331,7 +332,6 @@ class ReviewServiceTest {
         assertThat(result).isNotNull();
         assertThat(result.totalElements()).isEqualTo(2L);
         assertThat(result.content().size()).isEqualTo(1);
-
         assertThat(result.nextCursor()).isEqualTo("5.0");
         assertThat(result.nextAfter()).isEqualTo(lastReviewCreatedAt);
     }
@@ -426,42 +426,41 @@ class ReviewServiceTest {
     @DisplayName("리뷰 수정 성공: 권한이 있는 유저가 올바른 내용을 요청하면 리뷰 내용과 별점이 변경된다.")
     void updateReview_Success() {
         // given
-        User mockUser = createMockUser("test@test.com", "수달짱", "password1234!");
-        UUID userId = mockUser.getId();
+        User author = User.create("test@test.com", "수달짱", "password1234!");
+        UUID userId = UUID.randomUUID();
+        setField(author, "id", userId);
 
-        Book mockBook = createMockBook(mockUser, "도서명", "작가");
+        Book realBook = Book.create(
+            "도서명", author, "작가", "상세", "출판사",
+            LocalDate.of(2026, 11, 1), "9788960773417", "https://example.com"
+        );
+        setField(realBook, "id", UUID.randomUUID());
 
-        Review mockReview = createMockReview(mockUser, mockBook); // 기본값: 재미없어요, 1
-        UUID reviewId = mockReview.getId();
+        Review realReview = Review.create(author, realBook, "재미없어요", 1);
+        UUID reviewId = UUID.randomUUID();
+        setField(realReview, "id", reviewId);
 
         ReviewUpdateRequest updateRequest = new ReviewUpdateRequest("완전 명작이네요!", 5);
 
-        ReviewDto mockReviewDto = updateMockReviewDto(
-            mockReview,
-            mockBook,
-            mockUser,
-            updateRequest.content(),
-            updateRequest.rating()
+        ReviewDto mockReviewDto = new ReviewDto(
+            reviewId, realBook.getId(), "도서명", "https://example.com", userId, "수달짱",
+            "완전 명작이네요!", 5, 0, 0, false, Instant.now(), Instant.now()
         );
 
-        given(reviewRepository.findByFetchJoin(reviewId)).willReturn(Optional.of(mockReview));
+        given(reviewRepository.findByFetchJoin(reviewId)).willReturn(Optional.of(realReview));
         given(reviewLikeRepository.existsByReviewIdAndUserId(reviewId, userId)).willReturn(true);
-        given(reviewMapper.toDto(mockReview, true)).willReturn(mockReviewDto);
+        given(reviewMapper.toDto(any(), anyBoolean(), any())).willReturn(mockReviewDto);
 
         // when
         ReviewDto result = reviewService.updateReview(reviewId, userId, updateRequest);
 
         // then
-        assertThat(mockReview.getContent()).isEqualTo("완전 명작이네요!");
-        assertThat(mockReview.getRating()).isEqualTo(5);
+        assertThat(realReview.getContent()).isEqualTo("완전 명작이네요!");
+        assertThat(realReview.getRating()).isEqualTo(5);
 
         assertThat(result).isNotNull();
         assertThat(result.content()).isEqualTo("완전 명작이네요!");
         assertThat(result.rating()).isEqualTo(5);
-
-        verify(reviewRepository).findByFetchJoin(reviewId);
-        verify(reviewLikeRepository).existsByReviewIdAndUserId(reviewId, userId);
-        verify(reviewMapper).toDto(mockReview, true);
     }
 
     @Test

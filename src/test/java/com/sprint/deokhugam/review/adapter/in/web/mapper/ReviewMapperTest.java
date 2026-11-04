@@ -30,7 +30,6 @@ class ReviewMapperTest {
         UUID userId = UUID.randomUUID();
         UUID bookId = UUID.randomUUID();
 
-        // given
         given(mockReview.getUser()).willReturn(mockUser);
         given(mockReview.getBook()).willReturn(mockBook);
 
@@ -45,7 +44,7 @@ class ReviewMapperTest {
         given(mockReview.getRating()).willReturn(5);
 
         // when
-        ReviewDto dto = mapper.toDto(mockReview, true);
+        ReviewDto dto = mapper.toDto(mockReview, true, mockBook.getThumbnailUrl());
 
         // then
         assertThat(dto).isNotNull();
@@ -71,14 +70,14 @@ class ReviewMapperTest {
         given(reviewWithNullFields.getBook()).willReturn(bookWithNullFields);
 
         // when & then
-        assertThat(mapper.toDto(null, false)).isNull();
+        assertThat(mapper.toDto(null, false, null)).isNull();
 
-        ReviewDto dto1 = mapper.toDto(reviewWithNullUserAndBook, false);
+        ReviewDto dto1 = mapper.toDto(reviewWithNullUserAndBook, false, null);
         assertThat(dto1).isNotNull();
         assertThat(dto1.userId()).isNull();
         assertThat(dto1.bookId()).isNull();
 
-        ReviewDto dto2 = mapper.toDto(reviewWithNullFields, false);
+        ReviewDto dto2 = mapper.toDto(reviewWithNullFields, false, "https://example.com");
         assertThat(dto2).isNotNull();
         assertThat(dto2.userId()).isNull();
         assertThat(dto2.userNickname()).isNull();

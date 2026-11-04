@@ -39,8 +39,8 @@ jobs:
         run: chmod +x gradlew
 
       # 기본 .env는 없어도 compose가 넘어가지만, 명시한 .env.local은 없으면 에러라서 CI용 가짜 파일을 생성한다.
-      - name: CI용 .env.local 생성
-        run: echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" > .env.local
+      - name: CI용 ..env.local 생성
+        run: echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" > ..env.local
 
       - name: 빌드 + 테스트
         run: ./gradlew build              # 테스트 중 Spring이 compose로 postgres를 자동 기동
