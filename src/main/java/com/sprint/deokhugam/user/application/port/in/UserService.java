@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserDto;
 import com.sprint.deokhugam.user.adapter.in.web.dto.UserLoginRequest;
@@ -23,6 +24,7 @@ import com.sprint.deokhugam.user.domain.User;
 import com.sprint.deokhugam.user.domain.exception.UserErrorCode;
 import com.sprint.deokhugam.user.domain.exception.UserException;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService implements UserUseCase {
@@ -46,7 +48,9 @@ public class UserService implements UserUseCase {
 
         User user = User.create(email, request.nickname(), passwordHasher.hash(request.password()));
         try {
-            return userMapper.toDto(userRepository.saveAndFlush(user));
+            User savedUser = userRepository.saveAndFlush(user);
+            log.info("회원가입 완료: userId={}", savedUser.getId());
+            return userMapper.toDto(savedUser);
         } catch (DataIntegrityViolationException e) {
             // 동시 가입으로 existsBy 검사를 통과한 뒤 유니크 제약에 걸린 경우만 중복으로 변환한다.
             if (isUniqueViolation(e, User.EMAIL_UNIQUE_CONSTRAINT)) {
@@ -68,6 +72,7 @@ public class UserService implements UserUseCase {
         if (!passwordHasher.matches(request.password(), user.getPassword())) {
             throw new UserException(UserErrorCode.USER_LOGIN_FAILED);
         }
+        log.info("로그인 성공: userId={}", user.getId());
         return userMapper.toDto(user);
     }
 
@@ -97,6 +102,8 @@ public class UserService implements UserUseCase {
 
         user.changeNickname(newNickname);
         try {
+            User savedUser = userRepository.saveAndFlush(user);
+            log.info("닉네임 수정 완료: userId={}", savedUser.getId());
             return userMapper.toDto(userRepository.saveAndFlush(user));
         } catch (DataIntegrityViolationException e) {
             // 동시 요청으로 검증을 통과한 뒤 닉네임 유니크 제약에 걸린 경우만 중복으로 변환한다.
@@ -116,6 +123,7 @@ public class UserService implements UserUseCase {
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
         user.delete();
+        log.info("사용자 논리 삭제 처리: userId={}", userId);
     }
 
     @Override
@@ -126,6 +134,7 @@ public class UserService implements UserUseCase {
         User user = userRepository.findById(userId)
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
         userRepository.delete(user);
+        log.info("사용자 물리 삭제 처리: userId={}", userId);
     }
 
     @Override
