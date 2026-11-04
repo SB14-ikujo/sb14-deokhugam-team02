@@ -5,23 +5,8 @@ spring:
     name: deokhugam
   config:
     import: optional:file:.env.${spring.profiles.active:local}[.properties]
-  datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/deokhugam}
-    username: ${SPRING_DATASOURCE_USERNAME:${POSTGRES_USER:deokhugam}}
-    password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD}}
   jpa:
     open-in-view: false
-    hibernate:
-      ddl-auto: create
-    properties:
-      hibernate:
-        format_sql: true
-  docker:
-    compose:
-      file: docker-compose-logging-pipeline.yml   # 기본 이름(compose.yaml)이 아니라서 지정
-      lifecycle-management: start-only           # 앱 꺼져도 DB는 유지
-      skip:
-        in-tests: false
   servlet:
     multipart:
       max-file-size: 10MB
@@ -37,8 +22,6 @@ logging:
     path: ${LOG_PATH:logs}
   level:
     root: info
-    com.sprint.deokhugam: debug
-    org.hibernate.SQL: debug
 
 springdoc:
   swagger-ui:

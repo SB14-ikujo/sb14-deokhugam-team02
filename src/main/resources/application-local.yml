@@ -5,7 +5,6 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:${POSTGRES_PASSWORD}}
   jpa:
     defer-datasource-initialization: true
-    open-in-view: false
     hibernate:
       ddl-auto: create
     properties:
@@ -20,12 +19,12 @@ spring:
       lifecycle-management: start-only           # 앱 꺼져도 DB는 유지
       skip:
         in-tests: false
+      arguments:
+        - --env-file
+        - .env.local
 
 logging:
-  file:
-    path: ${LOG_PATH:logs}
   level:
-    root: info
     com.sprint.deokhugam: debug
     org.hibernate.orm.jdbc.bind: trace
     org.hibernate.SQL: debug
