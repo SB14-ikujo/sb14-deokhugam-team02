@@ -1,0 +1,30 @@
+// [목적] ECS 태스크 실행 역할이 태스크 시작 때 필요로 하는 추가 권한 두 가지를 준다
+//        1) Parameter Store 의 비밀값(DB 비밀번호, 액세스 키 등)을 읽어 환경변수로 주입 (/deokhugam/ 아래로만 제한)
+//        2) CloudWatch 로그 그룹이 없으면 만든다 (태스크 정의의 awslogs-create-group: "true" 설정에 필요)
+// [붙는 곳] IAM 역할 deokhugam-ecsTaskExecutionRole (태스크 실행 역할)
+// [정책 유형] 인라인 정책 (이 역할 안에 직접 만든 정책이다)
+//            IAM > 정책 메뉴에서는 검색되지 않고, 역할의 권한 탭에서만 보인다. 다른 역할에 재사용할 수 없다
+// [함께 필요] 이미지 받기, 로그 스트림 만들기·전송 권한은 AWS 관리형 정책 AmazonECSTaskExecutionRolePolicy 가 담당한다
+// [없으면] 1) 이 없으면 "ResourceInitializationError: unable to pull secrets" 오류로 태스크가 시작되지 못한다
+//          2) 가 없으면 로그 그룹이 없는 상태에서 "logs:CreateLogGroup" 권한 오류로 태스크가 시작되지 못한다
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      // 태스크 정의의 secrets 에 적은 파라미터 값을 한 번에 읽는다 (ECS 가 이 동작으로 값을 가져온다)
+      "Action": "ssm:GetParameters",
+      // /deokhugam/ 아래 파라미터로만 제한한다. 다른 경로의 파라미터는 읽을 수 없다
+      "Resource": "arn:aws:ssm:ap-northeast-2:<AWS계정번호>:parameter/deokhugam/*"
+    },
+    {
+      "Effect": "Allow",
+      // 로그 그룹(/ecs/deokhugam)이 없으면 만든다. 이미 있으면 쓰이지 않는다
+      "Action": "logs:CreateLogGroup",
+      // (ARN 은 로그 그룹을 만들기 전에도 이름만으로 정해지므로 "*" 없이 지정할 수 있다)
+      "Resource": "arn:aws:logs:ap-northeast-2:<AWS계정번호>:log-group:/ecs/deokhugam*"
+    }
+    // [참고] SecureString 을 AWS 관리형 키(aws/ssm)로 암호화했다면 추가 권한이 필요 없다
+    //        직접 만든 KMS 키로 암호화했다면 그 키에 대한 kms:Decrypt 권한을 별도 Statement 로 추가해야 한다
+  ]
+}
