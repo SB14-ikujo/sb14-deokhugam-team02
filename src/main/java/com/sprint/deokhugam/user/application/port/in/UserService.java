@@ -104,7 +104,7 @@ public class UserService implements UserUseCase {
         try {
             User savedUser = userRepository.saveAndFlush(user);
             log.info("닉네임 수정 완료: userId={}", savedUser.getId());
-            return userMapper.toDto(userRepository.saveAndFlush(user));
+            return userMapper.toDto(savedUser);
         } catch (DataIntegrityViolationException e) {
             // 동시 요청으로 검증을 통과한 뒤 닉네임 유니크 제약에 걸린 경우만 중복으로 변환한다.
             if (isUniqueViolation(e, User.NICKNAME_UNIQUE_CONSTRAINT)) {
