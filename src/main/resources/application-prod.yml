@@ -8,13 +8,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update   # TODO: 스키마 안정화 후 validate로 변경 (create는 재시작 때마다 테이블 삭제)
-  docker:
-    compose:
-      enabled: false     # 운영에는 compose가 없다
 
 logging:
   level:
-    root: info
     com.sprint.deokhugam: info
     org.hibernate.SQL: info
 
