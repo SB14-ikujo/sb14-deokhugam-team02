@@ -14,9 +14,9 @@
 | 프레임워크          | ![Spring Boot 4.1.1](https://img.shields.io/badge/Spring_Boot_4.1.1-6DB33F?style=flat-square&logo=springboot&logoColor=white) ![Spring Web MVC](https://img.shields.io/badge/Spring_Web_MVC-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Validation](https://img.shields.io/badge/Validation-6DB33F?style=flat-square&logo=spring&logoColor=white)                                                                                                                                                                                                                      | REST API, 요청 검증, 정적 웹 화면 제공                                      |
 | 데이터 접근         | ![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=flat-square&logo=spring&logoColor=white) ![QueryDSL 7.0](https://img.shields.io/badge/QueryDSL_7.0-3B6FD9?style=flat-square)                                                                                                                                                                                                                                                                                                                                                                          | 엔티티 관리, 동적 검색·정렬, 커서 페이지네이션                                      |
 | 데이터베이스         | ![PostgreSQL 15](https://img.shields.io/badge/PostgreSQL_15-4169E1?style=flat-square&logo=postgresql&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                              | 사용자·도서·리뷰·댓글·알림·랭킹 스냅샷 저장                                        |
-| 외부 API | ![Kakao Book API](https://img.shields.io/badge/Kakao_Book_API-FFCD00?style=flat-square&logo=kakaotalk&logoColor=black) ![OCR.space](https://img.shields.io/badge/OCR.space-0057B8?style=flat-square) | 도서 정보 조회(ISBN), 이미지 OCR 로 ISBN 인식 |
+| 외부 API         | ![Kakao Book API](https://img.shields.io/badge/Kakao_Book_API-FFCD00?style=flat-square&logo=kakaotalk&logoColor=black) ![OCR.space](https://img.shields.io/badge/OCR.space-0057B8?style=flat-square)                                                                                                                                                                                                                                                                                                                                                                               | 도서 정보 조회(ISBN), 이미지 OCR 로 ISBN 인식                                |
 | 스토리지           | ![AWS S3 SDK v2](https://img.shields.io/badge/AWS_S3_SDK_v2-569A31?style=flat-square&logo=amazons3&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 도서 표지 이미지 저장 (Presigned URL / 로컬 파일, `STORAGE_TYPE=local \| s3`) |
-| 배치 · 모니터링 | ![Spring Batch](https://img.shields.io/badge/Spring_Batch-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Actuator](https://img.shields.io/badge/Actuator-6DB33F?style=flat-square&logo=spring&logoColor=white) | 랭킹 집계 배치 실행 기록(BATCH_* 테이블), health · metrics 노출 |
+| 배치 · 모니터링      | ![Spring Batch](https://img.shields.io/badge/Spring_Batch-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Actuator](https://img.shields.io/badge/Actuator-6DB33F?style=flat-square&logo=spring&logoColor=white)                                                                                                                                                                                                                                                                                                                                                            | 랭킹 집계 배치 실행 기록(BATCH_* 테이블), health · metrics 노출                 |
 | 스케줄링           | ![Spring Scheduler](https://img.shields.io/badge/Spring_Scheduler-6DB33F?style=flat-square&logo=spring&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                            | 랭킹 집계, 인기 리뷰 알림, 읽은 알림 정리                                        |
 | 매핑             | ![MapStruct 1.6.3](https://img.shields.io/badge/MapStruct_1.6.3-12A594?style=flat-square) ![Lombok](https://img.shields.io/badge/Lombok-CF3030?style=flat-square)                                                                                                                                                                                                                                                                                                                                                                                                                  | DTO 변환, 반복 코드 축소                                                 |
 | 보안             | ![spring-security-crypto](https://img.shields.io/badge/spring--security--crypto-6DB33F?style=flat-square&logo=springsecurity&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                      | BCrypt 비밀번호 해시                                                   |
@@ -228,15 +228,21 @@ flowchart LR
 <details>
 <summary>기능별 OpenAPI Docs · 서비스 화면 보기</summary>
 
-| 기능   | OpenAPI Docs                                                                               | 서비스 화면                                                                                           |
-|------|--------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| 사용자  | <img src="docs/images/features/users-api.png" width="320" alt="users api">                 | <img src="docs/images/features/users-screen.png" width="320" alt="users screen">                 |
-| 도서   | <img src="docs/images/features/books-api.png" width="320" alt="books api">                 | <img src="docs/images/features/books-screen.png" width="320" alt="books screen">                 |
-| 리뷰   | <img src="docs/images/features/reviews-api.png" width="320" alt="reviews api">             | <img src="docs/images/features/reviews-screen.png" width="320" alt="reviews screen">             |
-| 댓글   | <img src="docs/images/features/comments-api.png" width="320" alt="comments api">           | <img src="docs/images/features/comments-screen.png" width="320" alt="comments screen">           |
-| 대시보드 | <img src="docs/images/features/dashboard-api.png" width="320" alt="dashboard api">         | <img src="docs/images/features/dashboard-screen.png" width="320" alt="dashboard screen">         |
-| 알림   | <img src="docs/images/features/notifications-api.png" width="320" alt="notifications api"> | <img src="docs/images/features/notifications-screen.png" width="320" alt="notifications screen"> |
+### OpenAPI Docs
 
+| 기능   | OpenAPI Docs                                                                               |
+|------|--------------------------------------------------------------------------------------------|
+| 사용자  | <img src="docs/images/features/users-api.png" width="320" alt="users api">                 |
+| 도서   | <img src="docs/images/features/books-api.png" width="320" alt="books api">                 |
+| 리뷰   | <img src="docs/images/features/reviews-api.png" width="320" alt="reviews api">             |
+| 댓글   | <img src="docs/images/features/comments-api.png" width="320" alt="comments api">           |
+| 알림   | <img src="docs/images/features/notifications-api.png" width="320" alt="notifications api"> |
+| 대시보드 | <img src="docs/images/features/dashboard-api.png" width="320" alt="dashboard api">         |
+
+### 서비스 기능 영상
+
+<video src="https://github.com/user-attachments/assets/여기에-복사한-주소" width="720" controls muted></video>
+[▶ 서비스 시연 영상 보기](docs/videos/demo.mp4)
 </details>
 
 ## 배포 구조
@@ -273,34 +279,30 @@ cp .env.example .env
 POSTGRES_DB=deokhugam
 POSTGRES_USER=deokhugam
 POSTGRES_PASSWORD=change-me
-
 # 도서 정보 조회 (카카오 책 검색 API)
 KAKAO_REST_API_KEY=
-
 # 이미지 저장소 (local | s3)
 STORAGE_TYPE=local
 STORAGE_PATH=./uploads
-
 # AWS S3 (STORAGE_TYPE=s3 일 때만 필요)
 AWS_S3_ACCESS_KEY=
 AWS_S3_SECRET_KEY=
 AWS_S3_REGION=
 AWS_S3_BUCKET=
 AWS_S3_PRESIGNED_URL_EXPIRATION=600
-
 # OCR.space (ISBN 이미지 인식)
 OCR_SPACE_API_KEY=
 ```
 
-| 변수                                                                      | 설명                               |
-|-------------------------------------------------------------------------|----------------------------------|
-| `POSTGRES_DB` `POSTGRES_USER` `POSTGRES_PASSWORD`                       | DB 접속 정보                         |
-| `KAKAO_REST_API_KEY`                                                    | 카카오 책 검색 API 키 (도서 등록에 필요)      |
+| 변수                                                                      | 설명                                    |
+|-------------------------------------------------------------------------|---------------------------------------|
+| `POSTGRES_DB` `POSTGRES_USER` `POSTGRES_PASSWORD`                       | DB 접속 정보                              |
+| `KAKAO_REST_API_KEY`                                                    | 카카오 책 검색 API 키 (도서 등록에 필요)            |
 | `STORAGE_TYPE`                                                          | 이미지 저장소 `local` \| `s3` (기본값 `local`) |
-| `STORAGE_PATH`                                                          | 로컬 이미지 저장 경로 (기본값 `./uploads`)    |
-| `AWS_S3_ACCESS_KEY` `AWS_S3_SECRET_KEY` `AWS_S3_REGION` `AWS_S3_BUCKET` | S3 설정 (`STORAGE_TYPE=s3` 일 때 필요) |
-| `AWS_S3_PRESIGNED_URL_EXPIRATION`                                       | Presigned URL 만료(초)              |
-| `OCR_SPACE_API_KEY`                                                     | OCR.space API 키 (ISBN 이미지 인식에 필요) |
+| `STORAGE_PATH`                                                          | 로컬 이미지 저장 경로 (기본값 `./uploads`)        |
+| `AWS_S3_ACCESS_KEY` `AWS_S3_SECRET_KEY` `AWS_S3_REGION` `AWS_S3_BUCKET` | S3 설정 (`STORAGE_TYPE=s3` 일 때 필요)      |
+| `AWS_S3_PRESIGNED_URL_EXPIRATION`                                       | Presigned URL 만료(초)                   |
+| `OCR_SPACE_API_KEY`                                                     | OCR.space API 키 (ISBN 이미지 인식에 필요)     |
 
 > 비밀번호·키는 `.env` 로만 관리하며 코드·yml 에 하드코딩하지 않습니다.
 
@@ -385,10 +387,10 @@ docker compose -f docker-compose-logging-pipeline.yml --profile full up -d --bui
 
 ### 기간별 인기 랭킹 스냅샷 배치
 
-| 랭킹    | 점수 산정                    |
-|-------|--------------------------|
-| 인기 도서 | 리뷰 수 × 0.4 + 평점 × 0.6    |
-| 인기 리뷰 | 댓글 수 × 0.7 + 좋아요 수 × 0.3 |
+| 랭킹    | 점수 산정                                    |
+|-------|------------------------------------------|
+| 인기 도서 | 리뷰 수 × 0.4 + 평점 × 0.6                    |
+| 인기 리뷰 | 댓글 수 × 0.7 + 좋아요 수 × 0.3                 |
 | 파워 유저 | 리뷰 점수 합 × 0.5 + 좋아요 수 × 0.2 + 댓글 수 × 0.3 |
 
 - `PeriodType`(일간 · 주간 · 월간 · 역대)별로 집계 결과를 **스냅샷 테이블** 에 저장하고, 조회 API 는 최신 스냅샷을 읽어 응답합니다.
