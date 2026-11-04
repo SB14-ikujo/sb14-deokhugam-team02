@@ -230,14 +230,13 @@ flowchart LR
 
 ### OpenAPI Docs
 
-| 기능   | OpenAPI Docs                                                                               |
-|------|--------------------------------------------------------------------------------------------|
-| 사용자  | <img src="docs/images/features/users-api.png" width="320" alt="users api">                 |
-| 도서   | <img src="docs/images/features/books-api.png" width="320" alt="books api">                 |
-| 리뷰   | <img src="docs/images/features/reviews-api.png" width="320" alt="reviews api">             |
-| 댓글   | <img src="docs/images/features/comments-api.png" width="320" alt="comments api">           |
-| 알림   | <img src="docs/images/features/notifications-api.png" width="320" alt="notifications api"> |
-| 대시보드 | <img src="docs/images/features/dashboard-api.png" width="320" alt="dashboard api">         |
+| 기능  | OpenAPI Docs                                                                               |
+|-----|--------------------------------------------------------------------------------------------|
+| 사용자 | <img src="docs/images/features/users-api.png" width="320" alt="users api">                 |
+| 도서  | <img src="docs/images/features/books-api.png" width="320" alt="books api">                 |
+| 리뷰  | <img src="docs/images/features/reviews-api.png" width="320" alt="reviews api">             |
+| 댓글  | <img src="docs/images/features/comments-api.png" width="320" alt="comments api">           |
+| 알림  | <img src="docs/images/features/notifications-api.png" width="320" alt="notifications api"> |
 
 ### 서비스 기능 영상
 
