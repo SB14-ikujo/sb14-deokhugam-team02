@@ -1,6 +1,6 @@
 [![codecov](https://codecov.io/github/SB14-ikujo/sb14-deokhugam-team02/graph/badge.svg?token=FMH1DWHUZA)](https://codecov.io/github/SB14-ikujo/sb14-deokhugam-team02)
 
-# 덕후감 (Deokhugam)
+<a href="http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/#/"><img src="src/main/resources/static/images/nav/deokhugam.svg" alt="덕후감 배포 홈페이지" width="300"></a>
 
 **도서 이미지 OCR 기반 ISBN 매칭 도서 리뷰 서비스**
 
@@ -93,6 +93,15 @@
 - 댓글 CRUD를 구현했습니다. (본인만 수정·삭제)
 - 목록은 시간순 정렬과 커서 페이지네이션으로 제공합니다.
 - 논리 삭제를 기본으로 하고, 물리 삭제 API를 제공합니다.
+
+## ERD
+
+모든 테이블은 `BaseEntity` 의 `id(UUID)`, `created_at`, `updated_at` 을 공통으로 가집니다.
+
+<p align="center"><img src="docs/images/erd1.png" alt="ERD" width="90%"/></p>
+
+- `reviews` : `UNIQUE(user_id, book_id)` — 한 사용자는 도서당 리뷰 1개
+- 사용자 · 도서 · 리뷰 · 댓글은 `is_deleted` 로 논리 삭제
 
 ## 파일 구조
 
@@ -193,22 +202,13 @@ flowchart LR
 
 `common` 패키지(config, exception, logging, pagination 등)는 모든 도메인이 공유합니다.
 
-## ERD
-
-모든 테이블은 `BaseEntity` 의 `id(UUID)`, `created_at`, `updated_at` 을 공통으로 가집니다.
-
-<p align="center"><img src="docs/images/erd1.png" alt="ERD" width="90%"/></p>
-
-- `reviews` : `UNIQUE(user_id, book_id)` — 한 사용자는 도서당 리뷰 1개
-- 사용자 · 도서 · 리뷰 · 댓글은 `is_deleted` 로 논리 삭제
-
 ## 구현 홈페이지
 
-| 구분        | 주소 · 상태                                                            |
-|-----------|--------------------------------------------------------------------|
-| 배포 홈페이지   | http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/#/ |
-| 로컬 홈페이지   | [http://localhost:8080/](http://localhost:8080/) — 백엔드 실행 후 접속     |
-| 로컬 API 문서 | [Swagger UI](http://localhost:8080/swagger-ui/index.html)          |
+| 구분           | 주소 · 상태                                                                                                                        |
+|:-------------|:-------------------------------------------------------------------------------------------------------------------------------|
+| 🌐 배포 홈페이지   | [deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com](http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/#/) |
+| 💻 로컬 홈페이지   | [http://localhost:8080/](http://localhost:8080/) — 백엔드 실행 후 접속                                                                 |
+| 📖 로컬 API 문서 | [Swagger UI](http://localhost:8080/swagger-ui/index.html)                                                                      |
 
 <details>
 <summary>기능별 OpenAPI Docs · 서비스 화면 보기</summary>
