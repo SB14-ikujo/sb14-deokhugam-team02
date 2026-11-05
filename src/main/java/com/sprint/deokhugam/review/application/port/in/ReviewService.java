@@ -70,12 +70,12 @@ public class ReviewService implements ReviewUseCase {
             throw new ReviewException(ReviewErrorCode.REVIEW_DUPLICATE);
         }
 
-        targetBook.increaseReviewCount(); // 해당 도서의 리뷰수 증가
-
         String content = createRequest.content();
         Integer rating = createRequest.rating();
 
         Review createReview = Review.create(requestUser, targetBook, content, rating);
+        targetBook.addReview(rating);
+
         try {
             Review createdReview = reviewRepositoryPort.save(createReview);
             return this.toReviewDto(createdReview, false);
@@ -94,6 +94,9 @@ public class ReviewService implements ReviewUseCase {
 
         // 논리적 삭제(Soft-delete) 하기
         review.softDelete(requestUserId);
+
+        // 도서 리뷰 정보 갱신
+        review.getBook().removeReview(review.getRating());
     }
 
     // 리뷰 물리 삭제
