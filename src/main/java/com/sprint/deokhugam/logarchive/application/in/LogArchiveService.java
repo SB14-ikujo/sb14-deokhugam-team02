@@ -11,7 +11,10 @@ import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import software.amazon.awssdk.core.exception.SdkClientException;
 
+import com.sprint.deokhugam.book.adapter.out.exception.StorageErrorCode;
+import com.sprint.deokhugam.book.adapter.out.exception.StorageException;
 import com.sprint.deokhugam.logarchive.application.out.LogStoragePort;
 
 @Slf4j
@@ -39,6 +42,8 @@ public class LogArchiveService implements LogArchiveUseCase {
                 }
             } catch (IOException e) {
                 log.error("로그 업로드 실패: {}", date, e);
+            } catch (SdkClientException e) {
+                throw new StorageException(StorageErrorCode.S3_CONNECTION_FAILED, e);
             }
         }
         return uploaded;
