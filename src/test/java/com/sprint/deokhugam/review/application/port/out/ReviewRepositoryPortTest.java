@@ -2,9 +2,11 @@ package com.sprint.deokhugam.review.application.port.out;
 
 import static org.assertj.core.api.AssertionsForInterfaceTypes.*;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -377,6 +379,30 @@ class ReviewRepositoryPortTest {
 
         // then
         assertThat(resultWithBlank).isNotEmpty();
+    }
+
+    @Test
+    @DisplayName("평점순 오름차순(ASC) 커서 분기를 검증한다")
+    void coverage_test_rating_asc_cursor() {
+        // given
+        UUID userId = null;
+        UUID bookId = null;
+        String keyword = null;
+        Instant after = Instant.now();
+        String cursor = "4.0";
+
+        // when
+        List<Review> list = reviewRepository.getReviewList(
+            userId, bookId, keyword,
+            "rating",
+            after,
+            cursor,
+            Sort.Direction.ASC,
+            10
+        );
+
+        // then
+        assertThat(list).isNotNull();
     }
 
 }
