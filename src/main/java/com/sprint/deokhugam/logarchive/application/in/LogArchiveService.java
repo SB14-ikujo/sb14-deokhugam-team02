@@ -32,7 +32,7 @@ public class LogArchiveService implements LogArchiveUseCase {
             try (DirectoryStream<Path> files = Files.newDirectoryStream(logDir, "app-" + date + ".*.log")) {
 
                 for (Path file : files) {
-                    String key = "logs/" + date + "/" + file.getFileName(); // logs/2026-11-03/app-2026-11-03.0.log
+                    String key = date + "/" + file.getFileName(); // logs/2026-11-03/app-2026-11-03.0.log
 
                     logStoragePort.upload(key, file);
                     uploaded++;
