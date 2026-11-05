@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.AfterEach;
@@ -17,12 +19,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.sprint.deokhugam.book.application.port.out.BookRepositoryPort;
 import com.sprint.deokhugam.book.domain.Book;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewCreateRequest;
 import com.sprint.deokhugam.review.adapter.in.web.dto.ReviewDto;
 import com.sprint.deokhugam.review.application.port.out.ReviewRepositoryPort;
+import com.sprint.deokhugam.review.domain.exception.ReviewErrorCode;
+import com.sprint.deokhugam.review.domain.exception.ReviewException;
 import com.sprint.deokhugam.user.application.port.out.UserRepositoryPort;
 import com.sprint.deokhugam.user.domain.User;
 
@@ -47,6 +53,9 @@ class ReviewConcurrencyTest {
 
     @Autowired
     private UserRepositoryPort userRepositoryPort;
+
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     private Book book;          // 모든 스레드가 리뷰를 남기는 대상 도서 (경합이 일어나는 공유 자원)
     private List<User> users;   // 리뷰 작성자들 (도서당 유저 1리뷰 제약 때문에 스레드마다 다른 유저 사용)
@@ -183,6 +192,108 @@ class ReviewConcurrencyTest {
         assertThat(result.getRating()).isCloseTo(3.0, within(0.0001));
     }
 
+    /*
+     * [테스트 4] 같은 유저의 동시 중복 생성
+     * 같은 유저가 같은 도서에 동시에 10번 리뷰 생성을 요청한다. (더블클릭, 네트워크 재시도 상황)
+     * 유저 행 비관적 락이 없으면 모두 "리뷰 없음"으로 보고 INSERT 해서 리뷰가 여러 개 생기고 reviewCount도 부풀려진다.
+     * 검증: 성공 1건, 나머지 9건은 REVIEW_DUPLICATE, 리뷰 1개, book.reviewCount == 1, 평균 평점 == 4.0
+     */
+    @Test
+    @DisplayName("같은 유저가 같은 도서에 동시에 리뷰를 생성하면 1건만 성공하고 나머지는 중복 예외가 발생한다")
+    void createReview_sameUserConcurrently_onlyOneSucceeds() throws InterruptedException {
+        // given
+        User sameUser = users.get(0);
+        AtomicInteger successCount = new AtomicInteger(); // 성공한 횟수
+        AtomicInteger duplicateCount = new AtomicInteger(); // "이미 리뷰 있음" 예외로 거절된 횟수
+        AtomicInteger otherFailCount = new AtomicInteger(); // 그 외 이유로 실패한 횟수
+
+        // when
+        runConcurrently(THREAD_COUNT, i -> {
+            try {
+                reviewService.createReview(new ReviewCreateRequest(
+                    book.getId(), sameUser.getId(), "내용" + i, 4));
+                successCount.incrementAndGet();
+            } catch (ReviewException e) {
+                // 정상적인 거절
+                if (e.getErrorCode() == ReviewErrorCode.REVIEW_DUPLICATE) {
+                    duplicateCount.incrementAndGet();
+                } else {
+                    otherFailCount.incrementAndGet();
+                }
+            } catch (Exception e) {
+                otherFailCount.incrementAndGet();   // 예상 못 한 실패
+            }
+        });
+
+        // then
+        Book result = bookRepositoryPort.findById(book.getId()).orElseThrow();
+
+        assertThat(successCount.get()).isEqualTo(1);
+        assertThat(duplicateCount.get()).isEqualTo(THREAD_COUNT - 1);
+        assertThat(otherFailCount.get()).isZero();
+        assertThat(reviewRepositoryPort.count()).isEqualTo(1);
+        assertThat(result.getReviewCount()).isEqualTo(1);
+        assertThat(result.getRating()).isCloseTo(4.0, within(0.0001));
+    }
+
+    /*
+     * [테스트 5] 다른 유저는 막히지 않는다
+     * 유저 A의 행을 다른 트랜잭션이 잠그고 있는 상태를 만든다. (A의 요청이 처리 중인 상황)
+     * 이때 다른 유저 B의 리뷰 생성은 대기 없이 끝나야 하고, 유저 A의 리뷰 생성만 락이 풀릴 때까지 대기해야 한다.
+     * 검증: B는 제한 시간 안에 성공, A는 락 해제 전까지 대기, 해제 후 A도 성공, 리뷰 2개 / reviewCount 2
+     */
+    @Test
+    @DisplayName("한 유저의 락이 잡혀 있어도 다른 유저의 리뷰 생성은 막히지 않는다")
+    void createReview_otherUserIsNotBlockedByUserLock() throws Exception {
+        // given: 유저 A의 행을 잠근 채 트랜잭션을 열어 두는 스레드
+        User userA = users.get(0);
+        User userB = users.get(1);
+        TransactionTemplate txTemplate = new TransactionTemplate(transactionManager);
+        CountDownLatch lockAcquired = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+
+        try {
+            executor.submit(() -> txTemplate.execute(status -> {
+                userRepositoryPort.findByIdAndIsDeletedFalseForUpdate(userA.getId());
+                lockAcquired.countDown();
+                try {
+                    release.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+                return null;
+            }));
+
+            assertThat(lockAcquired.await(5, TimeUnit.SECONDS)).isTrue(); // A의 락이 실제로 잡힌 뒤에 시작한다.
+
+            // when: 락이 잡힌 A와 락과 무관한 B가 각각 리뷰 생성을 요청한다.
+            Future<ReviewDto> requestA = executor.submit(() -> reviewService.createReview(
+                new ReviewCreateRequest(book.getId(), userA.getId(), "A의 리뷰", 4)));
+            Future<ReviewDto> requestB = executor.submit(() -> reviewService.createReview(
+                new ReviewCreateRequest(book.getId(), userB.getId(), "B의 리뷰", 2)));
+
+            // then
+            // B는 A의 락과 무관하므로 제한 시간 안에 끝나야 한다. (get이 TimeoutException을 던지면 막힌 것)
+            assertThat(requestB.get(5, TimeUnit.SECONDS)).isNotNull();
+            // A는 락이 풀리기 전까지 대기 중이어야 한다. (락이 실제로 같은 유저의 요청만 막는다는 증거)
+            assertThatThrownBy(() -> requestA.get(500, TimeUnit.MILLISECONDS))
+                .isInstanceOf(TimeoutException.class);
+            // 락을 풀면 대기하던 A도 정상 처리돼야 한다.
+            release.countDown();
+            assertThat(requestA.get(5, TimeUnit.SECONDS)).isNotNull();
+
+            // 두 유저의 리뷰가 모두 저장되고 집계에 반영됐는지 (평균 (4 + 2) / 2 = 3.0)
+            Book result = bookRepositoryPort.findById(book.getId()).orElseThrow();
+            assertThat(reviewRepositoryPort.count()).isEqualTo(2);
+            assertThat(result.getReviewCount()).isEqualTo(2);
+            assertThat(result.getRating()).isCloseTo(3.0, within(0.0001));
+        } finally {
+            release.countDown();
+            executor.shutdownNow();
+        }
+    }
+
     /**
      * threads 개의 스레드를 만들어 task 를 동시에 실행하고, 모두 끝날 때까지 기다린다.
      * - ready : 모든 스레드가 준비될 때까지 메인 스레드가 대기
@@ -213,6 +324,7 @@ class ReviewConcurrencyTest {
 
         ready.await();
         start.countDown();
+        // 30초 안에 모든 스레드가 끝나야 한다. (데드락이나 무한 대기로 테스트가 멈추지 않았는지)
         assertThat(done.await(30, TimeUnit.SECONDS)).isTrue();
         executor.shutdown();
     }

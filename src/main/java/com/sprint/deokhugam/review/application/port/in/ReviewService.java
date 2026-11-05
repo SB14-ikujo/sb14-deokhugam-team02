@@ -54,7 +54,7 @@ public class ReviewService implements ReviewUseCase {
         UUID targetBookId = createRequest.bookId(); // 리뷰를 남길 도서 ID
 
         // 요청한 유저 존재 유무 확인 및 데이터 가져오기 (소프트 딜리트 된 것들은 제외)
-        User requestUser = userRepositoryPort.findByIdAndIsDeletedFalse(requestUserId)
+        User requestUser = userRepositoryPort.findByIdAndIsDeletedFalseForUpdate(requestUserId)
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
         // 해당 도서 존재 유무 확인 및 데이터 가져오기 (소프트 딜리트 된 것들은 제외)
@@ -79,6 +79,7 @@ public class ReviewService implements ReviewUseCase {
         if (updatedBook == 0) {
             throw new ReviewException(ReviewErrorCode.REVIEW_BOOK_NOT_FOUND);
         }
+
         Review createdReview = reviewRepositoryPort.save(createReview);
 
         return this.toReviewDto(createdReview, false);
