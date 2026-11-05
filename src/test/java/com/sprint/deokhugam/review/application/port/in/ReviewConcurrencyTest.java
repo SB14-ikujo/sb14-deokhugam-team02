@@ -79,7 +79,7 @@ class ReviewConcurrencyTest {
      * 유저 10명이 같은 도서에 동시에 리뷰를 작성한다.
      * 락이 없으면 여러 트랜잭션이 같은 reviewCount/rating 값을 읽고 덮어써서(lost update)
      * 저장된 리뷰 수보다 book.reviewCount가 작아진다.
-     * 검증: 저장된 리뷰 수 == book.reviewCount, 평균 평점 == 3.0
+     * 검증: 실패 0건, 저장된 리뷰 수 == book.reviewCount == 10, 평균 평점 == 3.0
      */
     @Test
     @DisplayName("서로 다른 유저가 동시에 리뷰를 생성해도 reviewCount와 평균 평점이 정확해야 한다")
@@ -97,22 +97,20 @@ class ReviewConcurrencyTest {
             }
         });
 
-        // then
+        // then: 서로 다른 유저라 실패가 없어야 하고, 모든 리뷰가 개수와 평점에 반영돼야 한다
         Book result = bookRepositoryPort.findById(book.getId()).orElseThrow();
-        long savedReviews = reviewRepositoryPort.count();
 
-        assertThat(savedReviews).isEqualTo(THREAD_COUNT - failCount.get());
-        assertThat(result.getReviewCount()).isEqualTo((int)savedReviews);
-        if (failCount.get() == 0) {
-            assertThat(result.getRating()).isCloseTo(3.0, within(0.0001));
-        }
+        assertThat(failCount.get()).isZero();
+        assertThat(reviewRepositoryPort.count()).isEqualTo(THREAD_COUNT);
+        assertThat(result.getReviewCount()).isEqualTo(THREAD_COUNT);
+        assertThat(result.getRating()).isCloseTo(3.0, within(0.0001));
     }
 
     /*
      * [테스트 2] 동시 리뷰 삭제
      * 리뷰 10개를 순차로 만들어 둔 뒤, 그중 5개를 동시에 soft delete 한다.
      * 락이 없으면 removeReview 계산이 서로 덮어써져 reviewCount가 5가 되지 않는다.
-     * 검증: book.reviewCount == 10 - 삭제 성공 수, 평균 평점 == 3.0 (남은 5개가 1~5점)
+     * 검증: 실패 0건, book.reviewCount == 5, 평균 평점 == 3.0 (남은 5개가 1~5점)
      */
     @Test
     @DisplayName("여러 리뷰를 동시에 삭제해도 reviewCount와 평균 평점이 정확해야 한다")
@@ -137,21 +135,19 @@ class ReviewConcurrencyTest {
             }
         });
 
-        // then
+        // then: 삭제는 모두 성공해야 하고, 남은 5개(1~5점)만 개수와 평점에 반영돼야 한다
         Book result = bookRepositoryPort.findById(book.getId()).orElseThrow();
-        int deleted = deleteCount - failCount.get();
 
-        assertThat(result.getReviewCount()).isEqualTo(THREAD_COUNT - deleted);
-        if (failCount.get() == 0) {
-            assertThat(result.getRating()).isCloseTo(3.0, within(0.0001));
-        }
+        assertThat(failCount.get()).isZero();
+        assertThat(result.getReviewCount()).isEqualTo(THREAD_COUNT - deleteCount);
+        assertThat(result.getRating()).isCloseTo(3.0, within(0.0001));
     }
 
     /*
      * [테스트 3] 생성 + 삭제 혼합
      * 기존 리뷰 5개를 삭제하는 스레드 5개와, 새 리뷰 5개를 만드는 스레드 5개를 동시에 실행한다.
      * addReview와 removeReview가 서로 섞여도 최종 reviewCount는 5 - 5 + 5 = 5 여야 한다.
-     * 검증: book.reviewCount == 5, 평균 평점 == 3.0 (모두 3점)
+     * 검증: 실패 0건, book.reviewCount == 5, 평균 평점 == 3.0 (모두 3점)
      */
     @Test
     @DisplayName("리뷰 생성과 삭제가 동시에 일어나도 reviewCount가 정확해야 한다")
@@ -179,12 +175,12 @@ class ReviewConcurrencyTest {
             }
         });
 
-        // then: 5 - 5 + 5 = 5
+        // then: 모든 요청이 성공해야 하고, 5 - 5 + 5 = 5
         Book result = bookRepositoryPort.findById(book.getId()).orElseThrow();
-        if (failCount.get() == 0) {
-            assertThat(result.getReviewCount()).isEqualTo(half);
-            assertThat(result.getRating()).isCloseTo(3.0, within(0.0001));
-        }
+
+        assertThat(failCount.get()).isZero();
+        assertThat(result.getReviewCount()).isEqualTo(half);
+        assertThat(result.getRating()).isCloseTo(3.0, within(0.0001));
     }
 
     /**
