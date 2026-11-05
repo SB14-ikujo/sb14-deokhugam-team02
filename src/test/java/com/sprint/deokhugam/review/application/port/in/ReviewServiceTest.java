@@ -143,7 +143,7 @@ class ReviewServiceTest {
         Review mockReview = createMockReview(mockUser, mockBook, "재밌네요.", 5);
         ReviewDto mockReviewDto = createMockReviewDto(mockReview, mockBook, mockUser);
 
-        given(userRepository.findByIdAndIsDeletedFalse(userId)).willReturn(Optional.of(mockUser));
+        given(userRepository.findByIdAndIsDeletedFalseForUpdate(userId)).willReturn(Optional.of(mockUser));
         given(bookRepository.findByIdAndIsDeletedFalse(bookId)).willReturn(Optional.of(mockBook));
         given(reviewRepository.findValidReview(userId, bookId)).willReturn(Optional.empty());
 
@@ -176,7 +176,7 @@ class ReviewServiceTest {
 
         ReviewCreateRequest failRequest = new ReviewCreateRequest(bookId, nonExistUserId, "재밌어요", 5);
 
-        given(userRepository.findByIdAndIsDeletedFalse(failRequest.userId())).willReturn(Optional.empty());
+        given(userRepository.findByIdAndIsDeletedFalseForUpdate(failRequest.userId())).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> reviewService.createReview(failRequest)).isInstanceOf(UserException.class);
@@ -193,11 +193,11 @@ class ReviewServiceTest {
         UUID userId = mockUser.getId();
         UUID bookId = mockBook.getId();
 
-        ReviewCreateRequest createRequest = new ReviewCreateRequest(userId, bookId, "두 번째 리뷰 시도", 5);
+        ReviewCreateRequest createRequest = new ReviewCreateRequest(bookId, userId, "두 번째 리뷰 시도", 5);
         UUID realUserId = createRequest.userId();
         UUID realBookId = createRequest.bookId();
 
-        given(userRepository.findByIdAndIsDeletedFalse(realUserId)).willReturn(Optional.of(mockUser));
+        given(userRepository.findByIdAndIsDeletedFalseForUpdate(realUserId)).willReturn(Optional.of(mockUser));
         given(bookRepository.findByIdAndIsDeletedFalse(realBookId)).willReturn(Optional.of(mockBook));
         given(reviewRepository.findValidReview(realUserId, realBookId)).willReturn(Optional.of(existingReview));
 
