@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/github/SB14-ikujo/sb14-deokhugam-team02/graph/badge.svg?token=FMH1DWHUZA)](https://codecov.io/github/SB14-ikujo/sb14-deokhugam-team02)
+
 # 덕후감 (Deokhugam)
 
 **도서 이미지 OCR 기반 ISBN 매칭 도서 리뷰 서비스**
