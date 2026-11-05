@@ -38,4 +38,19 @@ public interface BookRepositoryPort extends JpaRepository<Book, UUID>, BookRepos
         WHERE b.id = :bookId
         """)
     int removeReview(@Param("bookId") UUID bookId, @Param("grade") int grade);
+
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("""
+        UPDATE Book b
+        SET b.rating = CASE
+                WHEN b.reviewCount = 0 THEN 0.0
+                ELSE (b.rating * b.reviewCount - :oldGrade + :newGrade) / b.reviewCount
+            END
+        WHERE b.id = :bookId
+        """)
+    int changeReviewRating(
+        @Param("bookId") UUID bookId,
+        @Param("oldGrade") int oldGrade,
+        @Param("newGrade") int newGrade
+    );
 }
