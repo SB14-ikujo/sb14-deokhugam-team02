@@ -80,9 +80,21 @@ public class Book extends BaseEntity {
         return new Book(title, user, author, description, publisher, publishedDate, isbn, thumbnailUrl);
     }
 
-    // 리뷰 수 증가
-    public void increaseReviewCount() {
-        this.reviewCount += 1;
+    // 리뷰 수 증가 및 평균 갱신
+    public void addReview(int rating) {
+        this.rating = ((this.rating * this.reviewCount) + rating) / (this.reviewCount + 1);
+        this.reviewCount++;
+    }
+
+    // 리뷰 수 감소 및 평균 갱신
+    public void removeReview(int rating) {
+        if (this.reviewCount <= 1) {
+            this.reviewCount = 0;
+            this.rating = 0.0;
+            return;
+        }
+        this.rating = ((this.rating * this.reviewCount) - rating) / (this.reviewCount - 1);
+        this.reviewCount--;
     }
 
     // 논리 삭제
@@ -121,4 +133,5 @@ public class Book extends BaseEntity {
     public void updateThumbnailUrl(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
     }
+
 }
