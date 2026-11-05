@@ -26,7 +26,7 @@ public class LogArchiveScheduler {
     public void archive() {
         LocalDate today = LocalDate.now(SEOUL);
         log.info("[로그 아카이브 배치] 시작 - 기준일: {}", today);
-        int uploaded = logArchiveUseCase.archive(LocalDate.now(SEOUL));
+        int uploaded = logArchiveUseCase.archive(today);
         log.info("[로그 아카이브 배치] 종료 - 업로드: {}건", uploaded);
 
     }
