@@ -59,7 +59,7 @@ public class ReviewService implements ReviewUseCase {
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
         // 해당 도서 존재 유무 확인 및 데이터 가져오기 (소프트 딜리트 된 것들은 제외)
-        Book targetBook = bookRepositoryPort.findByIdAndIsDeletedFalseForUpdate(targetBookId)
+        Book targetBook = bookRepositoryPort.findByIdAndIsDeletedFalse(targetBookId)
             .orElseThrow(() -> new BookException(BookErrorCode.BOOK_NOT_FOUND));
 
         // 기존에 리뷰가 있는지 확인
@@ -74,7 +74,8 @@ public class ReviewService implements ReviewUseCase {
         Integer rating = createRequest.rating();
 
         Review createReview = Review.create(requestUser, targetBook, content, rating);
-        targetBook.addReview(rating);
+
+        bookRepositoryPort.addReview(createReview.getBook().getId(), rating);
 
         try {
             Review createdReview = reviewRepositoryPort.save(createReview);
@@ -95,15 +96,8 @@ public class ReviewService implements ReviewUseCase {
         // 논리적 삭제(Soft-delete) 하기
         review.softDelete(requestUserId);
 
-        // Lazy 프록시에서 id만 꺼내기 → SELECT 안 나감
-        UUID bookId = review.getBook().getId();
-
-        // 락 걸어서 최신 값으로 조회
-        Book targetBook = bookRepositoryPort.findByIdAndIsDeletedFalseForUpdate(bookId)
-            .orElseThrow(() -> new BookException(BookErrorCode.BOOK_NOT_FOUND));
-
         // 도서 리뷰 정보 갱신
-        targetBook.removeReview(review.getRating());
+        bookRepositoryPort.removeReview(review.getBook().getId(), review.getRating());
     }
 
     // 리뷰 물리 삭제
