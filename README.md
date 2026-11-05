@@ -231,8 +231,6 @@ flowchart LR
 
 ## 배포 구조
 
-> 🚧 배포 구조는 현재 구성 중입니다. 확정되면 이미지와 함께 업데이트합니다.
-
 <p align="center"><img src="docs/images/deploy-architecture.png" alt="배포 구조" width="90%"/></p>
 
 ## 시작하기
