@@ -45,6 +45,18 @@ jobs:
       - name: 빌드 + 테스트
         run: ./gradlew build              # 테스트 중 Spring이 compose로 postgres를 자동 기동
 
+      - name: Codecov 업로드
+        uses: codecov/codecov-action@v5
+        continue-on-error: true           # 업로드가 실패해도 이후 step과 CI 결과에 영향 없음
+        with:
+          files: ./build/reports/jacoco/test/jacocoTestReport.xml
+          fail_ci_if_error: false         # Codecov 장애로 CI가 깨지지 않게 (안정화 후 true로)
+          flags: unittests
+          name: deokhugam
+          verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
       - name: 커버리지 PR 코멘트 추가
         id: jacoco                        # 이 step의 출력값을 뒤 step에서 쓰기 위한 이름표
         if: github.event_name == 'pull_request'
