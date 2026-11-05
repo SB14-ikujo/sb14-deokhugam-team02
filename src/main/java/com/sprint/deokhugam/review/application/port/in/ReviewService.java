@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -80,13 +79,9 @@ public class ReviewService implements ReviewUseCase {
         if (updatedBook == 0) {
             throw new ReviewException(ReviewErrorCode.REVIEW_BOOK_NOT_FOUND);
         }
+        Review createdReview = reviewRepositoryPort.save(createReview);
 
-        try {
-            Review createdReview = reviewRepositoryPort.save(createReview);
-            return this.toReviewDto(createdReview, false);
-        } catch (DataIntegrityViolationException e) {
-            throw new ReviewException(ReviewErrorCode.REVIEW_DUPLICATE);
-        }
+        return this.toReviewDto(createdReview, false);
     }
 
     // 리뷰 소프트 딜리트
@@ -156,6 +151,9 @@ public class ReviewService implements ReviewUseCase {
 
         UUID reviewWriterId = review.getUser().getId();
 
+        UUID bookId = review.getBook().getId();
+        int oldGrade = review.getRating();
+
         if (!reviewWriterId.equals(requestUserId)) {
             throw new ReviewException(ReviewErrorCode.REVIEW_FORBIDDEN);
         }
@@ -165,6 +163,12 @@ public class ReviewService implements ReviewUseCase {
 
         // 내가 이 리뷰에 좋아요를 남겼는지 확인
         boolean likedByMe = reviewLikeRepositoryPort.existsByReviewIdAndUserId(reviewId, requestUserId);
+
+        int updatedBook = bookRepositoryPort.changeReviewRating(bookId, oldGrade, updateRequest.rating());
+
+        if (updatedBook == 0) {
+            throw new ReviewException(ReviewErrorCode.REVIEW_BOOK_NOT_FOUND);
+        }
 
         // 반환
         return this.toReviewDto(review, likedByMe);
