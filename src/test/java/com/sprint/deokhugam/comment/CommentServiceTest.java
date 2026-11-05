@@ -81,6 +81,7 @@ class CommentServiceTest {
 
         given(commentRepository.save(any(Comment.class)))
             .willAnswer(inv -> inv.getArgument(0));
+        given(reviewRepository.addCommentCount(any())).willReturn(1);
 
         CommentDto result = commentService.create(request);
 
@@ -407,6 +408,7 @@ class CommentServiceTest {
     @DisplayName("댓글 논리 삭제 성공 - 작성자 본인이면 isDeleted가 true가 된다")
     void softDelete_success() {
         Comment comment = givenCommentWrittenBy(userId);
+        given(reviewRepository.removeCommentCount(any())).willReturn(1);
 
         commentService.softDelete(commentId, userId);
 

@@ -139,8 +139,6 @@ class ReviewServiceTest {
         Book mockBook = createMockBook(mockUser, "도서명", "작가");
         UUID bookId = mockBook.getId();
 
-        int initialReviewCount = mockBook.getReviewCount();
-
         ReviewCreateRequest createRequest = new ReviewCreateRequest(bookId, userId, "재밌네요.", 5);
         Review mockReview = createMockReview(mockUser, mockBook, "재밌네요.", 5);
         ReviewDto mockReviewDto = createMockReviewDto(mockReview, mockBook, mockUser);
@@ -149,6 +147,7 @@ class ReviewServiceTest {
         given(bookRepository.findByIdAndIsDeletedFalse(bookId)).willReturn(Optional.of(mockBook));
         given(reviewRepository.findValidReview(userId, bookId)).willReturn(Optional.empty());
 
+        given(bookRepository.addReview(any(), anyInt())).willReturn(1);
         given(reviewRepository.save(any(Review.class))).willReturn(mockReview);
         given(reviewMapper.toDto(any(Review.class), eq(false), any())).willReturn(mockReviewDto);
 
@@ -160,7 +159,8 @@ class ReviewServiceTest {
         assertThat(result.content()).isEqualTo(mockReviewDto.content());
         assertThat(result.rating()).isEqualTo(mockReviewDto.rating());
 
-        assertThat(mockBook.getReviewCount()).isEqualTo(initialReviewCount + 1);
+        // 리뷰 수/평점은 엔티티가 아니라 DB UPDATE 쿼리로 갱신된다
+        verify(bookRepository).addReview(bookId, 5);
         verify(reviewRepository).save(any(Review.class));
     }
 
@@ -449,6 +449,7 @@ class ReviewServiceTest {
 
         given(reviewRepository.findByFetchJoin(reviewId)).willReturn(Optional.of(realReview));
         given(reviewLikeRepository.existsByReviewIdAndUserId(reviewId, userId)).willReturn(true);
+        given(bookRepository.changeReviewRating(any(), anyInt(), anyInt())).willReturn(1);
         given(reviewMapper.toDto(any(), anyBoolean(), any())).willReturn(mockReviewDto);
 
         // when
@@ -523,6 +524,7 @@ class ReviewServiceTest {
         UUID reviewId = mockReview.getId();
 
         given(reviewRepository.findByIdAndIsDeletedFalse(reviewId)).willReturn(Optional.of(mockReview));
+        given(bookRepository.removeReview(any(), anyInt())).willReturn(1);
 
         // when
         reviewService.reviewSoftDelete(reviewId, requestUserId);
