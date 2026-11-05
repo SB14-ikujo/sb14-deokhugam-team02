@@ -204,11 +204,11 @@ flowchart LR
 
 ## 구현 홈페이지
 
-| 구분        | 주소 · 상태                                                        |
-|-----------|----------------------------------------------------------------|
-| 배포 홈페이지   | 배포 URL 추가 필요                                                   |
-| 로컬 홈페이지   | [http://localhost:8080/](http://localhost:8080/) — 백엔드 실행 후 접속 |
-| 로컬 API 문서 | [Swagger UI](http://localhost:8080/swagger-ui/index.html)      |
+| 구분        | 주소 · 상태                                                            |
+|-----------|--------------------------------------------------------------------|
+| 배포 홈페이지   | http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/#/ |
+| 로컬 홈페이지   | [http://localhost:8080/](http://localhost:8080/) — 백엔드 실행 후 접속     |
+| 로컬 API 문서 | [Swagger UI](http://localhost:8080/swagger-ui/index.html)          |
 
 <details>
 <summary>기능별 OpenAPI Docs · 서비스 화면 보기</summary>
