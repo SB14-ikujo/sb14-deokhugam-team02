@@ -75,7 +75,11 @@ public class ReviewService implements ReviewUseCase {
 
         Review createReview = Review.create(requestUser, targetBook, content, rating);
 
-        bookRepositoryPort.addReview(createReview.getBook().getId(), rating);
+        int updatedBook = bookRepositoryPort.addReview(createReview.getBook().getId(), rating);
+
+        if (updatedBook == 0) {
+            throw new ReviewException(ReviewErrorCode.REVIEW_BOOK_NOT_FOUND);
+        }
 
         try {
             Review createdReview = reviewRepositoryPort.save(createReview);
@@ -97,7 +101,12 @@ public class ReviewService implements ReviewUseCase {
         review.softDelete(requestUserId);
 
         // 도서 리뷰 정보 갱신
-        bookRepositoryPort.removeReview(review.getBook().getId(), review.getRating());
+        int updatedBook = bookRepositoryPort.removeReview(review.getBook().getId(), review.getRating());
+
+        if (updatedBook == 0) {
+            throw new ReviewException(ReviewErrorCode.REVIEW_BOOK_NOT_FOUND);
+        }
+
     }
 
     // 리뷰 물리 삭제
