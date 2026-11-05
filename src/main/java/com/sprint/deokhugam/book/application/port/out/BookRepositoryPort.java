@@ -15,7 +15,7 @@ public interface BookRepositoryPort extends JpaRepository<Book, UUID>, BookRepos
 
     boolean existsByIsbn(String isbn);
 
-    @Modifying(clearAutomatically = true)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
             UPDATE Book b
             SET b.rating = (b.rating * b.reviewCount + :grade) / (b.reviewCount + 1),
@@ -24,7 +24,7 @@ public interface BookRepositoryPort extends JpaRepository<Book, UUID>, BookRepos
         """)
     int addReview(@Param("bookId") UUID bookId, @Param("grade") int grade);
 
-    @Modifying(clearAutomatically = true)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
         UPDATE Book b
         SET b.rating = CASE
