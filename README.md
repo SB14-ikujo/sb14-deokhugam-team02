@@ -22,6 +22,7 @@ OCR 기반 ISBN 인식과 외부 도서 API 연동으로 도서 등록 과정을
 |----------|------------------------------------------------------------------------------------|
 | 📅 개발 기간 | 2026.09.29 ~ 2026.11.06                                                            |
 | 🌐 배포 주소 | [덕후감 서비스 바로가기](http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/#/) |
+| 📖 스웨거 문서 | [Swagger UI 바로가기](http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/swagger-ui/index.html#/) |
 
 ## 🛠 기술 스택
 
@@ -195,6 +196,106 @@ OCR 기반 ISBN 인식과 외부 도서 API 연동으로 도서 등록 과정을
 
 </details>
 
+### 🏗 공통 · 인프라
+
+**설계 · 개발 환경** — 담당자 [김양현](https://github.com/yyy2724)
+
+- 헥사고날 패키지 설계, 중앙 예외 처리
+- 프로젝트 초기 세팅 (로그 파이프라인 · Docker · 코드 스타일)
+- 개발 인프라 구성: CI 빌드 · 테스트, `main` 브랜치 가드, 커밋 · PR 규칙, Claude 리뷰 워크플로
+
+**AWS 인프라 · 운영** — 담당자 [이은솔](https://github.com/EUNSOLY)
+
+- AWS 인프라 구성, CD 구축 (**무중단 자동 배포**)
+- 로그 S3 정기 적재 🚀, MDC 로깅 · 요청자 식별
+- 이미지 스토리지 (로컬 / S3), 환경별 프로필 · `.env` 분리
+- 코드 품질: Checkstyle · Git Hook · JaCoCo · Codecov
+
+## ⚙️ 핵심 기술
+
+### 📅 기간별 랭킹 스냅샷 · Spring Batch
+
+- 인기 도서 · 인기 리뷰 · 파워 유저를 **일간 · 주간 · 월간 · 역대**(`PeriodType`)로 집계해 **스냅샷 테이블**에 저장하고, 조회 API 는 집계 없이 최신 스냅샷만 읽습니다.
+- `dailyRankingJob` 이 인기 도서 → 인기 리뷰 → 인기 리뷰 알림 → 파워 유저 Step 을 순서대로 실행하고, `BatchScheduler` 가 매일 KST 00:00 에 시작합니다.
+- 집계 하나가 실패해도 나머지는 계속 수행하고(`runSafely`), 전용 스레드 풀로 여러 스케줄을 동시에 돌립니다.
+- `(period, snapshot_date, rank)` 등 유니크 제약으로 같은 날짜 · 기간의 순위 중복을 막습니다.
+
+| 랭킹    | 점수 산정                                    |
+|-------|------------------------------------------|
+| 인기 도서 | 리뷰 수 × 0.4 + 평점 × 0.6                    |
+| 인기 리뷰 | 댓글 수 × 0.7 + 좋아요 수 × 0.3                 |
+| 파워 유저 | 리뷰 점수 합 × 0.5 + 좋아요 수 × 0.2 + 댓글 수 × 0.3 |
+
+### 🔍 OCR 기반 ISBN 인식
+
+```
+책 표지 · 바코드 이미지 ─▶ OCR.space ─▶ ISBN 추출 ─▶ 카카오 책 API ─▶ 도서 등록
+```
+
+- 업로드한 이미지에서 OCR 로 ISBN 을 인식하고, `IsbnValidator` 로 형식 · 체크섬을 검증한 뒤 도서를 등록합니다.
+- 인식에 실패하면 전용 에러 코드(`BOOK_OCR_FAILED`)로 응답합니다.
+
+### 🌐 외부 API 연동
+
+- **OCR.space** 로 이미지에서 ISBN 을 인식하고, 인식한 ISBN 으로 **카카오 책 검색 API** 를 호출해 도서 정보를 조회합니다. (`RestClient`)
+- 호출 코드는 `port.out` 인터페이스(`BookSearchPort`, `OcrClient`) 뒤에 두어, 서비스 로직은 외부 제공자를 모르고 교체해도 그대로 유지됩니다.
+- 표지 썸네일은 내려받은 뒤 스토리지에 저장하고, 다운로드 시 리다이렉트는 따라가지 않도록 제한합니다.
+
+### 🔐 비밀번호 암호화
+
+- `spring-security-crypto` 의 **BCrypt** 로 비밀번호를 단방향 해시해 저장하고, 로그인 때는 해시를 비교합니다.
+- `PasswordHasher` 포트와 `BCryptPasswordHasher` 어댑터로 분리해, 해시 방식을 바꿔도 사용자 로직은 영향을 받지 않습니다.
+
+### 🧭 커서 기반 페이지네이션 (QueryDSL)
+
+- 도서 · 댓글 · 알림 · 랭킹 목록을 **커서 방식**으로 제공해, 데이터가 쌓여도 OFFSET 비용이 늘지 않습니다.
+- 키워드 검색 · 필터 · 정렬 같은 동적 조건은 `*RepositoryCustom` + QueryDSL 로 구현했습니다.
+- 목록 조회마다 반복되는 "다음 페이지 판단 · 응답 변환" 코드를 공통 메서드 두 개로 모았습니다.
+
+```
+QueryDSL (limit + 1 조회) ─▶ SliceUtils.toSlice() ─▶ CursorPageResponse.of() ─▶ 응답
+```
+
+| 단계                        | 역할                                                                                                      |
+|---------------------------|---------------------------------------------------------------------------------------------------------|
+| QueryDSL 조회               | 한 페이지 크기보다 **1개 더**(`limit + 1`) 가져옵니다.                                                                 |
+| `SliceUtils.toSlice()`    | 결과가 `limit` 보다 많으면 다음 페이지가 있다고 보고(`hasNext`), 확인용으로 더 가져온 1개를 잘라낸 뒤 `Slice` 로 변환합니다.                    |
+| `CursorPageResponse.of()` | `Slice` 를 응답 형식(`content` · `nextCursor` · `nextAfter` · `size` · `totalElements` · `hasNext`)으로 변환합니다. |
+
+- `CursorPageResponse.of()` 는 다음 페이지가 있을 때만 **마지막 항목**에서 `nextCursor` · `nextAfter` 를 꺼내고, 없으면 둘 다 `null` 입니다.
+- 제네릭 `T` 는 어떤 필드가 있는지 알 수 없으므로, 커서 값을 꺼내는 방법을 람다(`cursorExtractor`, `afterExtractor`)로 넘겨받습니다. 덕분에 `NotificationDto`,
+  `ReviewDto` 등 어떤 DTO 에도 같은 변환 메서드를 씁니다.
+
+### ⚡ 동시성 제어
+
+- 리뷰 좋아요 수와 도서의 리뷰 수 · 평점 집계를 **DB 에서 원자적으로 갱신**(`@Modifying` UPDATE 쿼리)해, 동시 요청에서도 값이 틀어지지 않도록 합니다.
+- 사용자는 이메일 · 닉네임 유니크 제약을 두고, 동시 가입으로 제약이 깨지면 **409** 로 변환합니다.
+
+### 🗑 논리 삭제 · 물리 삭제 · 연쇄 삭제
+
+- 사용자 · 도서 · 리뷰 · 댓글은 `is_deleted` 로 **논리 삭제**를 기본으로 하고, 물리 삭제 API 를 별도로 제공합니다.
+- 물리 삭제 시 `@OnDelete` 로 연관 데이터(리뷰 · 좋아요 · 댓글 · 알림 등)를 **DB 에서 연쇄 삭제**해 고아 데이터를 남기지 않습니다. (도서 등록자는 `SET NULL`)
+- 사용자는 논리 삭제 후 1일이 지나면 스케줄러가 물리 삭제합니다.
+
+### 🖼 이미지 스토리지 전환
+
+- `BookImageStorage` 포트 하나에 `AwsS3Storage`(S3 Presigned URL) 와 `LocalStorage` 구현체를 두고, `STORAGE_TYPE=local | s3` 설정만으로
+  전환합니다.
+- 로컬 개발에서는 AWS 계정 없이도 이미지 업로드를 테스트할 수 있습니다.
+
+### 🧯 통일된 예외 응답
+
+- `ErrorCode` · `DeokhugamException` 을 기반으로 도메인마다 `*ErrorCode` · `*Exception` 을 두고, `GlobalExceptionController` 가 한 형식(
+  `ErrorResponse`)으로 응답합니다.
+
+### 📜 요청자 식별 · MDC 로깅 · ELK
+
+- `Deokhugam-Request-User-ID` 헤더를 `MdcLoggingInterceptor` 가 읽어 `UserContextHolder` 에 담고, 컨트롤러에서는 `@RequestUserId` 로
+  주입받습니다. (요청 종료 시 정리해 스레드 오염 방지)
+- `requestedIp` · `requestedUserId` · `requestMethod` · `requestUrl` 을 MDC 에 담아 Logback → Logstash → Elasticsearch →
+  Kibana 로 수집 · 조회합니다.
+- `logback-spring.xml` 의 `LOG_PATTERN` 과 `logstash.conf` 의 grok 패턴은 **짝**입니다. 한쪽을 바꾸면 반드시 둘 다 수정하세요.
+
 ## 🗃 ERD
 
 모든 테이블은 `BaseEntity` 의 `id(UUID)`, `created_at`, `updated_at` 을 공통으로 가집니다.
@@ -254,9 +355,74 @@ src
 
 <p align="center"><img src="docs/readme/images/package-structure2.png" alt="패키지 구조" width="100%"/></p>
 
-## ☁️ 배포 구조
+## ☁️ 인프라 구조
 
-<p align="center"><img src="docs/readme/images/deploy-architecture.png" alt="배포 구조" width="90%"/></p>
+#### 🚀 배포 흐름 (CI/CD)
+
+```mermaid
+%%{init: {"theme":"base","flowchart":{"curve":"basis","nodeSpacing":28,"rankSpacing":48,"padding":14,"wrappingWidth":400},"themeVariables":{"fontFamily":"-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif","fontSize":"15px","lineColor":"#94A3B8","textColor":"#334155","edgeLabelBackground":"#FFFFFF"}}}%%
+flowchart TB
+    gh["🐙 GitHub<br/>main 머지"]
+    gha["⚙️ GitHub Actions<br/>빌드 · 배포"]
+    ecr["📦 Amazon ECR<br/>Docker 이미지"]
+    app["🌱 Amazon ECS Fargate<br/>덕후감 앱"]
+    rds[("🐘 RDS<br/>PostgreSQL")]
+    s3[("🪣 Amazon S3<br/>도서 이미지 · 로그")]
+    elk["📊 ELK<br/>Logstash · Elasticsearch · Kibana"]
+    gh --> gha -- " OIDC로 AWS 인증 " --> ecr -- " 배포 " --> app
+    app --> rds
+    app --> s3
+    app -.-> elk
+    classDef app fill: #ECFDF5, stroke: #10B981, stroke-width: 2.5px, color: #064E3B
+    classDef db fill: #EFF6FF, stroke: #3B82F6, stroke-width: 2px, color: #1E3A8A
+    classDef ops fill: #F8FAFC, stroke: #64748B, stroke-width: 1.5px, color: #1E293B
+    classDef mon fill: #FFF7ED, stroke: #F97316, stroke-width: 2px, color: #7C2D12
+    classDef store fill: #F0FDFA, stroke: #14B8A6, stroke-width: 2px, color: #134E4A
+    class gh ops
+    class gha ops
+    class ecr ops
+    class app app
+    class rds db
+    class s3 store
+    class elk mon
+```
+
+#### 🌐 서비스 흐름 (사용자 요청)
+
+```mermaid
+%%{init: {"theme":"base","flowchart":{"curve":"basis","nodeSpacing":28,"rankSpacing":48,"padding":14,"wrappingWidth":400},"themeVariables":{"fontFamily":"-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif","fontSize":"15px","lineColor":"#94A3B8","textColor":"#334155","edgeLabelBackground":"#FFFFFF"}}}%%
+flowchart TB
+    user(["👥 사용자"])
+    alb["⚖️ ALB<br/>로드 밸런서"]
+    app["🌱 Amazon ECS Fargate<br/>덕후감 앱"]
+    rds[("🐘 RDS<br/>PostgreSQL")]
+    s3[("🪣 Amazon S3<br/>도서 이미지")]
+    ext["🔌 외부 API<br/>카카오 책 검색 · OCR.space"]
+    user -- " HTTP 80 " --> alb --> app
+    app --> rds
+    app --> s3
+    app -. " 도서 · OCR 요청 " .-> ext
+    classDef client fill: #F8FAFC, stroke: #94A3B8, stroke-width: 1.5px, color: #0F172A
+    classDef net fill: #F5F3FF, stroke: #8B5CF6, stroke-width: 2px, color: #4C1D95
+    classDef app fill: #ECFDF5, stroke: #10B981, stroke-width: 2.5px, color: #064E3B
+    classDef db fill: #EFF6FF, stroke: #3B82F6, stroke-width: 2px, color: #1E3A8A
+    classDef store fill: #F0FDFA, stroke: #14B8A6, stroke-width: 2px, color: #134E4A
+    classDef ops fill: #F8FAFC, stroke: #64748B, stroke-width: 1.5px, color: #1E293B
+    class user client
+    class alb net
+    class app app
+    class rds db
+    class s3 store
+    class ext ops
+```
+
+<details>
+<summary>[자세히 보기]</summary>
+<br>
+
+<p align="center"><img src="docs/readme/images/deploy-architecture.png" alt="배포 구조 상세" width="90%"/></p>
+
+</details>
 
 ## 🚀 시작하기
 
@@ -264,8 +430,6 @@ src
 
 - JDK 17
 - Docker Desktop (PostgreSQL 이 compose 로 자동 기동되며, 테스트에도 필요)
-
-Gradle 은 저장소에 포함된 Wrapper 를 사용합니다.
 
 ### 2. 저장소 받기
 
@@ -276,11 +440,18 @@ cd sb14-deokhugam-team02
 
 ### 3. 환경변수 설정
 
-[.env.example](.env.example) 을 복사한 뒤 값을 채웁니다. `.env` 는 커밋하지 않습니다. 카카오·OCR.space 키가 없으면 도서 등록과 OCR 기능을 사용할 수 없습니다.
+[.env.example](.env.example) 을 `.env.local` 로 복사한 뒤 값을 채웁니다. 카카오·OCR.space 키가 없으면 도서 등록과 OCR 기능을 사용할 수 없습니다.
 
 ```bash
-cp .env.example .env
+cp .env.example .env.local
 ```
+
+| 환경 | 파일           | 비고                                    |
+|----|--------------|---------------------------------------|
+| 로컬 | `.env.local` | 위 예시대로 직접 작성 (기본 프로필)                 |
+| 운영 | `.env.prod`  | 🔒 **비공개** (저장소에 포함하지 않으며 팀 내부에서만 관리) |
+
+`.env.local` · `.env.prod` 는 커밋하지 않습니다.
 
 ```properties
 POSTGRES_DB=deokhugam
@@ -311,26 +482,24 @@ OCR_SPACE_API_KEY=
 | `AWS_S3_PRESIGNED_URL_EXPIRATION`                                       | Presigned URL 만료(초)                   |
 | `OCR_SPACE_API_KEY`                                                     | OCR.space API 키 (ISBN 이미지 인식에 필요)     |
 
-> 비밀번호·키는 `.env` 로만 관리하며 코드·yml 에 하드코딩하지 않습니다.
-
 ### 4. 실행
 
 ```bash
 ./gradlew bootRun
 ```
 
+활성 프로필을 따로 지정하지 않으면 `local` 이 기본값이라 위 명령만으로 로컬 환경(`.env.local`)으로 실행되고, PostgreSQL 은 Docker compose 로 자동 기동됩니다.
+
 | 접속 대상      | 주소                                                                                         |
 |------------|--------------------------------------------------------------------------------------------|
 | 웹 화면       | [http://localhost:8080/](http://localhost:8080/)                                           |
 | Swagger UI | [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html) |
 
-앱과 ELK 를 함께 띄우려면 다음 명령을 사용합니다.
+앱과 ELK 를 함께 띄우려면 다음 명령을 사용합니다. compose 는 기본으로 `.env` 만 읽으므로 `--env-file` 을 직접 지정해야 합니다.
 
 ```bash
-docker compose -f docker-compose-logging-pipeline.yml --profile full up -d --build
+docker compose -f docker-compose-logging-pipeline.yml --env-file .env.local --profile full up -d --build
 ```
-
-현재 JPA 설정은 `ddl-auto: create` 이며, 애플리케이션을 실행할 때마다 테이블을 새로 만듭니다. 운영 환경에서는 데이터가 사라지므로 `validate` 또는 `none` 으로 바꿔야 합니다.
 
 ### 5. 빌드와 검사
 
@@ -345,103 +514,25 @@ docker compose -f docker-compose-logging-pipeline.yml --profile full up -d --bui
 ./gradlew checkstyleMain checkstyleTest
 ```
 
-## ⚙️ 주요 구현
+## 📏 팀 개발 규칙
 
-### 헥사고날 아키텍처 (포트 & 어댑터)
+### 🎨 코드 스타일
 
-- 도메인마다 `adapter` / `application.port` / `domain` 으로 나누고, 의존성은 항상 **바깥 → 안쪽** 으로만 향합니다.
-- 서비스는 `port.out` 인터페이스(`*RepositoryPort`, `BookImageStorage`, `PasswordHasher`)만 알고, 구현체는 `adapter.out` 이 제공합니다. (의존성
-  역전)
-- 덕분에 저장소(S3 ↔ 로컬)나 해시 방식을 바꿔도 비즈니스 로직은 그대로 유지됩니다.
+에디터 → 커밋 → PR 세 단계에서 자동으로 맞추고 검사합니다.
 
-### 커서 기반 페이지네이션 (QueryDSL)
+| 단계  | 도구                     | 자동화 내용                                                                                            |
+|-----|------------------------|---------------------------------------------------------------------------------------------------|
+| 에디터 | `.editorconfig`        | UTF-8, LF, 파일 끝 개행, Java·Gradle 4칸 / yml 2칸 들여쓰기를 에디터가 자동 적용                                      |
+| 에디터 | IntelliJ 포매터           | `rule-config/intellij-formatter.xml` 을 가져와 통일 ([가이드](docs/code-style/INTELLIJ_SETUP_GUIDE.md))    |
+| 빌드  | Checkstyle 12.3.0      | [네이버 핵데이 Java 컨벤션](https://naver.github.io/hackday-conventions-java) 기반, 경고 0개(`maxWarnings = 0`) |
+| 커밋  | `.githooks/pre-commit` | 커밋 직전에 Checkstyle 을 실행하고, 위반이 있으면 **커밋을 차단**                                                      |
 
-- 도서 · 댓글 · 알림 · 대시보드 목록 조회를 **커서 방식** 으로 제공합니다. 데이터가 쌓여도 OFFSET 비용이 늘지 않습니다.
-- `limit + 1` 개를 조회해 다음 페이지 유무를 판단하고(`SliceUtils`), `CursorPageResponse` 가 `nextCursor` · `nextAfter` · `hasNext` 를 공통
-  형식으로 응답합니다.
-- 복잡한 동적 검색 · 정렬은 `*RepositoryCustom` + QueryDSL 로 구현했습니다.
+- Gradle 동기화 시 `build.gradle` 이 git 훅 경로를 `.githooks` 로 자동 설정(`core.hooksPath`)하므로 팀원이 별도로 설치할 명령은 없습니다.
+- 위반 리포트는 `build/reports/checkstyle/` 에 생성됩니다.
 
-### 기간별 인기 랭킹 스냅샷 배치
+> 실시간 코드 스타일 체크를 위해 가이드에 맞춰 에디터 설정 진행 (필수는 아님)
 
-| 랭킹    | 점수 산정                                    |
-|-------|------------------------------------------|
-| 인기 도서 | 리뷰 수 × 0.4 + 평점 × 0.6                    |
-| 인기 리뷰 | 댓글 수 × 0.7 + 좋아요 수 × 0.3                 |
-| 파워 유저 | 리뷰 점수 합 × 0.5 + 좋아요 수 × 0.2 + 댓글 수 × 0.3 |
-
-- `PeriodType`(일간 · 주간 · 월간 · 역대)별로 집계 결과를 **스냅샷 테이블** 에 저장하고, 조회 API 는 최신 스냅샷을 읽어 응답합니다.
-- `(period, snapshot_date, rank)` 등에 유니크 제약을 두어 같은 날짜 · 기간에 순위가 중복되지 않도록 보장합니다.
-- 매일 KST 00:00 에 `BatchScheduler` 가 인기 도서 · 인기 리뷰를 집계하며, 한 집계가 실패해도 다른 집계는 계속 수행합니다(`runSafely`).
-- 배치 전용 스레드 풀(`deokhugam-batch-`, 3개)과 공통 에러 핸들러로 여러 배치를 동시에 돌리고 예외를 한곳에서 로깅합니다.
-
-### 알림 자동 생성 · 정리 스케줄러
-
-- 매일 KST 01:00 에 인기 리뷰 알림을 생성합니다. 발송 주기는 `PeriodType.isNotifyDay` 로 판단합니다. (일간: 매일 / 주간: 월요일 / 월간: 매월 1일 / 역대: 발송 안 함)
-- 읽은 알림은 매일 KST 00:00 에 자동 정리합니다.
-
-### 논리 삭제 / 물리 삭제 분리
-
-- 사용자 · 도서 · 리뷰 · 댓글은 `is_deleted` 로 **논리 삭제** 를 기본으로 하고, 리뷰 · 댓글은 `/hard` 엔드포인트로 **물리 삭제** 를 제공합니다.
-- 물리 삭제 시 연관 데이터(좋아요 · 댓글 · 알림 등)를 함께 정리해 고아 데이터가 남지 않도록 합니다.
-
-### 도서 이미지 스토리지 전환 구조
-
-- `BookImageStorage` 포트 하나에 `AwsS3Storage`(S3 Presigned URL) 와 `LocalStorage` 두 구현체를 두고, `STORAGE_TYPE=local | s3` 설정만으로
-  전환합니다.
-- 로컬 개발에서는 AWS 계정 없이도 이미지 업로드를 테스트할 수 있습니다.
-
-### ISBN 검증 · 도서 중복 방지
-
-- `IsbnValidator` 로 ISBN 형식을 검증하고, ISBN 중복 등록과 ISBN 수정을 막아 도서 식별의 일관성을 유지합니다.
-- 이미지에서 ISBN 을 인식하지 못한 경우를 위한 전용 에러 코드(`BOOK_OCR_FAILED`)가 정의되어 있습니다.
-
-### OCR 기반 ISBN 인식 · 도서 등록 흐름
-
-```
-책 표지 · 바코드 이미지 ─▶ POST /api/books/isbn/ocr (OCR.space) ─▶ ISBN 추출
-                         ─▶ GET /api/books/info (카카오 책 API) ─▶ POST /api/books 로 도서 등록
-```
-
-- `OcrClient` 포트의 구현체(`OcrSpaceClient`)가 OCR.space API 를 호출하고, 서비스는 포트만 알기 때문에 OCR 제공자를 교체해도 로직은 유지됩니다.
-- 인식한 ISBN 은 `IsbnValidator` 로 검증한 뒤 카카오 책 API 로 도서 정보를 조회하고, 표지 이미지는 스토리지(`local` / `s3`)에 저장합니다.
-
-### 통일된 예외 응답
-
-- `ErrorCode` · `DeokhugamException` 을 기반으로 도메인마다 `*ErrorCode` · `*Exception` 을 두고, `GlobalExceptionController` 에서 한 형식(
-  `ErrorResponse`)으로 응답합니다.
-
-### 요청자 식별 · MDC 로깅 · ELK 파이프라인
-
-- `Deokhugam-Request-User-ID` 헤더를 `MdcLoggingInterceptor` 가 읽어 `UserContextHolder` 에 저장하고, 컨트롤러에서는 `@RequestUserId` 로
-  주입받습니다. (스레드 오염 방지를 위해 요청 종료 시 정리)
-- `requestedIp` · `requestedUserId` · `requestMethod` · `requestUrl` 을 MDC 에 담아 Logback → Logstash → Elasticsearch →
-  Kibana 로 수집 · 조회합니다.
-
-### 코드 품질 자동화
-
-- 에디터(`.editorconfig`) → 커밋(`pre-commit` 훅 Checkstyle) → PR(GitHub Actions) 3단계로 스타일을 검사합니다. (`maxWarnings = 0`)
-- JaCoCo 라인 커버리지 80% 를 기준으로 하고, 커버리지 결과를 PR 코멘트로 남깁니다.
-- 커밋 메시지 · 이슈 연결 · PR 대상 브랜치를 워크플로우로 검사하고, PR 이 열리면 Claude 가 한국어로 자동 리뷰합니다.
-
-## 📏 개발 규칙
-
-### 코드 스타일
-
-에디터 → 커밋 → CI 세 단계에서 자동으로 맞추고 검사합니다.
-
-| 단계  | 도구                     | 내용                                                                                             |
-|-----|------------------------|------------------------------------------------------------------------------------------------|
-| 에디터 | `.editorconfig`        | UTF-8, LF, 파일 끝 개행, Java·Gradle 4칸 / yml 2칸 들여쓰기                                               |
-| 에디터 | IntelliJ 포매터           | `rule-config/intellij-formatter.xml` 을 가져와 통일 ([가이드](docs/code-style/INTELLIJ_SETUP_GUIDE.md)) |
-| 빌드  | Checkstyle 12.3.0      | [네이버 핵데이 Java 컨벤션](https://naver.github.io/hackday-conventions-java) 기반, `maxWarnings = 0`     |
-| 커밋  | `.githooks/pre-commit` | 커밋 전 Checkstyle 실행, 위반 시 커밋 차단                                                                 |
-| 커밋  | `.githooks/commit-msg` | 커밋 메시지 `타입: 설명` 형식 검사                                                                          |
-| PR  | GitHub Actions         | `ci.yml` 에서 Checkstyle 재검사, `pr-convention.yml` 로 커밋 메시지 검사                                    |
-
-Gradle 동기화 시 `build.gradle` 이 git 훅 경로를 `.githooks` 로 자동 설정(`core.hooksPath`)하므로 별도 설치 명령은 없습니다. 위반 리포트는
-`build/reports/checkstyle/` 에 생성됩니다.
-
-### 커밋 메시지
+### 💬 커밋 메시지
 
 ```
 <타입>: <설명>
@@ -456,23 +547,35 @@ Gradle 동기화 시 `build.gradle` 이 git 훅 경로를 `.githooks` 로 자동
 | `docs`     | 문서      | `docs: README 작성`        |
 | `chore`    | 환경설정·빌드 | `chore: 의존성 정리`          |
 
-### 브랜치 전략과 CI/CD
+| 단계 | 도구                     | 자동화 내용                                                        |
+|----|------------------------|---------------------------------------------------------------|
+| 커밋 | `.githooks/commit-msg` | 커밋 메시지 첫 줄이 `타입: 설명` 형식이 아니면 **커밋을 차단** (Merge · Revert 는 통과) |
+| PR | `pr-convention.yml`    | `commit-lint` 가 PR 에 포함된 **모든 커밋** 메시지를 다시 검사                 |
+
+### 🌿 브랜치 전략
 
 ```
 작업 브랜치 ──PR──▶ develop ──PR──▶ main
 ```
 
-- `main` 은 `develop` 에서 온 PR 만 허용합니다. (`pr-target-guard`)
-- 이슈 템플릿 6종(feat/fix/refactor/test/docs/chore)과 PR 템플릿을 사용합니다.
-- PR 이 열리면 Claude 가 자동 리뷰합니다. (참고용) 재리뷰는 PR 코멘트에 `@claude` 를 남깁니다.
+| 브랜치       | 역할                                |
+|-----------|-----------------------------------|
+| `main`    | 운영 배포 브랜치. `develop` 에서 온 PR 만 허용 |
+| `develop` | 개발 통합 브랜치. 작업 브랜치를 PR 로 합침        |
+| 작업 브랜치    | 기능 · 수정 단위로 생성하고 `develop` 으로 PR  |
 
-| 워크플로우                 | 트리거                                    | 역할                                               |
-|-----------------------|----------------------------------------|--------------------------------------------------|
-| `ci.yml`              | PR(`develop`, `main`), push(`develop`) | Gradle 빌드 + 테스트 + Checkstyle, JaCoCo 커버리지 PR 코멘트 |
-| `pr-convention.yml`   | PR 생성·수정                               | 커밋 메시지 규칙, 이슈 연결 검사                              |
-| `pr-target-guard.yml` | PR(`main`)                             | `main` 대상 PR 의 출발 브랜치 검사                         |
-| `claude-review.yml`   | PR 오픈(`develop`)                       | Claude 자동 코드 리뷰 (참고용, 한국어)                       |
-| `claude.yml`          | PR 코멘트 `@claude`                       | 재리뷰 · 요청 처리                                      |
+- 작업 브랜치 이름은 `타입/이슈번호-설명` 으로 짓습니다. (예: `feat/12-review-api`)
+- 이슈 템플릿 6종(feat/fix/refactor/test/docs/chore)과 PR 템플릿을 사용합니다.
+- 팀원 리뷰 후 2명 이상 승인 완료 시 머지가 가능합니다. Claude 자동 리뷰는 참고용이며 머지 필수 조건은 아닙니다.
+
+| 단계 | 자동화 내용                                                                   |
+|----|--------------------------------------------------------------------------|
+| PR | 브랜치 이름에서 이슈 번호를 찾아 PR 본문에 `Closes #번호` 를 **자동 연결** (`pr-convention.yml`) |
+| PR | `main` 대상 PR 의 출발 브랜치가 `develop` 이 아니면 **머지 차단** (`pr-target-guard.yml`) |
+
+### 🔄 CI/CD
+
+PR 이 열리면 자동으로 검사하고, `main` 에 머지되면 AWS 로 자동 배포합니다.
 
 ```mermaid
 flowchart LR
@@ -485,24 +588,17 @@ D --> E["develop<br/>머지 후 ci 재검증"]
 E --> F[PR → main]
 F --> G["자동 검사<br/>ci · main-only-from-develop"]
 G --> H[main 머지]
-H -.-> I["CD (AWS 배포)<br/>준비 중"]
+H --> I["CD (deploy.yml)<br/>ECR push → ECS 배포"]
 ```
 
-> ⚠️ CD(배포)는 아직 구성 중이라 현재 워크플로우에는 포함되어 있지 않습니다.
-
-### 로깅 파이프라인
-
-```
-Spring App (Logback, MDC) ─▶ Logstash (grok) ─▶ Elasticsearch ─▶ Kibana
-```
-
-- `logback-spring.xml` 의 `LOG_PATTERN` 과 `logstash.conf` 의 grok 패턴은 **짝**입니다. 한쪽을 바꾸면 반드시 둘 다 수정하세요.
-- MDC 키: `requestedIp`, `requestedUserId`, `requestMethod`, `requestUrl`
-
-### 기타 규칙
-
-- 테스트 커버리지: 라인 80% 이상 목표 ([JaCoCo 가이드](docs/test/JECOCO_GUIDE.md))
-- `open-in-view: false` — 지연 로딩은 서비스 계층 트랜잭션 안에서 처리
+| 구분 | 워크플로우                 | 트리거                                    | 자동화 내용                                                        |
+|----|-----------------------|----------------------------------------|---------------------------------------------------------------|
+| CI | `ci.yml`              | PR(`develop`, `main`), push(`develop`) | Gradle 빌드 · 테스트 · Checkstyle, JaCoCo 커버리지 PR 코멘트, Codecov 업로드 |
+| CI | `pr-convention.yml`   | PR 생성 · 수정                             | 커밋 메시지 검사(`commit-lint`), 이슈 연결(`issue-link`)                 |
+| CI | `pr-target-guard.yml` | PR(`main`)                             | 출발 브랜치가 `develop` 인지 검사                                       |
+| CI | `claude-review.yml`   | PR 오픈(`develop`)                       | Claude 자동 코드 리뷰 (한국어, 참고용)                                    |
+| CI | `claude.yml`          | PR 코멘트 `@claude`                       | 재리뷰 · 요청 처리                                                   |
+| CD | `deploy.yml`          | push(`main`)                           | OIDC 인증 → 이미지 빌드 · ECR push → ECS 서비스 배포                      |
 
 ## 🔗 관련 문서
 
