@@ -20,26 +20,26 @@ OCR 기반 ISBN 인식과 외부 도서 API 연동으로 도서 등록 과정을
 
 | 구분        | 내용                                                                                                         |
 |-----------|------------------------------------------------------------------------------------------------------------|
-| 📅 개발 기간  | 2026.09.29 ~ 2026.11.06                                                                                    |
-| 🌐 배포 주소  | [덕후감 서비스 바로가기](http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/#/)                         |
-| 📖 스웨거 문서 | [Swagger UI 바로가기](http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/swagger-ui/index.html#/) |
+| 📅&nbsp;개발&nbsp;기간  | 2026.09.29 ~ 2026.11.06                                                                                    |
+| 🌐&nbsp;배포&nbsp;주소  | [덕후감 서비스 바로가기](http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/#/)                         |
+| 📖&nbsp;스웨거&nbsp;문서 | [Swagger UI 바로가기](http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/swagger-ui/index.html#/) |
 
 ## 🛠 기술 스택
 
 | 구분            | 기술                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 |:--------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 💻 언어 · 빌드    | ![Java 17](https://img.shields.io/badge/Java_17-ED8B00?style=flat-square&logo=openjdk&logoColor=white) ![Gradle 9.7.1](https://img.shields.io/badge/Gradle_9.7.1-02303A?style=flat-square&logo=gradle&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| 🌱 프레임워크      | ![Spring Boot 4.1.1](https://img.shields.io/badge/Spring_Boot_4.1.1-6DB33F?style=flat-square&logo=springboot&logoColor=white) ![Spring Web MVC](https://img.shields.io/badge/Spring_Web_MVC-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Validation](https://img.shields.io/badge/Validation-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Spring Batch](https://img.shields.io/badge/Spring_Batch-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Spring Scheduler](https://img.shields.io/badge/Spring_Scheduler-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Actuator](https://img.shields.io/badge/Actuator-6DB33F?style=flat-square&logo=spring&logoColor=white) |
-| 🗄 데이터        | ![PostgreSQL 15](https://img.shields.io/badge/PostgreSQL_15-4169E1?style=flat-square&logo=postgresql&logoColor=white) ![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=flat-square&logo=spring&logoColor=white) ![QueryDSL 7.0](https://img.shields.io/badge/QueryDSL_7.0-3B6FD9?style=flat-square)                                                                                                                                                                                                                                                                                                                                                                               |
-| 🔌 외부 연동      | ![Kakao Book API](https://img.shields.io/badge/Kakao_Book_API-FFCD00?style=flat-square&logo=kakaotalk&logoColor=black) ![OCR.space](https://img.shields.io/badge/OCR.space-0057B8?style=flat-square) ![AWS S3 SDK v2](https://img.shields.io/badge/AWS_S3_SDK_v2-569A31?style=flat-square&logo=amazons3&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                      |
-| 🧰 라이브러리      | ![MapStruct 1.6.3](https://img.shields.io/badge/MapStruct_1.6.3-12A594?style=flat-square) ![Lombok](https://img.shields.io/badge/Lombok-CF3030?style=flat-square) ![spring-security-crypto](https://img.shields.io/badge/spring--security--crypto-6DB33F?style=flat-square&logo=springsecurity&logoColor=white) ![springdoc-openapi 3.1.1](https://img.shields.io/badge/springdoc--openapi_3.1.1-85EA2D?style=flat-square&logo=swagger&logoColor=black)                                                                                                                                                                                                                                                       |
-| 🧪 테스트 코드     | ![JUnit 5](https://img.shields.io/badge/JUnit_5-25A162?style=flat-square&logo=junit5&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| 📈 커버리지 관리    | ![JaCoCo 0.8.13](https://img.shields.io/badge/JaCoCo_0.8.13-4C9A2A?style=flat-square) ![Codecov](https://img.shields.io/badge/Codecov-F01F7A?style=flat-square&logo=codecov&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| 🧹 코드 품질 · 리뷰 | ![Checkstyle 12.3.0](https://img.shields.io/badge/Checkstyle_12.3.0-2C8EBB?style=flat-square) ![Claude Code Action](https://img.shields.io/badge/Claude_Code_Action-D97757?style=flat-square&logo=anthropic&logoColor=white) ![Git Hooks](https://img.shields.io/badge/Git_Hooks-F05032?style=flat-square&logo=git&logoColor=white) ![EditorConfig](https://img.shields.io/badge/EditorConfig-FEFEFE?style=flat-square&logo=editorconfig&logoColor=black)                                                                                                                                                                                                                                                     |
-| 📜 로깅         | ![Logback + MDC](https://img.shields.io/badge/Logback_+_MDC-555555?style=flat-square) ![Elasticsearch](https://img.shields.io/badge/Elasticsearch-005571?style=flat-square&logo=elasticsearch&logoColor=white) ![Logstash](https://img.shields.io/badge/Logstash-005571?style=flat-square&logo=logstash&logoColor=white) ![Kibana](https://img.shields.io/badge/Kibana-005571?style=flat-square&logo=kibana&logoColor=white)                                                                                                                                                                                                                                                                                  |
-| ☁️ 인프라 · 배포   | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![docker-compose](https://img.shields.io/badge/docker--compose-2496ED?style=flat-square&logo=docker&logoColor=white) ![AWS ECS](https://img.shields.io/badge/AWS_ECS_Fargate-FF9900?style=flat-square&logo=amazonecs&logoColor=white) ![AWS ECR](https://img.shields.io/badge/AWS_ECR-FF9900?style=flat-square&logo=amazonwebservices&logoColor=white) ![AWS RDS](https://img.shields.io/badge/AWS_RDS-527FFF?style=flat-square&logo=amazonrds&logoColor=white)                                                                                                                                           |
-| ⚙️ CI/CD      | ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| 🤝 협업툴        | ![Git](https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white) ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-000000?style=flat-square&logo=notion&logoColor=white) ![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat-square&logo=discord&logoColor=white) ![ZEP 강의실](https://img.shields.io/badge/ZEP_강의실-7C3AED?style=flat-square)                                                                                                                                                                                                                           |
+| 💻&nbsp;언어&nbsp;·&nbsp;빌드    | ![Java 17](https://img.shields.io/badge/Java_17-ED8B00?style=flat-square&logo=openjdk&logoColor=white) ![Gradle 9.7.1](https://img.shields.io/badge/Gradle_9.7.1-02303A?style=flat-square&logo=gradle&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 🌱&nbsp;프레임워크      | ![Spring Boot 4.1.1](https://img.shields.io/badge/Spring_Boot_4.1.1-6DB33F?style=flat-square&logo=springboot&logoColor=white) ![Spring Web MVC](https://img.shields.io/badge/Spring_Web_MVC-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Validation](https://img.shields.io/badge/Validation-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Spring Batch](https://img.shields.io/badge/Spring_Batch-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Spring Scheduler](https://img.shields.io/badge/Spring_Scheduler-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Actuator](https://img.shields.io/badge/Actuator-6DB33F?style=flat-square&logo=spring&logoColor=white) |
+| 🗄&nbsp;데이터        | ![PostgreSQL 15](https://img.shields.io/badge/PostgreSQL_15-4169E1?style=flat-square&logo=postgresql&logoColor=white) ![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=flat-square&logo=spring&logoColor=white) ![QueryDSL 7.0](https://img.shields.io/badge/QueryDSL_7.0-3B6FD9?style=flat-square)                                                                                                                                                                                                                                                                                                                                                                               |
+| 🔌&nbsp;외부&nbsp;연동      | ![Kakao Book API](https://img.shields.io/badge/Kakao_Book_API-FFCD00?style=flat-square&logo=kakaotalk&logoColor=black) ![OCR.space](https://img.shields.io/badge/OCR.space-0057B8?style=flat-square) ![AWS S3 SDK v2](https://img.shields.io/badge/AWS_S3_SDK_v2-569A31?style=flat-square&logo=amazons3&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                      |
+| 🧰&nbsp;라이브러리      | ![MapStruct 1.6.3](https://img.shields.io/badge/MapStruct_1.6.3-12A594?style=flat-square) ![Lombok](https://img.shields.io/badge/Lombok-CF3030?style=flat-square) ![spring-security-crypto](https://img.shields.io/badge/spring--security--crypto-6DB33F?style=flat-square&logo=springsecurity&logoColor=white) ![springdoc-openapi 3.1.1](https://img.shields.io/badge/springdoc--openapi_3.1.1-85EA2D?style=flat-square&logo=swagger&logoColor=black)                                                                                                                                                                                                                                                       |
+| 🧪&nbsp;테스트&nbsp;코드     | ![JUnit 5](https://img.shields.io/badge/JUnit_5-25A162?style=flat-square&logo=junit5&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 📈&nbsp;커버리지&nbsp;관리    | ![JaCoCo 0.8.13](https://img.shields.io/badge/JaCoCo_0.8.13-4C9A2A?style=flat-square) ![Codecov](https://img.shields.io/badge/Codecov-F01F7A?style=flat-square&logo=codecov&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 🧹&nbsp;코드&nbsp;품질&nbsp;·&nbsp;리뷰 | ![Checkstyle 12.3.0](https://img.shields.io/badge/Checkstyle_12.3.0-2C8EBB?style=flat-square) ![Claude Code Action](https://img.shields.io/badge/Claude_Code_Action-D97757?style=flat-square&logo=anthropic&logoColor=white) ![Git Hooks](https://img.shields.io/badge/Git_Hooks-F05032?style=flat-square&logo=git&logoColor=white) ![EditorConfig](https://img.shields.io/badge/EditorConfig-FEFEFE?style=flat-square&logo=editorconfig&logoColor=black)                                                                                                                                                                                                                                                     |
+| 📜&nbsp;로깅         | ![Logback + MDC](https://img.shields.io/badge/Logback_+_MDC-555555?style=flat-square) ![Elasticsearch](https://img.shields.io/badge/Elasticsearch-005571?style=flat-square&logo=elasticsearch&logoColor=white) ![Logstash](https://img.shields.io/badge/Logstash-005571?style=flat-square&logo=logstash&logoColor=white) ![Kibana](https://img.shields.io/badge/Kibana-005571?style=flat-square&logo=kibana&logoColor=white)                                                                                                                                                                                                                                                                                  |
+| ☁️&nbsp;인프라&nbsp;·&nbsp;배포   | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![docker-compose](https://img.shields.io/badge/docker--compose-2496ED?style=flat-square&logo=docker&logoColor=white) ![AWS ECS](https://img.shields.io/badge/AWS_ECS_Fargate-FF9900?style=flat-square&logo=amazonecs&logoColor=white) ![AWS ECR](https://img.shields.io/badge/AWS_ECR-FF9900?style=flat-square&logo=amazonwebservices&logoColor=white) ![AWS RDS](https://img.shields.io/badge/AWS_RDS-527FFF?style=flat-square&logo=amazonrds&logoColor=white)                                                                                                                                           |
+| ⚙️&nbsp;CI/CD      | ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 🤝&nbsp;협업툴        | ![Git](https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white) ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-000000?style=flat-square&logo=notion&logoColor=white) ![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat-square&logo=discord&logoColor=white) ![ZEP 강의실](https://img.shields.io/badge/ZEP_강의실-7C3AED?style=flat-square)                                                                                                                                                                                                                           |
 
 ## 👥 팀원별 소개
 
@@ -220,11 +220,11 @@ OCR 기반 ISBN 인식과 외부 도서 API 연동으로 도서 등록 과정을
 - 집계 하나가 실패해도 나머지는 계속 수행하고(`runSafely`), 전용 스레드 풀로 여러 스케줄을 동시에 돌립니다.
 - `(period, snapshot_date, rank)` 등 유니크 제약으로 같은 날짜 · 기간의 순위 중복을 막습니다.
 
-| 랭킹    | 점수 산정                                    |
+| 랭킹    | 점수&nbsp;산정                                    |
 |-------|------------------------------------------|
-| 인기 도서 | 리뷰 수 × 0.4 + 평점 × 0.6                    |
-| 인기 리뷰 | 댓글 수 × 0.7 + 좋아요 수 × 0.3                 |
-| 파워 유저 | 리뷰 점수 합 × 0.5 + 좋아요 수 × 0.2 + 댓글 수 × 0.3 |
+| 인기&nbsp;도서 | 리뷰 수 × 0.4 + 평점 × 0.6                    |
+| 인기&nbsp;리뷰 | 댓글 수 × 0.7 + 좋아요 수 × 0.3                 |
+| 파워&nbsp;유저 | 리뷰 점수 합 × 0.5 + 좋아요 수 × 0.2 + 댓글 수 × 0.3 |
 
 ### 🔍 OCR 기반 ISBN 인식
 
@@ -258,7 +258,7 @@ QueryDSL (limit + 1 조회) ─▶ SliceUtils.toSlice() ─▶ CursorPageRespons
 
 | 단계                        | 역할                                                                                                      |
 |---------------------------|---------------------------------------------------------------------------------------------------------|
-| QueryDSL 조회               | 한 페이지 크기보다 **1개 더**(`limit + 1`) 가져옵니다.                                                                 |
+| QueryDSL&nbsp;조회               | 한 페이지 크기보다 **1개 더**(`limit + 1`) 가져옵니다.                                                                 |
 | `SliceUtils.toSlice()`    | 결과가 `limit` 보다 많으면 다음 페이지가 있다고 보고(`hasNext`), 확인용으로 더 가져온 1개를 잘라낸 뒤 `Slice` 로 변환합니다.                    |
 | `CursorPageResponse.of()` | `Slice` 를 응답 형식(`content` · `nextCursor` · `nextAfter` · `size` · `totalElements` · `hasNext`)으로 변환합니다. |
 
@@ -474,7 +474,7 @@ OCR_SPACE_API_KEY=
 
 | 변수                                                                      | 설명                                    |
 |-------------------------------------------------------------------------|---------------------------------------|
-| `POSTGRES_DB` `POSTGRES_USER` `POSTGRES_PASSWORD`                       | DB 접속 정보                              |
+| `POSTGRES_DB` `POSTGRES_USER` `POSTGRES_PASSWORD`                       | DB&nbsp;접속&nbsp;정보                              |
 | `KAKAO_REST_API_KEY`                                                    | 카카오 책 검색 API 키 (도서 등록에 필요)            |
 | `STORAGE_TYPE`                                                          | 이미지 저장소 `local` \| `s3` (기본값 `local`) |
 | `STORAGE_PATH`                                                          | 로컬 이미지 저장 경로 (기본값 `./uploads`)        |
@@ -490,10 +490,10 @@ OCR_SPACE_API_KEY=
 
 활성 프로필을 따로 지정하지 않으면 `local` 이 기본값이라 위 명령만으로 로컬 환경(`.env.local`)으로 실행되고, PostgreSQL 은 Docker compose 로 자동 기동됩니다.
 
-| 접속 대상      | 주소                                                                                         |
+| 접속&nbsp;대상      | 주소                                                                                         |
 |------------|--------------------------------------------------------------------------------------------|
-| 웹 화면       | [http://localhost:8080/](http://localhost:8080/)                                           |
-| Swagger UI | [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html) |
+| 웹&nbsp;화면       | [http://localhost:8080/](http://localhost:8080/)                                           |
+| Swagger&nbsp;UI | [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html) |
 
 앱과 ELK 를 함께 띄우려면 다음 명령을 사용합니다. compose 는 기본으로 `.env` 만 읽으므로 `--env-file` 을 직접 지정해야 합니다.
 
@@ -520,10 +520,10 @@ docker compose -f docker-compose-logging-pipeline.yml --env-file .env.local --pr
 
 에디터 → 커밋 → PR 세 단계에서 자동으로 맞추고 검사합니다.
 
-| 단계  | 도구                     | 자동화 내용                                                                                            |
+| 단계  | 도구                     | 자동화&nbsp;내용                                                                                            |
 |-----|------------------------|---------------------------------------------------------------------------------------------------|
 | 에디터 | `.editorconfig`        | UTF-8, LF, 파일 끝 개행, Java·Gradle 4칸 / yml 2칸 들여쓰기를 에디터가 자동 적용                                      |
-| 에디터 | IntelliJ 포매터           | `rule-config/intellij-formatter.xml` 을 가져와 통일 ([가이드](docs/code-style/INTELLIJ_SETUP_GUIDE.md))    |
+| 에디터 | IntelliJ&nbsp;포매터           | `rule-config/intellij-formatter.xml` 을 가져와 통일 ([가이드](docs/code-style/INTELLIJ_SETUP_GUIDE.md))    |
 | 빌드  | Checkstyle 12.3.0      | [네이버 핵데이 Java 컨벤션](https://naver.github.io/hackday-conventions-java) 기반, 경고 0개(`maxWarnings = 0`) |
 | 커밋  | `.githooks/pre-commit` | 커밋 직전에 Checkstyle 을 실행하고, 위반이 있으면 **커밋을 차단**                                                      |
 
@@ -540,17 +540,17 @@ docker compose -f docker-compose-logging-pipeline.yml --env-file .env.local --pr
 
 | 타입         | 용도      | 예시                       |
 |------------|---------|--------------------------|
-| `feat`     | 신규 기능   | `feat: 도서 목록 조회 기능 추가`   |
-| `fix`      | 버그 수정   | `fix: 리뷰 중복 작성 검증 오류 수정` |
+| `feat`     | 신규&nbsp;기능   | `feat: 도서 목록 조회 기능 추가`   |
+| `fix`      | 버그&nbsp;수정   | `fix: 리뷰 중복 작성 검증 오류 수정` |
 | `refactor` | 리팩토링    | `refactor: 랭킹 집계 로직 분리`  |
 | `test`     | 테스트     | `test: 댓글 목록 조회 테스트 추가`  |
 | `docs`     | 문서      | `docs: README 작성`        |
 | `chore`    | 환경설정·빌드 | `chore: 의존성 정리`          |
 
-| 단계 | 도구                     | 자동화 내용                                                        |
-|----|------------------------|---------------------------------------------------------------|
-| 커밋 | `.githooks/commit-msg` | 커밋 메시지 첫 줄이 `타입: 설명` 형식이 아니면 **커밋을 차단** (Merge · Revert 는 통과) |
-| PR | `pr-convention.yml`    | `commit-lint` 가 PR 에 포함된 **모든 커밋** 메시지를 다시 검사                 |
+**커밋 메시지 자동 검사**
+
+- 커밋 단계 — `.githooks/commit-msg` 가 커밋 메시지 첫 줄이 `타입: 설명` 형식이 아니면 **커밋을 차단**합니다. (Merge · Revert 는 통과)
+- PR 단계 — `pr-convention.yml` 의 `commit-lint` 가 PR 에 포함된 **모든 커밋** 메시지를 다시 검사합니다.
 
 ### 🌿 브랜치 전략
 
@@ -562,13 +562,13 @@ docker compose -f docker-compose-logging-pipeline.yml --env-file .env.local --pr
 |-----------|-----------------------------------|
 | `main`    | 운영 배포 브랜치. `develop` 에서 온 PR 만 허용 |
 | `develop` | 개발 통합 브랜치. 작업 브랜치를 PR 로 합침        |
-| 작업 브랜치    | 기능 · 수정 단위로 생성하고 `develop` 으로 PR  |
+| 작업&nbsp;브랜치    | 기능 · 수정 단위로 생성하고 `develop` 으로 PR  |
 
 - 작업 브랜치 이름은 `타입/이슈번호-설명` 으로 짓습니다. (예: `feat/12-review-api`)
 - 이슈 템플릿 6종(feat/fix/refactor/test/docs/chore)과 PR 템플릿을 사용합니다.
 - 팀원 리뷰 후 2명 이상 승인 완료 시 머지가 가능합니다. Claude 자동 리뷰는 참고용이며 머지 필수 조건은 아닙니다.
 
-| 단계 | 자동화 내용                                                                   |
+| 단계 | 자동화&nbsp;내용                                                                   |
 |----|--------------------------------------------------------------------------|
 | PR | 브랜치 이름에서 이슈 번호를 찾아 PR 본문에 `Closes #번호` 를 **자동 연결** (`pr-convention.yml`) |
 | PR | `main` 대상 PR 의 출발 브랜치가 `develop` 이 아니면 **머지 차단** (`pr-target-guard.yml`) |
@@ -591,13 +591,13 @@ G --> H[main 머지]
 H --> I["CD (deploy.yml)<br/>ECR push → ECS 배포"]
 ```
 
-| 구분 | 워크플로우                 | 트리거                                    | 자동화 내용                                                        |
+| 구분 | 워크플로우                 | 트리거                                    | 자동화&nbsp;내용                                                        |
 |----|-----------------------|----------------------------------------|---------------------------------------------------------------|
 | CI | `ci.yml`              | PR(`develop`, `main`), push(`develop`) | Gradle 빌드 · 테스트 · Checkstyle, JaCoCo 커버리지 PR 코멘트, Codecov 업로드 |
-| CI | `pr-convention.yml`   | PR 생성 · 수정                             | 커밋 메시지 검사(`commit-lint`), 이슈 연결(`issue-link`)                 |
+| CI | `pr-convention.yml`   | PR&nbsp;생성&nbsp;·&nbsp;수정                             | 커밋 메시지 검사(`commit-lint`), 이슈 연결(`issue-link`)                 |
 | CI | `pr-target-guard.yml` | PR(`main`)                             | 출발 브랜치가 `develop` 인지 검사                                       |
 | CI | `claude-review.yml`   | PR 오픈(`develop`)                       | Claude 자동 코드 리뷰 (한국어, 참고용)                                    |
-| CI | `claude.yml`          | PR 코멘트 `@claude`                       | 재리뷰 · 요청 처리                                                   |
+| CI | `claude.yml`          | PR 코멘트 `@claude`                       | 재리뷰&nbsp;·&nbsp;요청&nbsp;처리                                                   |
 | CD | `deploy.yml`          | push(`main`)                           | OIDC 인증 → 이미지 빌드 · ECR push → ECS 서비스 배포                      |
 
 ## 🔗 관련 문서
