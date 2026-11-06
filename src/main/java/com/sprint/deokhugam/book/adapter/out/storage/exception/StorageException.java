@@ -1,4 +1,4 @@
-package com.sprint.deokhugam.book.adapter.out.exception;
+package com.sprint.deokhugam.book.adapter.out.storage.exception;
 
 import com.sprint.deokhugam.common.exception.DeokhugamException;
 

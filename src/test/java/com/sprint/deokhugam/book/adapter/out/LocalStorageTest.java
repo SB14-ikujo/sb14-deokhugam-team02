@@ -10,9 +10,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import com.sprint.deokhugam.book.adapter.out.exception.StorageErrorCode;
-import com.sprint.deokhugam.book.adapter.out.exception.StorageException;
 import com.sprint.deokhugam.book.adapter.out.storage.LocalStorage;
+import com.sprint.deokhugam.book.adapter.out.storage.exception.StorageErrorCode;
+import com.sprint.deokhugam.book.adapter.out.storage.exception.StorageException;
 
 class LocalStorageTest {
 

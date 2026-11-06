@@ -21,7 +21,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 
-import com.sprint.deokhugam.book.adapter.out.exception.StorageException;
+import com.sprint.deokhugam.book.adapter.out.storage.exception.StorageException;
 
 @Slf4j
 @RestControllerAdvice

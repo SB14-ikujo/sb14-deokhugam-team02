@@ -19,8 +19,8 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
 import software.amazon.awssdk.services.s3.presigner.model.PresignedGetObjectRequest;
 
-import com.sprint.deokhugam.book.adapter.out.exception.StorageErrorCode;
-import com.sprint.deokhugam.book.adapter.out.exception.StorageException;
+import com.sprint.deokhugam.book.adapter.out.storage.exception.StorageErrorCode;
+import com.sprint.deokhugam.book.adapter.out.storage.exception.StorageException;
 import com.sprint.deokhugam.book.application.port.out.BookImageStorage;
 import com.sprint.deokhugam.common.config.AwsS3Properties;
 

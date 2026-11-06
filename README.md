@@ -199,70 +199,52 @@ OCR 기반 ISBN 인식과 외부 도서 API 연동으로 도서 등록 과정을
 
 모든 테이블은 `BaseEntity` 의 `id(UUID)`, `created_at`, `updated_at` 을 공통으로 가집니다.
 
-<p align="center"><img src="docs/readme/images/erd1.png" alt="ERD" width="90%"/></p>
+<p align="center"><img src="docs/readme/images/erd.png" alt="ERD" width="90%"/></p>
 
 - 사용자 · 도서 · 리뷰 · 댓글은 `is_deleted` 로 논리 삭제
 
-## 📁 파일 구조
-
-```
-sb14-deokhugam-team02/
-├── .githooks/               # pre-commit, commit-msg 훅
-├── .github/                 # 이슈·PR 템플릿, GitHub Actions 워크플로우
-├── docs/
-│   ├── code-style/          # Checkstyle, EditorConfig, IntelliJ 설정 가이드
-│   ├── images/              # README 이미지 (ERD, 패키지 구조, 팀원 등)
-│   ├── logging/             # 로깅 인터셉터 가이드
-│   └── test/                # JaCoCo 가이드
-├── rule-config/             # Checkstyle 규칙, IntelliJ 포매터
-├── src/
-│   ├── main/
-│   │   ├── java/com/sprint/deokhugam/   # 백엔드 소스
-│   │   └── resources/
-│   │       ├── application.yml          # DB, 스토리지, 스케줄 설정
-│   │       ├── logback-spring.xml       # 로그 패턴 (logstash.conf 와 짝)
-│   │       └── static/                  # 웹 화면 빌드 결과물
-│   └── test/                # 단위·슬라이스 테스트
-├── .env.example             # 환경변수 예시
-├── build.gradle             # 의존성과 빌드 작업
-├── docker-compose-logging-pipeline.yml
-├── Dockerfile
-├── logstash.conf
-└── README.md
-```
+## 📁 패키지 구조
 
 백엔드는 **헥사고날 아키텍처(포트 & 어댑터)** 로 구성합니다. 도메인마다 `adapter` / `application.port` / `domain` 으로 나누고, 의존성은 항상 바깥(adapter)에서 안쪽(
 domain)으로만 향합니다.
+아래는 가장 구성이 큰 `book` 도메인을 펼친 예시이고, 나머지 도메인도 같은 구조입니다.
+
+```
+src
+├── main
+│   ├── java/com/sprint/deokhugam
+│   │   ├── book                        # 📚 도서 (펼친 예시)
+│   │   │   ├── adapter
+│   │   │   │   ├── in
+│   │   │   │   │   └── web             # BookController, BookApi(Swagger), dto, mapper
+│   │   │   │   └── out
+│   │   │   │       ├── kakao           # 카카오 책 검색 Adapter, config, dto
+│   │   │   │       ├── external        # OcrSpaceClient (OCR.space)
+│   │   │   │       └── storage         # AwsS3Storage, LocalStorage
+│   │   │   ├── application
+│   │   │   │   ├── dto                 # BookSearchResult, StoredThumbnail 등
+│   │   │   │   └── port
+│   │   │   │       ├── in              # BookUseCase · BookService, OcrUseCase · OcrService
+│   │   │   │       └── out             # BookRepositoryPort, RepositoryCustom(QueryDSL), BookSearchPort, BookImageStorage, OcrClient
+│   │   │   └── domain                  # Book
+│   │   │       ├── exception           # BookException, BookErrorCode
+│   │   │       └── validator           # IsbnValidator
+│   │   ├── review                      # ✍️ 리뷰 · 좋아요
+│   │   ├── comment                     # 💬 댓글
+│   │   ├── user                        # 👤 사용자 (adapter.in.scheduler, adapter.out.security: BCrypt)
+│   │   ├── notification                # 🔔 알림 (adapter.in.batch · scheduler)
+│   │   ├── dashboard                   # 📊 인기 도서 · 인기 리뷰 · 파워 유저 (adapter.in.batch · scheduler)
+│   │   └── common                      # 공통 (config, context, domain, exception, logging, pagination, util)
+│   └── resources
+│       ├── application.yml             # 공통 설정
+│       ├── application-local.yml       # 로컬 환경 (Docker PostgreSQL, 로컬 스토리지)
+│       ├── application-prod.yml        # 운영 환경 (AWS RDS, S3)
+│       ├── logback-spring.xml          # 로그 패턴 (logstash.conf 와 짝)
+│       └── static                      # 웹 화면 빌드 결과물
+└── test/java/com/sprint/deokhugam      # 도메인별 단위 · 슬라이스 테스트 (main 과 같은 패키지 구조)
+```
 
 <p align="center"><img src="docs/readme/images/package-structure2.png" alt="패키지 구조" width="100%"/></p>
-
-```
-com.sprint.deokhugam
-├── book                      # 도서
-│   ├── adapter
-│   │   ├── in.web            # Controller, Api(Swagger), dto, mapper
-│   │   └── out               # AwsS3Storage, LocalStorage, 스토리지 예외
-│   ├── application.port
-│   │   ├── in                # BookUseCase, BookService
-│   │   └── out               # RepositoryPort, RepositoryCustom(QueryDSL), BookImageStorage
-│   └── domain                # Book, validator(IsbnValidator), exception
-├── review                    # 리뷰 · 좋아요 (동일 구조)
-├── comment                   # 댓글 (동일 구조)
-├── user                      # 사용자 (adapter.out.security: BCryptPasswordHasher)
-├── notification              # 알림 (adapter.in.scheduler 포함)
-├── dashboard                 # 인기 도서 / 인기 리뷰 / 파워 유저
-│   ├── adapter.in            # web, scheduler(BatchScheduler)
-│   ├── application.port      # in(popularbook, popularreview), out(popularbook, popularreview, poweruser)
-│   └── domain                # PopularBook, PopularReview, PowerUser, PeriodType, Ranker
-└── common
-    ├── config                # Swagger, JPA, QueryDSL, Scheduler, WebMvc, AwsS3
-    ├── context.user          # @RequestUserId, ArgumentResolver
-    ├── domain                # BaseEntity (UUID id, createdAt, updatedAt)
-    ├── exception             # ErrorCode, DeokhugamException, GlobalExceptionController
-    ├── logging               # MdcLoggingInterceptor, LogLevelHighlightConverter
-    ├── pagination            # CursorPageResponse
-    └── util                  # SliceUtils
-```
 
 ```mermaid
 flowchart LR

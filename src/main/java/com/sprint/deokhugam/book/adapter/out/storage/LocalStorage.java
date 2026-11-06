@@ -12,8 +12,8 @@ import org.springframework.web.util.UriUtils;
 
 import lombok.extern.slf4j.Slf4j;
 
-import com.sprint.deokhugam.book.adapter.out.exception.StorageErrorCode;
-import com.sprint.deokhugam.book.adapter.out.exception.StorageException;
+import com.sprint.deokhugam.book.adapter.out.storage.exception.StorageErrorCode;
+import com.sprint.deokhugam.book.adapter.out.storage.exception.StorageException;
 import com.sprint.deokhugam.book.application.port.out.BookImageStorage;
 
 @Slf4j
