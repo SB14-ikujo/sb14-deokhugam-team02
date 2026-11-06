@@ -42,15 +42,46 @@ OCR 기반 ISBN 인식과 외부 도서 API 연동으로 도서 등록 과정을
 
 ## 👥 팀원별 소개
 
-|                                                    강성준                                                    |                                                      김세중                                                      |                                                    김양현                                                    |                                                       김지현                                                       |                                                     박성욱                                                     |                                                    이은솔                                                    |
-|:---------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------:|
-| <a href="https://github.com/xian980"><img src="https://github.com/xian980.png" width="100" alt="강성준"></a> | <a href="https://github.com/SB-14-KSJ"><img src="https://github.com/SB-14-KSJ.png" width="100" alt="김세중"></a> | <a href="https://github.com/yyy2724"><img src="https://github.com/yyy2724.png" width="100" alt="김양현"></a> | <a href="https://github.com/pengji-dev"><img src="https://github.com/pengji-dev.png" width="100" alt="김지현"></a> | <a href="https://github.com/ziezz767"><img src="https://github.com/ziezz767.png" width="100" alt="박성욱"></a> | <a href="https://github.com/EUNSOLY"><img src="https://github.com/EUNSOLY.png" width="100" alt="이은솔"></a> |
-|                                                    사용자                                                    |                                                      댓글                                                       |                                                대시보드 · OCR                                                 |                                                     도서 · 관리                                                     |                                                  리뷰 · 좋아요                                                   |                                                    알림                                                     |
+<table align="center">
+<tr>
+  <td align="center" width="180">
+    <a href="https://github.com/xian980"><img src="https://github.com/xian980.png" width="110" alt="강성준"/></a><br/>
+    <a href="https://github.com/xian980"><img src="https://img.shields.io/badge/GitHub-xian980-444C56?style=flat-square&logo=github&logoColor=white&labelColor=2D333B"/></a>
+  </td>
+  <td align="center" width="180">
+    <a href="https://github.com/SB-14-KSJ"><img src="https://github.com/SB-14-KSJ.png" width="110" alt="김세중"/></a><br/>
+    <a href="https://github.com/SB-14-KSJ"><img src="https://img.shields.io/badge/GitHub-SB--14--KSJ-444C56?style=flat-square&logo=github&logoColor=white&labelColor=2D333B"/></a>
+  </td>
+  <td align="center" width="180">
+    <a href="https://github.com/yyy2724"><img src="https://github.com/yyy2724.png" width="110" alt="김양현"/></a><br/>
+    <a href="https://github.com/yyy2724"><img src="https://img.shields.io/badge/GitHub-yyy2724-444C56?style=flat-square&logo=github&logoColor=white&labelColor=2D333B"/></a>
+  </td>
+  <td align="center" width="180">
+    <a href="https://github.com/pengji-dev"><img src="https://github.com/pengji-dev.png" width="110" alt="김지현"/></a><br/>
+    <a href="https://github.com/pengji-dev"><img src="https://img.shields.io/badge/GitHub-pengji--dev-444C56?style=flat-square&logo=github&logoColor=white&labelColor=2D333B"/></a>
+  </td>
+  <td align="center" width="180">
+    <a href="https://github.com/ziezz767"><img src="https://github.com/ziezz767.png" width="110" alt="박성욱"/></a><br/>
+    <a href="https://github.com/ziezz767"><img src="https://img.shields.io/badge/GitHub-ziezz767-444C56?style=flat-square&logo=github&logoColor=white&labelColor=2D333B"/></a>
+  </td>
+  <td align="center" width="180">
+    <a href="https://github.com/EUNSOLY"><img src="https://github.com/EUNSOLY.png" width="110" alt="이은솔"/></a><br/>
+    <a href="https://github.com/EUNSOLY"><img src="https://img.shields.io/badge/GitHub-EUNSOLY-444C56?style=flat-square&logo=github&logoColor=white&labelColor=2D333B"/></a>
+  </td>
+</tr>
+<tr>
+  <td align="center" valign="top"><b>강성준</b><br/><br/><sub><kbd><b>사용자&nbsp;도메인</b></kbd><br/>·&nbsp;회원가입&nbsp;·&nbsp;로그인<br/>·&nbsp;사용자&nbsp;조회&nbsp;·&nbsp;닉네임&nbsp;수정<br/>·&nbsp;논리&nbsp;삭제&nbsp;·&nbsp;물리&nbsp;삭제&nbsp;스케줄러<br/><kbd><b>헬퍼</b></kbd>&nbsp;🤝<br/>·&nbsp;도서&nbsp;상세&nbsp;조회&nbsp;API</sub></td>
+  <td align="center" valign="top"><b>김세중</b><br/><br/><sub><kbd><b>댓글&nbsp;도메인</b></kbd><br/>·&nbsp;댓글&nbsp;CRUD&nbsp;·&nbsp;목록&nbsp;조회<br/>·&nbsp;부적절한&nbsp;단어&nbsp;필터링<br/>·&nbsp;댓글&nbsp;알림&nbsp;연결<br/><kbd><b>공통</b></kbd><br/>·&nbsp;README&nbsp;문서&nbsp;정리</sub></td>
+  <td align="center" valign="top"><b>김양현</b><br/><br/><sub><kbd><b>대시보드&nbsp;도메인</b></kbd><br/>·&nbsp;인기&nbsp;도서&nbsp;·&nbsp;리뷰&nbsp;·&nbsp;파워&nbsp;유저&nbsp;집계<br/><kbd><b>심화</b></kbd>&nbsp;🚀<br/>·&nbsp;Spring&nbsp;Batch&nbsp;스케줄러<br/>·&nbsp;OCR&nbsp;ISBN&nbsp;인식&nbsp;API<br/><kbd><b>공통</b></kbd><br/>·&nbsp;헥사고날&nbsp;패키지&nbsp;설계<br/>·&nbsp;중앙&nbsp;예외&nbsp;처리<br/>·&nbsp;개발&nbsp;인프라&nbsp;구성</sub></td>
+  <td align="center" valign="top"><b>김지현</b><br/><br/><sub><kbd><b>도서&nbsp;도메인</b></kbd><br/>·&nbsp;ISBN&nbsp;검증<br/>·&nbsp;도서&nbsp;등록&nbsp;·&nbsp;수정&nbsp;·&nbsp;삭제<br/>·&nbsp;카카오&nbsp;도서&nbsp;검색<br/>·&nbsp;썸네일&nbsp;처리</sub></td>
+  <td align="center" valign="top"><b>박성욱</b><br/><br/><sub><kbd><b>리뷰&nbsp;·&nbsp;좋아요&nbsp;도메인</b></kbd><br/>·&nbsp;리뷰&nbsp;CRUD&nbsp;·&nbsp;목록&nbsp;조회<br/>·&nbsp;리뷰&nbsp;좋아요&nbsp;토글<br/>·&nbsp;좋아요&nbsp;알림&nbsp;연결<br/>·&nbsp;동시성&nbsp;제어<br/>·&nbsp;N+1&nbsp;개선&nbsp;·&nbsp;연쇄&nbsp;삭제<br/>·&nbsp;리뷰&nbsp;도메인&nbsp;테스트</sub></td>
+  <td align="center" valign="top"><b>이은솔</b><br/><br/><sub><kbd><b>알림&nbsp;도메인</b></kbd><br/>·&nbsp;알림&nbsp;자동&nbsp;생성<br/>·&nbsp;알림&nbsp;조회&nbsp;·&nbsp;읽음&nbsp;처리<br/>·&nbsp;오래된&nbsp;알림&nbsp;삭제&nbsp;배치<br/><kbd><b>공통</b></kbd><br/>·&nbsp;AWS&nbsp;인프라&nbsp;구성<br/>·&nbsp;CD&nbsp;구축&nbsp;(무중단&nbsp;자동&nbsp;배포)<br/>·&nbsp;MDC&nbsp;로깅<br/>·&nbsp;이미지&nbsp;스토리지<br/>·&nbsp;환경별&nbsp;프로필&nbsp;관리<br/>·&nbsp;로그&nbsp;정기&nbsp;적재&nbsp;🚀<br/>·&nbsp;코드&nbsp;품질<br/><kbd><b>헬퍼</b></kbd>&nbsp;🤝<br/>·&nbsp;도서&nbsp;검색&nbsp;·&nbsp;정렬<br/>·&nbsp;리뷰&nbsp;집계&nbsp;동시성&nbsp;제어</sub></td>
+</tr>
+</table>
+
+<p align="center"><sub>🤝 헬퍼 (본인 담당 도메인 외에 함께 구현한 부분) &nbsp; 🚀 심화 과제</sub></p>
 
 ## 🧩 구현 기능 상세
-
-팀원별로 맡은 기능과 구현 내용을 정리했습니다. 도서 · 댓글 · 알림 · 랭킹 목록은 모두 커서 기반 페이지네이션을 사용합니다.
-웹 화면 빌드 결과물이 `src/main/resources/static` 에 포함되어 있어 백엔드 실행 후 함께 사용할 수 있습니다.
 
 ### 💬 댓글
 
@@ -114,6 +145,7 @@ OCR 기반 ISBN 인식과 외부 도서 API 연동으로 도서 등록 과정을
 **담당자** · [강성준](https://github.com/xian980)
 
 - 가입 · 로그인 — 회원가입(이메일 중복 불가), 로그인(**BCrypt** 비밀번호 암호화)
+- 동시 가입 처리 — 이메일 · 닉네임 유니크 제약 위반을 **409**로 변환
 - 조회 · 수정 — 사용자 조회, 닉네임만 수정
 - 삭제 — 논리 삭제 후 **1일 뒤 물리 삭제** (자동 삭제가 있는 유일한 도메인), 연관 데이터(리뷰 · 댓글 · 좋아요 · 알림) 모두 삭제
 
