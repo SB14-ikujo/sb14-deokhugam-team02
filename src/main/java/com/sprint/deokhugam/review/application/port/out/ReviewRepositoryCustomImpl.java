@@ -35,7 +35,6 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
                 keywordContains(keyword)
             )
             .fetchOne();
-
         return totalCount;
     }
 
@@ -132,5 +131,6 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
         return asc ? new OrderSpecifier<?>[] {review.createdAt.asc()} : // 오래된 순
             new OrderSpecifier<?>[] {review.createdAt.desc()}; // 최신 순
     }
+
 }
 

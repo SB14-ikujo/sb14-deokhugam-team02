@@ -54,6 +54,12 @@ public class CommentApplicationService implements CommentUseCase {
             Comment.create(review, user, request.content())
         );
 
+        int createdCommentCount = reviewRepository.addCommentCount(review.getId());
+
+        if (createdCommentCount == 0) {
+            throw new CommentException(CommentErrorCode.COMMENT_REVIEW_NOT_FOUND);
+        }
+
         notificationUseCase.createCommentNotification(
             review,
             user.getNickname()
@@ -135,6 +141,13 @@ public class CommentApplicationService implements CommentUseCase {
 
         // 상태 변경(isDeleted = true)은 더티 체킹으로 트랜잭션 커밋 시 DB에 반영
         comment.softDelete();
+
+        int deletedCommentCount = reviewRepository.removeCommentCount(comment.getReview().getId());
+
+        if (deletedCommentCount == 0) {
+            throw new CommentException(CommentErrorCode.COMMENT_REVIEW_NOT_FOUND);
+        }
+
         log.debug("댓글 논리 삭제: commentId={}, requestUserId={}", commentId, requestUserId);
     }
 

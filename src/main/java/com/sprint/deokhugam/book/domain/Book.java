@@ -80,11 +80,6 @@ public class Book extends BaseEntity {
         return new Book(title, user, author, description, publisher, publishedDate, isbn, thumbnailUrl);
     }
 
-    // 리뷰 수 증가
-    public void increaseReviewCount() {
-        this.reviewCount += 1;
-    }
-
     // 논리 삭제
     public void delete() {
         this.isDeleted = true;
@@ -121,4 +116,5 @@ public class Book extends BaseEntity {
     public void updateThumbnailUrl(String thumbnailUrl) {
         this.thumbnailUrl = thumbnailUrl;
     }
+
 }

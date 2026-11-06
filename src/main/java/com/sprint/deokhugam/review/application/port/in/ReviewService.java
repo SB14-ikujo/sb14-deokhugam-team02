@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,7 +54,7 @@ public class ReviewService implements ReviewUseCase {
         UUID targetBookId = createRequest.bookId(); // 리뷰를 남길 도서 ID
 
         // 요청한 유저 존재 유무 확인 및 데이터 가져오기 (소프트 딜리트 된 것들은 제외)
-        User requestUser = userRepositoryPort.findByIdAndIsDeletedFalse(requestUserId)
+        User requestUser = userRepositoryPort.findByIdAndIsDeletedFalseForUpdate(requestUserId)
             .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
 
         // 해당 도서 존재 유무 확인 및 데이터 가져오기 (소프트 딜리트 된 것들은 제외)
@@ -70,18 +69,20 @@ public class ReviewService implements ReviewUseCase {
             throw new ReviewException(ReviewErrorCode.REVIEW_DUPLICATE);
         }
 
-        targetBook.increaseReviewCount(); // 해당 도서의 리뷰수 증가
-
         String content = createRequest.content();
         Integer rating = createRequest.rating();
 
         Review createReview = Review.create(requestUser, targetBook, content, rating);
-        try {
-            Review createdReview = reviewRepositoryPort.save(createReview);
-            return this.toReviewDto(createdReview, false);
-        } catch (DataIntegrityViolationException e) {
-            throw new ReviewException(ReviewErrorCode.REVIEW_DUPLICATE);
+
+        int updatedBook = bookRepositoryPort.addReview(createReview.getBook().getId(), rating);
+
+        if (updatedBook == 0) {
+            throw new ReviewException(ReviewErrorCode.REVIEW_BOOK_NOT_FOUND);
         }
+
+        Review createdReview = reviewRepositoryPort.save(createReview);
+
+        return this.toReviewDto(createdReview, false);
     }
 
     // 리뷰 소프트 딜리트
@@ -94,6 +95,14 @@ public class ReviewService implements ReviewUseCase {
 
         // 논리적 삭제(Soft-delete) 하기
         review.softDelete(requestUserId);
+
+        // 도서 리뷰 정보 갱신
+        int updatedBook = bookRepositoryPort.removeReview(review.getBook().getId(), review.getRating());
+
+        if (updatedBook == 0) {
+            throw new ReviewException(ReviewErrorCode.REVIEW_BOOK_NOT_FOUND);
+        }
+
     }
 
     // 리뷰 물리 삭제
@@ -143,6 +152,9 @@ public class ReviewService implements ReviewUseCase {
 
         UUID reviewWriterId = review.getUser().getId();
 
+        UUID bookId = review.getBook().getId();
+        int oldGrade = review.getRating();
+
         if (!reviewWriterId.equals(requestUserId)) {
             throw new ReviewException(ReviewErrorCode.REVIEW_FORBIDDEN);
         }
@@ -152,6 +164,12 @@ public class ReviewService implements ReviewUseCase {
 
         // 내가 이 리뷰에 좋아요를 남겼는지 확인
         boolean likedByMe = reviewLikeRepositoryPort.existsByReviewIdAndUserId(reviewId, requestUserId);
+
+        int updatedBook = bookRepositoryPort.changeReviewRating(bookId, oldGrade, updateRequest.rating());
+
+        if (updatedBook == 0) {
+            throw new ReviewException(ReviewErrorCode.REVIEW_BOOK_NOT_FOUND);
+        }
 
         // 반환
         return this.toReviewDto(review, likedByMe);
