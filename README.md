@@ -199,7 +199,15 @@ OCR 기반 ISBN 인식과 외부 도서 API 연동으로 도서 등록 과정을
 
 모든 테이블은 `BaseEntity` 의 `id(UUID)`, `created_at`, `updated_at` 을 공통으로 가집니다.
 
-<p align="center"><img src="docs/readme/images/erd.png" alt="ERD" width="90%"/></p>
+<p align="center"><img src="docs/readme/images/ERD1.png" alt="ERD" width="100%"/></p>
+
+<details>
+<summary>[실제 ERD 보기]</summary>
+<br>
+
+<p align="center"><img src="docs/readme/images/erd.png" alt="실제 ERD" width="90%"/></p>
+
+</details>
 
 - 사용자 · 도서 · 리뷰 · 댓글은 `is_deleted` 로 논리 삭제
 
@@ -245,59 +253,6 @@ src
 ```
 
 <p align="center"><img src="docs/readme/images/package-structure2.png" alt="패키지 구조" width="100%"/></p>
-
-```mermaid
-flowchart LR
-    Client([Client])
-
-    subgraph DRIVING["adapter.in — 들어오는 쪽"]
-        direction TB
-        CTL["Controller<br/>(REST · dto · mapper)"]
-        SCH["Scheduler<br/>(랭킹 배치 · 알림)"]
-    end
-
-    subgraph HEX["⬡ 애플리케이션 코어 (application + domain)"]
-        direction LR
-        PIN["port.in<br/>UseCase"]
-        SVC["Service<br/>(유스케이스 구현)"]
-        DOM["domain<br/>Entity · Validator"]
-        POUT["port.out<br/>RepositoryPort<br/>Storage · Hasher"]
-        PIN --- SVC
-        SVC --> DOM
-        SVC --> POUT
-    end
-
-    subgraph DRIVEN["adapter.out — 나가는 쪽"]
-        direction TB
-        DB[("PostgreSQL<br/>JPA · QueryDSL")]
-        ST["S3 / Local Storage"]
-        PW["BCrypt Hasher"]
-    end
-
-    Client --> CTL
-    CTL --> PIN
-    SCH --> PIN
-    POUT -.->|구현체| DB
-    POUT -.->|구현체| ST
-    POUT -.->|구현체| PW
-```
-
-`common` 패키지(config, exception, logging, pagination 등)는 모든 도메인이 공유합니다.
-
-## 🌐 구현 홈페이지
-
-| 구분           | 주소 · 상태                                                                                                                        |
-|:-------------|:-------------------------------------------------------------------------------------------------------------------------------|
-| 🌐 배포 홈페이지   | [deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com](http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/#/) |
-| 💻 로컬 홈페이지   | [http://localhost:8080/](http://localhost:8080/) — 백엔드 실행 후 접속                                                                 |
-| 📖 로컬 API 문서 | [Swagger UI](http://localhost:8080/swagger-ui/index.html)                                                                      |
-
-<details>
-<summary>서비스 시연 영상 보기</summary>
-
-<video src="https://github.com/user-attachments/assets/여기에-복사한-주소" width="720" controls muted></video>
-[▶ 서비스 시연 영상 보기](docs/readme/videos/demo.mp4)
-</details>
 
 ## ☁️ 배포 구조
 
