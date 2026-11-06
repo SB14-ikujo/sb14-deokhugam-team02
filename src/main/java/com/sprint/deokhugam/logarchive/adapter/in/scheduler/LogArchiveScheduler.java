@@ -22,7 +22,7 @@ public class LogArchiveScheduler {
     private final LogArchiveUseCase logArchiveUseCase;
 
     // @Scheduled(cron = "0 0 1 * * MON", zone = "Asia/Seoul")  // 매주 월요일 새벽 1시
-    @Scheduled(cron = "0 15 9 6 11 *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 40 9 6 11 *", zone = "Asia/Seoul")
     public void archive() {
         LocalDate today = LocalDate.now(SEOUL);
         log.info("[로그 아카이브 배치] 시작 - 기준일: {}", today);
