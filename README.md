@@ -2,11 +2,11 @@
 
 <div align="center">
 
-<a href="http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/#/"><img src="src/main/resources/static/images/nav/deokhugam.svg" alt="덕후감 배포 홈페이지" width="300"></a>
+<img src="src/main/resources/static/images/nav/deokhugam.svg" alt="덕후감 배포 홈페이지" width="300">
 
-# 📚 DEOKHUGAM
+### 📚 DEOKHUGAM
 
-### 책 사진 한 장으로 ISBN을 찾아 도서를 등록하고, 리뷰로 소통하는 도서 리뷰 서비스
+**책 사진 한 장으로 ISBN을 찾아 도서를 등록하고, 리뷰로 소통하는 도서 리뷰 서비스**
 
 </div>
 
@@ -18,10 +18,10 @@
 OCR 기반 ISBN 인식과 외부 도서 API 연동으로 도서 등록 과정을 간소화하고, 리뷰·좋아요·댓글·알림 기능을 통해 사용자 간 상호작용을 지원합니다.
 또한 **Spring Batch** 기반의 주기적인 데이터 집계를 통해 인기 도서, 인기 리뷰, 파워 유저 순위를 일간·주간·월간·역대 기준으로 제공합니다.
 
-| 구분       | 내용                                                                                 |
-|----------|------------------------------------------------------------------------------------|
-| 📅 개발 기간 | 2026.09.29 ~ 2026.11.06                                                            |
-| 🌐 배포 주소 | [덕후감 서비스 바로가기](http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/#/) |
+| 구분        | 내용                                                                                                         |
+|-----------|------------------------------------------------------------------------------------------------------------|
+| 📅 개발 기간  | 2026.09.29 ~ 2026.11.06                                                                                    |
+| 🌐 배포 주소  | [덕후감 서비스 바로가기](http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/#/)                         |
 | 📖 스웨거 문서 | [Swagger UI 바로가기](http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/swagger-ui/index.html#/) |
 
 ## 🛠 기술 스택
