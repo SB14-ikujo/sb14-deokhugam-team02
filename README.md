@@ -1,109 +1,177 @@
 [![codecov](https://codecov.io/github/SB14-ikujo/sb14-deokhugam-team02/graph/badge.svg?token=FMH1DWHUZA)](https://codecov.io/github/SB14-ikujo/sb14-deokhugam-team02)
 
+<div align="center">
+
 <a href="http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/#/"><img src="src/main/resources/static/images/nav/deokhugam.svg" alt="덕후감 배포 홈페이지" width="300"></a>
 
-**도서 이미지 OCR 기반 ISBN 매칭 도서 리뷰 서비스**
+# 📚 DEOKHUGAM
 
-덕후감은 책 표지나 바코드 이미지에서 OCR 로 ISBN 을 인식하고, 외부 도서 API 와 매칭해 도서 정보를 손쉽게 등록하는 도서 리뷰 백엔드 서비스입니다. 사용자는 도서에 리뷰를 작성하고 다른 사용자의 리뷰에
-좋아요와 댓글을 남길 수 있으며, 내 리뷰에 반응이 생기면 알림으로 받아볼 수 있습니다. 또한 Spring Batch 기반의 주기적인 집계로 인기 도서, 인기 리뷰, 파워 유저 순위를 일간 · 주간 · 월간 · 역대
-기간별로 대시보드에 제공합니다.
+### 책 사진 한 장으로 ISBN을 찾아 도서를 등록하고, 리뷰로 소통하는 도서 리뷰 서비스
 
-## 기술 스택
+</div>
 
-| 구분             | 기술                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | 용도                                                               |
-|----------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
-| 언어             | ![Java 17](https://img.shields.io/badge/Java_17-ED8B00?style=flat-square&logo=openjdk&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | 백엔드 구현                                                           |
-| 프레임워크          | ![Spring Boot 4.1.1](https://img.shields.io/badge/Spring_Boot_4.1.1-6DB33F?style=flat-square&logo=springboot&logoColor=white) ![Spring Web MVC](https://img.shields.io/badge/Spring_Web_MVC-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Validation](https://img.shields.io/badge/Validation-6DB33F?style=flat-square&logo=spring&logoColor=white)                                                                                                                                                                                                                      | REST API, 요청 검증, 정적 웹 화면 제공                                      |
-| 데이터 접근         | ![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=flat-square&logo=spring&logoColor=white) ![QueryDSL 7.0](https://img.shields.io/badge/QueryDSL_7.0-3B6FD9?style=flat-square)                                                                                                                                                                                                                                                                                                                                                                          | 엔티티 관리, 동적 검색·정렬, 커서 페이지네이션                                      |
-| 데이터베이스         | ![PostgreSQL 15](https://img.shields.io/badge/PostgreSQL_15-4169E1?style=flat-square&logo=postgresql&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                              | 사용자·도서·리뷰·댓글·알림·랭킹 스냅샷 저장                                        |
-| 외부 API         | ![Kakao Book API](https://img.shields.io/badge/Kakao_Book_API-FFCD00?style=flat-square&logo=kakaotalk&logoColor=black) ![OCR.space](https://img.shields.io/badge/OCR.space-0057B8?style=flat-square)                                                                                                                                                                                                                                                                                                                                                                               | 도서 정보 조회(ISBN), 이미지 OCR 로 ISBN 인식                                |
-| 스토리지           | ![AWS S3 SDK v2](https://img.shields.io/badge/AWS_S3_SDK_v2-569A31?style=flat-square&logo=amazons3&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                | 도서 표지 이미지 저장 (Presigned URL / 로컬 파일, `STORAGE_TYPE=local \| s3`) |
-| 배치 · 모니터링      | ![Spring Batch](https://img.shields.io/badge/Spring_Batch-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Actuator](https://img.shields.io/badge/Actuator-6DB33F?style=flat-square&logo=spring&logoColor=white)                                                                                                                                                                                                                                                                                                                                                            | 랭킹 집계 배치 실행 기록(BATCH_* 테이블), health · metrics 노출                 |
-| 스케줄링           | ![Spring Scheduler](https://img.shields.io/badge/Spring_Scheduler-6DB33F?style=flat-square&logo=spring&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                            | 랭킹 집계, 인기 리뷰 알림, 읽은 알림 정리                                        |
-| 매핑             | ![MapStruct 1.6.3](https://img.shields.io/badge/MapStruct_1.6.3-12A594?style=flat-square) ![Lombok](https://img.shields.io/badge/Lombok-CF3030?style=flat-square)                                                                                                                                                                                                                                                                                                                                                                                                                  | DTO 변환, 반복 코드 축소                                                 |
-| 보안             | ![spring-security-crypto](https://img.shields.io/badge/spring--security--crypto-6DB33F?style=flat-square&logo=springsecurity&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                      | BCrypt 비밀번호 해시                                                   |
-| API 문서         | ![springdoc-openapi 3.1.1](https://img.shields.io/badge/springdoc--openapi_3.1.1-85EA2D?style=flat-square&logo=swagger&logoColor=black)                                                                                                                                                                                                                                                                                                                                                                                                                                            | OpenAPI 명세, Swagger UI                                           |
-| 로깅             | ![Logback + MDC](https://img.shields.io/badge/Logback_+_MDC-555555?style=flat-square) ![Elasticsearch](https://img.shields.io/badge/Elasticsearch-005571?style=flat-square&logo=elasticsearch&logoColor=white) ![Logstash](https://img.shields.io/badge/Logstash-005571?style=flat-square&logo=logstash&logoColor=white) ![Kibana](https://img.shields.io/badge/Kibana-005571?style=flat-square&logo=kibana&logoColor=white)                                                                                                                                                       | 요청 단위 로그 수집·조회                                                   |
-| 빌드             | ![Gradle 9.7.1](https://img.shields.io/badge/Gradle_9.7.1-02303A?style=flat-square&logo=gradle&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | 빌드, 의존성 관리                                                       |
-| 코드 품질          | ![Checkstyle 12.3.0](https://img.shields.io/badge/Checkstyle_12.3.0-2C8EBB?style=flat-square) ![JaCoCo 0.8.13](https://img.shields.io/badge/JaCoCo_0.8.13-4C9A2A?style=flat-square) ![JUnit 5](https://img.shields.io/badge/JUnit_5-25A162?style=flat-square&logo=junit5&logoColor=white)                                                                                                                                                                                                                                                                                          | 코드 스타일 검사, 테스트, 커버리지 검증(라인 80%)                                  |
-| 개발 편의          | ![devtools](https://img.shields.io/badge/devtools-6DB33F?style=flat-square&logo=spring&logoColor=white) ![docker-compose 자동 인식](https://img.shields.io/badge/docker--compose_자동_인식-2496ED?style=flat-square&logo=docker&logoColor=white)                                                                                                                                                                                                                                                                                                                                           | 자동 재시작, 실행 시 PostgreSQL 자동 기동                                    |
-| 인프라 · 배포       | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![Railway](https://img.shields.io/badge/Railway-0B0D0E?style=flat-square&logo=railway&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                         | 컨테이너 실행, 배포                                                      |
-| CI/CD · 자동화 리뷰 | ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white) ![Dependabot](https://img.shields.io/badge/Dependabot-025E8C?style=flat-square&logo=dependabot&logoColor=white) ![CodeRabbit](https://img.shields.io/badge/CodeRabbit-FF570A?style=flat-square) ![Claude Code Action](https://img.shields.io/badge/Claude_Code_Action-D97757?style=flat-square&logo=anthropic&logoColor=white) ![JetBrains Junie](https://img.shields.io/badge/JetBrains_Junie-000000?style=flat-square&logo=jetbrains&logoColor=white) | 빌드·테스트·검사, PR 자동 리뷰                                              |
-| 협업 · 소통        | ![Git](https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white) ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-000000?style=flat-square&logo=notion&logoColor=white) ![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat-square&logo=discord&logoColor=white) ![ZEP 강의실](https://img.shields.io/badge/ZEP_강의실-7C3AED?style=flat-square)                                                                                                | 형상 관리, 문서화, 커뮤니케이션                                               |
+<br>
 
-## 주요 기능
+## 📝 프로젝트 소개
 
-| 기능    | 설명                                                              |
-|-------|-----------------------------------------------------------------|
-| 사용자   | 회원가입(이메일 중복 불가)·로그인(BCrypt), 조회, 닉네임 수정, 논리 삭제 후 물리 삭제          |
-| 도서    | ISBN 검증·중복 방지, 카카오 책 API 기반 등록, 표지 이미지 저장, 제목·저자·ISBN 검색과 4종 정렬 |
-| OCR   | 책 표지·바코드 이미지에서 ISBN 인식 (심화)                                     |
-| 리뷰    | 도서당 1개 작성, 본인만 수정·삭제, 논리·물리 삭제, 키워드·필터·정렬 검색, 좋아요               |
-| 댓글    | 리뷰별 댓글 CRUD, 시간순 커서 목록, 논리·물리 삭제                                |
-| 대시보드  | 인기 도서·인기 리뷰·파워 유저를 일간·주간·월간·역대로 집계해 매일 스냅샷 저장                   |
-| 알림    | 내 리뷰의 좋아요·댓글·인기 순위 진입 알림, 읽음 처리, 읽은 알림 자동 정리                    |
-| 목록 탐색 | 도서·댓글·알림·랭킹 목록의 커서 페이지네이션                                       |
+**덕후감**은 도서 정보를 간편하게 등록하고, 사용자 간 리뷰와 소통을 지원하는 **도서 리뷰 백엔드 서비스**입니다.
+OCR 기반 ISBN 인식과 외부 도서 API 연동으로 도서 등록 과정을 간소화하고, 리뷰·좋아요·댓글·알림 기능을 통해 사용자 간 상호작용을 지원합니다.
+또한 **Spring Batch** 기반의 주기적인 데이터 집계를 통해 인기 도서, 인기 리뷰, 파워 유저 순위를 일간·주간·월간·역대 기준으로 제공합니다.
 
+| 구분       | 내용                                                                                 |
+|----------|------------------------------------------------------------------------------------|
+| 📅 개발 기간 | 2026.09.29 ~ 2026.11.06                                                            |
+| 🌐 배포 주소 | [덕후감 서비스 바로가기](http://deokhugam-alb-742426925.ap-northeast-2.elb.amazonaws.com/#/) |
+
+## 🛠 기술 스택
+
+| 구분            | 기술                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+|:--------------|:--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 💻 언어 · 빌드    | ![Java 17](https://img.shields.io/badge/Java_17-ED8B00?style=flat-square&logo=openjdk&logoColor=white) ![Gradle 9.7.1](https://img.shields.io/badge/Gradle_9.7.1-02303A?style=flat-square&logo=gradle&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 🌱 프레임워크      | ![Spring Boot 4.1.1](https://img.shields.io/badge/Spring_Boot_4.1.1-6DB33F?style=flat-square&logo=springboot&logoColor=white) ![Spring Web MVC](https://img.shields.io/badge/Spring_Web_MVC-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Validation](https://img.shields.io/badge/Validation-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Spring Batch](https://img.shields.io/badge/Spring_Batch-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Spring Scheduler](https://img.shields.io/badge/Spring_Scheduler-6DB33F?style=flat-square&logo=spring&logoColor=white) ![Actuator](https://img.shields.io/badge/Actuator-6DB33F?style=flat-square&logo=spring&logoColor=white) |
+| 🗄 데이터        | ![PostgreSQL 15](https://img.shields.io/badge/PostgreSQL_15-4169E1?style=flat-square&logo=postgresql&logoColor=white) ![Spring Data JPA](https://img.shields.io/badge/Spring_Data_JPA-6DB33F?style=flat-square&logo=spring&logoColor=white) ![QueryDSL 7.0](https://img.shields.io/badge/QueryDSL_7.0-3B6FD9?style=flat-square)                                                                                                                                                                                                                                                                                                                                                                               |
+| 🔌 외부 연동      | ![Kakao Book API](https://img.shields.io/badge/Kakao_Book_API-FFCD00?style=flat-square&logo=kakaotalk&logoColor=black) ![OCR.space](https://img.shields.io/badge/OCR.space-0057B8?style=flat-square) ![AWS S3 SDK v2](https://img.shields.io/badge/AWS_S3_SDK_v2-569A31?style=flat-square&logo=amazons3&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                      |
+| 🧰 라이브러리      | ![MapStruct 1.6.3](https://img.shields.io/badge/MapStruct_1.6.3-12A594?style=flat-square) ![Lombok](https://img.shields.io/badge/Lombok-CF3030?style=flat-square) ![spring-security-crypto](https://img.shields.io/badge/spring--security--crypto-6DB33F?style=flat-square&logo=springsecurity&logoColor=white) ![springdoc-openapi 3.1.1](https://img.shields.io/badge/springdoc--openapi_3.1.1-85EA2D?style=flat-square&logo=swagger&logoColor=black)                                                                                                                                                                                                                                                       |
+| 🧪 테스트 코드     | ![JUnit 5](https://img.shields.io/badge/JUnit_5-25A162?style=flat-square&logo=junit5&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 📈 커버리지 관리    | ![JaCoCo 0.8.13](https://img.shields.io/badge/JaCoCo_0.8.13-4C9A2A?style=flat-square) ![Codecov](https://img.shields.io/badge/Codecov-F01F7A?style=flat-square&logo=codecov&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 🧹 코드 품질 · 리뷰 | ![Checkstyle 12.3.0](https://img.shields.io/badge/Checkstyle_12.3.0-2C8EBB?style=flat-square) ![Claude Code Action](https://img.shields.io/badge/Claude_Code_Action-D97757?style=flat-square&logo=anthropic&logoColor=white) ![Git Hooks](https://img.shields.io/badge/Git_Hooks-F05032?style=flat-square&logo=git&logoColor=white) ![EditorConfig](https://img.shields.io/badge/EditorConfig-FEFEFE?style=flat-square&logo=editorconfig&logoColor=black)                                                                                                                                                                                                                                                     |
+| 📜 로깅         | ![Logback + MDC](https://img.shields.io/badge/Logback_+_MDC-555555?style=flat-square) ![Elasticsearch](https://img.shields.io/badge/Elasticsearch-005571?style=flat-square&logo=elasticsearch&logoColor=white) ![Logstash](https://img.shields.io/badge/Logstash-005571?style=flat-square&logo=logstash&logoColor=white) ![Kibana](https://img.shields.io/badge/Kibana-005571?style=flat-square&logo=kibana&logoColor=white)                                                                                                                                                                                                                                                                                  |
+| ☁️ 인프라 · 배포   | ![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white) ![docker-compose](https://img.shields.io/badge/docker--compose-2496ED?style=flat-square&logo=docker&logoColor=white) ![AWS ECS](https://img.shields.io/badge/AWS_ECS_Fargate-FF9900?style=flat-square&logo=amazonecs&logoColor=white) ![AWS ECR](https://img.shields.io/badge/AWS_ECR-FF9900?style=flat-square&logo=amazonwebservices&logoColor=white) ![AWS RDS](https://img.shields.io/badge/AWS_RDS-527FFF?style=flat-square&logo=amazonrds&logoColor=white)                                                                                                                                           |
+| ⚙️ CI/CD      | ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 🤝 협업툴        | ![Git](https://img.shields.io/badge/Git-F05032?style=flat-square&logo=git&logoColor=white) ![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat-square&logo=github&logoColor=white) ![Notion](https://img.shields.io/badge/Notion-000000?style=flat-square&logo=notion&logoColor=white) ![Discord](https://img.shields.io/badge/Discord-5865F2?style=flat-square&logo=discord&logoColor=white) ![ZEP 강의실](https://img.shields.io/badge/ZEP_강의실-7C3AED?style=flat-square)                                                                                                                                                                                                                           |
+
+## 👥 팀원별 소개
+
+|                                                    강성준                                                    |                                                      김세중                                                      |                                                    김양현                                                    |                                                       김지현                                                       |                                                     박성욱                                                     |                                                    이은솔                                                    |
+|:---------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------:|
+| <a href="https://github.com/xian980"><img src="https://github.com/xian980.png" width="100" alt="강성준"></a> | <a href="https://github.com/SB-14-KSJ"><img src="https://github.com/SB-14-KSJ.png" width="100" alt="김세중"></a> | <a href="https://github.com/yyy2724"><img src="https://github.com/yyy2724.png" width="100" alt="김양현"></a> | <a href="https://github.com/pengji-dev"><img src="https://github.com/pengji-dev.png" width="100" alt="김지현"></a> | <a href="https://github.com/ziezz767"><img src="https://github.com/ziezz767.png" width="100" alt="박성욱"></a> | <a href="https://github.com/EUNSOLY"><img src="https://github.com/EUNSOLY.png" width="100" alt="이은솔"></a> |
+|                                                    사용자                                                    |                                                      댓글                                                       |                                                대시보드 · OCR                                                 |                                                     도서 · 관리                                                     |                                                  리뷰 · 좋아요                                                   |                                                    알림                                                     |
+
+## 🧩 구현 기능 상세
+
+팀원별로 맡은 기능과 구현 내용을 정리했습니다. 도서 · 댓글 · 알림 · 랭킹 목록은 모두 커서 기반 페이지네이션을 사용합니다.
 웹 화면 빌드 결과물이 `src/main/resources/static` 에 포함되어 있어 백엔드 실행 후 함께 사용할 수 있습니다.
 
-## 팀원별  소개
+### 💬 댓글
 
-|                                                    김양현                                                    |                                                     박성욱                                                     |                                                       김지현                                                       |                                                    이은솔                                                    |                                                    강성준                                                    |                                                      김세중                                                      |
-|:---------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------:|:---------------------------------------------------------------------------------------------------------:|:-------------------------------------------------------------------------------------------------------------:|
-| <a href="https://github.com/yyy2724"><img src="https://github.com/yyy2724.png" width="100" alt="김양현"></a> | <a href="https://github.com/ziezz767"><img src="https://github.com/ziezz767.png" width="100" alt="박성욱"></a> | <a href="https://github.com/pengji-dev"><img src="https://github.com/pengji-dev.png" width="100" alt="김지현"></a> | <a href="https://github.com/EUNSOLY"><img src="https://github.com/EUNSOLY.png" width="100" alt="이은솔"></a> | <a href="https://github.com/xian980"><img src="https://github.com/xian980.png" width="100" alt="강성준"></a> | <a href="https://github.com/SB-14-KSJ"><img src="https://github.com/SB-14-KSJ.png" width="100" alt="김세중"></a> |
-|                                                대시보드 · OCR                                                 |                                                  리뷰 · 좋아요                                                   |                                                     도서 · 관리                                                     |                                                    알림                                                     |                                                    사용자                                                    |                                                      댓글                                                       |
+**담당자** · [김세중](https://github.com/SB-14-KSJ)
 
-## 팀원별 구현 기능 상세
+- 댓글 CRUD — 본인만 수정 · 삭제
+- 목록 — 시간순 정렬, 커서 페이지네이션
+- 삭제 — 논리 삭제 기본, 물리 삭제 API 제공
 
-### 김양현 — 대시보드와 OCR
+<details>
+<summary>📎 문서 · 서비스 상세 보기</summary>
+<br>
 
-- 인기 도서 · 인기 리뷰 · 파워 유저를 기간별(일간·주간·월간·역대)로 집계하고, 매일 배치로 스냅샷을 저장했습니다.
-- 인기 순위 조회 API 3개를 구현했습니다.
-- OCR: 책 사진에서 ISBN을 인식하는 기능을 담당합니다. (심화)
+| 📄 API 문서 (Swagger)                                                               | 🎞 서비스 상세 (GIF)                                                              |
+|:----------------------------------------------------------------------------------|:-----------------------------------------------------------------------------|
+| <img src="docs/readme/images/features/comments-api.png" width="400" alt="댓글 api"> | <img src="docs/readme/images/features/comments.gif" width="400" alt="댓글 시연"> |
 
-### 박성욱 — 리뷰와 좋아요
+</details>
 
-- 리뷰 CRUD를 구현했습니다. (도서당 1개, 본인만 수정·삭제)
-- 논리 삭제를 기본으로 하고, 물리 삭제 시 좋아요·댓글도 함께 삭제합니다.
-- 키워드(닉네임·내용·도서 제목) 검색, 작성자·도서 필터, 정렬(작성일·평점), 커서 페이지네이션을 적용했습니다.
-- 좋아요 / 취소와 내가 좋아요 했는지 여부(`likedByMe`)를 구현했습니다.
+### 📚 도서 관리
 
-### 김지현 — 도서 관리
+**담당자** · [김지현](https://github.com/pengji-dev)
 
-- ISBN으로 카카오 책 API를 조회해 도서를 등록합니다.
-- CRUD를 구현했습니다. (ISBN 중복 불가, ISBN 수정 불가)
-- 표지 이미지를 S3에 저장합니다.
-- 키워드(제목·저자·ISBN) 검색, 정렬 4종(제목·출판일·평점·리뷰 수), 커서 페이지네이션을 적용했습니다.
-- 논리 삭제를 기본으로 하고, 물리 삭제 시 리뷰·댓글 등 연관 데이터를 모두 삭제합니다.
+- 등록 — **ISBN 검증** 후 카카오 책 API로 조회해 등록, 같은 ISBN 중복 등록 불가
+- CRUD — 도서 조회 · 수정 · 삭제 (ISBN은 수정 불가)
+- 이미지 — 표지 이미지를 **S3**에 저장
+- 검색 · 정렬 — 키워드(제목 · 저자 · ISBN) 검색, 정렬 4종(제목 · 출판일 · 평점 · 리뷰 수), 커서 페이지네이션
+- 삭제 — 논리 삭제 기본, 물리 삭제 시 리뷰 · 댓글 등 연관 데이터 모두 삭제
 
-### 이은솔 — 알림
+<details>
+<summary>📎 문서 · 서비스 상세 보기</summary>
+<br>
 
-- 알림 자동 생성: 내 리뷰에 좋아요·댓글이 달렸을 때, 내 리뷰가 기간별 인기 순위 10위 안에 들었을 때
-- 목록 조회(최신순), 알림 하나 읽음, 전체 읽음을 구현했습니다.
-- 확인한 지 1주가 지난 알림을 매일 배치로 자동 삭제합니다.
+| 📄 API 문서 (Swagger)                                                            | 🎞 서비스 상세 (GIF)                                                           |
+|:-------------------------------------------------------------------------------|:--------------------------------------------------------------------------|
+| <img src="docs/readme/images/features/books-api.png" width="400" alt="도서 api"> | <img src="docs/readme/images/features/books.gif" width="400" alt="도서 시연"> |
 
-### 강성준 — 사용자
+</details>
 
-- 회원가입(이메일 중복 불가), 로그인, 조회, 닉네임만 수정하는 기능을 구현했습니다.
-- 삭제: 논리 삭제 후 1일 뒤 물리 삭제합니다. (자동 삭제가 있는 유일한 도메인)
-- 물리 삭제 시 연관된 모든 데이터(리뷰·댓글·좋아요·알림)를 삭제합니다.
+### ✍️ 리뷰 · 좋아요
 
-### 김세중 — 댓글
+**담당자** · [박성욱](https://github.com/ziezz767)
 
-- 댓글 CRUD를 구현했습니다. (본인만 수정·삭제)
-- 목록은 시간순 정렬과 커서 페이지네이션으로 제공합니다.
-- 논리 삭제를 기본으로 하고, 물리 삭제 API를 제공합니다.
+- 리뷰 CRUD — 도서당 1개 작성, 본인만 수정 · 삭제
+- 삭제 — 논리 삭제 기본, 물리 삭제 시 좋아요 · 댓글도 함께 삭제
+- 검색 · 정렬 — 키워드(닉네임 · 내용 · 도서 제목), 작성자 · 도서 필터, 정렬(작성일 · 평점), 커서 페이지네이션
+- 좋아요 — 좋아요 / 취소, 내가 좋아요 했는지 여부(`likedByMe`)
 
-## ERD
+<details>
+<summary>📎 문서 · 서비스 상세 보기</summary>
+<br>
+
+| 📄 API 문서 (Swagger)                                                              | 🎞 서비스 상세 (GIF)                                                             |
+|:---------------------------------------------------------------------------------|:----------------------------------------------------------------------------|
+| <img src="docs/readme/images/features/reviews-api.png" width="400" alt="리뷰 api"> | <img src="docs/readme/images/features/reviews.gif" width="400" alt="리뷰 시연"> |
+
+</details>
+
+### 👤 사용자
+
+**담당자** · [강성준](https://github.com/xian980)
+
+- 가입 · 로그인 — 회원가입(이메일 중복 불가), 로그인(**BCrypt** 비밀번호 암호화)
+- 조회 · 수정 — 사용자 조회, 닉네임만 수정
+- 삭제 — 논리 삭제 후 **1일 뒤 물리 삭제** (자동 삭제가 있는 유일한 도메인), 연관 데이터(리뷰 · 댓글 · 좋아요 · 알림) 모두 삭제
+
+<details>
+<summary>📎 문서 · 서비스 상세 보기</summary>
+<br>
+
+| 📄 API 문서 (Swagger)                                                             | 🎞 서비스 상세 (GIF)                                                            |
+|:--------------------------------------------------------------------------------|:---------------------------------------------------------------------------|
+| <img src="docs/readme/images/features/users-api.png" width="400" alt="사용자 api"> | <img src="docs/readme/images/features/users.gif" width="400" alt="사용자 시연"> |
+
+</details>
+
+### 🔔 알림
+
+**담당자** · [이은솔](https://github.com/EUNSOLY)
+
+- 자동 생성 — 내 리뷰에 **좋아요 · 댓글**이 달렸을 때, 내 리뷰가 기간별 **인기 순위 10위** 안에 들었을 때
+- 조회 · 읽음 — 목록 조회(최신순), 알림 하나 읽음, 전체 읽음
+- 자동 정리 — 확인한 지 1주가 지난 알림을 매일 배치로 자동 삭제
+
+<details>
+<summary>📎 문서 · 서비스 상세 보기</summary>
+<br>
+
+| 📄 API 문서 (Swagger)                                                                    | 🎞 서비스 상세 (GIF)                                                                   |
+|:---------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------|
+| <img src="docs/readme/images/features/notifications-api.png" width="400" alt="알림 api"> | <img src="docs/readme/images/features/notifications.gif" width="400" alt="알림 시연"> |
+
+</details>
+
+### 📊 대시보드 · OCR
+
+**담당자** · [김양현](https://github.com/yyy2724)
+
+- 집계 — 인기 도서 · 인기 리뷰 · 파워 유저를 **일간 · 주간 · 월간 · 역대** 기간별로 집계하고, 매일 배치로 스냅샷을 저장
+- 순위 API — 인기 순위 조회 API 3개
+- OCR — 책 표지 · 바코드 이미지에서 **ISBN 인식** (심화)
+
+<details>
+<summary>📎 문서 · 서비스 상세 보기</summary>
+<br>
+
+| 📄 API 문서 (Swagger)                                                                  | 🎞 서비스 상세 (GIF)                                                                 |
+|:-------------------------------------------------------------------------------------|:--------------------------------------------------------------------------------|
+| <img src="docs/readme/images/features/dashboard-api.png" width="400" alt="대시보드 api"> | <img src="docs/readme/images/features/dashboard.gif" width="400" alt="대시보드 시연"> |
+
+</details>
+
+## 🗃 ERD
 
 모든 테이블은 `BaseEntity` 의 `id(UUID)`, `created_at`, `updated_at` 을 공통으로 가집니다.
 
-<p align="center"><img src="docs/images/erd1.png" alt="ERD" width="90%"/></p>
+<p align="center"><img src="docs/readme/images/erd1.png" alt="ERD" width="90%"/></p>
 
-- `reviews` : `UNIQUE(user_id, book_id)` — 한 사용자는 도서당 리뷰 1개
 - 사용자 · 도서 · 리뷰 · 댓글은 `is_deleted` 로 논리 삭제
 
-## 파일 구조
+## 📁 파일 구조
 
 ```
 sb14-deokhugam-team02/
@@ -134,7 +202,7 @@ sb14-deokhugam-team02/
 백엔드는 **헥사고날 아키텍처(포트 & 어댑터)** 로 구성합니다. 도메인마다 `adapter` / `application.port` / `domain` 으로 나누고, 의존성은 항상 바깥(adapter)에서 안쪽(
 domain)으로만 향합니다.
 
-<p align="center"><img src="docs/images/package-structure2.png" alt="패키지 구조" width="100%"/></p>
+<p align="center"><img src="docs/readme/images/package-structure2.png" alt="패키지 구조" width="100%"/></p>
 
 ```
 com.sprint.deokhugam
@@ -202,7 +270,7 @@ flowchart LR
 
 `common` 패키지(config, exception, logging, pagination 등)는 모든 도메인이 공유합니다.
 
-## 구현 홈페이지
+## 🌐 구현 홈페이지
 
 | 구분           | 주소 · 상태                                                                                                                        |
 |:-------------|:-------------------------------------------------------------------------------------------------------------------------------|
@@ -211,29 +279,17 @@ flowchart LR
 | 📖 로컬 API 문서 | [Swagger UI](http://localhost:8080/swagger-ui/index.html)                                                                      |
 
 <details>
-<summary>기능별 OpenAPI Docs · 서비스 화면 보기</summary>
-
-### OpenAPI Docs
-
-| 기능  | OpenAPI Docs                                                                               |
-|-----|--------------------------------------------------------------------------------------------|
-| 사용자 | <img src="docs/images/features/users-api.png" width="320" alt="users api">                 |
-| 도서  | <img src="docs/images/features/books-api.png" width="320" alt="books api">                 |
-| 리뷰  | <img src="docs/images/features/reviews-api.png" width="320" alt="reviews api">             |
-| 댓글  | <img src="docs/images/features/comments-api.png" width="320" alt="comments api">           |
-| 알림  | <img src="docs/images/features/notifications-api.png" width="320" alt="notifications api"> |
-
-### 서비스 기능 영상
+<summary>서비스 시연 영상 보기</summary>
 
 <video src="https://github.com/user-attachments/assets/여기에-복사한-주소" width="720" controls muted></video>
-[▶ 서비스 시연 영상 보기](docs/videos/demo.mp4)
+[▶ 서비스 시연 영상 보기](docs/readme/videos/demo.mp4)
 </details>
 
-## 배포 구조
+## ☁️ 배포 구조
 
-<p align="center"><img src="docs/images/deploy-architecture.png" alt="배포 구조" width="90%"/></p>
+<p align="center"><img src="docs/readme/images/deploy-architecture.png" alt="배포 구조" width="90%"/></p>
 
-## 시작하기
+## 🚀 시작하기
 
 ### 1. 준비 사항
 
@@ -320,38 +376,7 @@ docker compose -f docker-compose-logging-pipeline.yml --profile full up -d --bui
 ./gradlew checkstyleMain checkstyleTest
 ```
 
-## API 안내
-
-상세 요청·응답 형식은 실행 후 Swagger UI 에서 확인할 수 있습니다. 수정·삭제 요청은 `Deokhugam-Request-User-ID` 헤더로 요청자를 식별합니다.
-
-| 영역   | 메서드                      | 경로                                    | 설명                     |
-|------|--------------------------|---------------------------------------|------------------------|
-| 사용자  | `POST`                   | `/api/users`                          | 회원가입                   |
-| 사용자  | `POST`                   | `/api/users/login`                    | 로그인                    |
-| 사용자  | `GET`, `PATCH`, `DELETE` | `/api/users/{userId}`                 | 조회, 닉네임 수정, 논리 삭제      |
-| 사용자  | `DELETE`                 | `/api/users/{userId}/hard`            | 물리 삭제                  |
-| 도서   | `POST`, `GET`            | `/api/books`                          | 도서 등록, 목록 조회(검색·정렬·커서) |
-| 도서   | `GET`, `DELETE`          | `/api/books/{bookId}`                 | 상세 조회, 삭제              |
-| 도서   | `GET`                    | `/api/books/info`                     | ISBN 으로 외부 도서 정보 조회    |
-| 도서   | `POST`                   | `/api/books/isbn/ocr`                 | 이미지에서 ISBN 인식 (OCR)    |
-| 리뷰   | `POST`                   | `/api/reviews`                        | 리뷰 작성                  |
-| 리뷰   | `GET`, `PATCH`, `DELETE` | `/api/reviews/{reviewId}`             | 상세 조회, 수정, 논리 삭제       |
-| 리뷰   | `DELETE`                 | `/api/reviews/{reviewId}/hard`        | 물리 삭제                  |
-| 리뷰   | `POST`                   | `/api/reviews/{reviewId}/like`        | 좋아요 / 취소               |
-| 댓글   | `POST`, `GET`            | `/api/comments`                       | 댓글 등록, 목록 조회(커서)       |
-| 댓글   | `GET`, `PATCH`, `DELETE` | `/api/comments/{commentId}`           | 상세 조회, 수정, 논리 삭제       |
-| 댓글   | `DELETE`                 | `/api/comments/{commentId}/hard`      | 물리 삭제                  |
-| 대시보드 | `GET`                    | `/api/books/popular`                  | 인기 도서                  |
-| 대시보드 | `GET`                    | `/api/reviews/popular`                | 인기 리뷰                  |
-| 대시보드 | `GET`                    | `/api/users/power`                    | 파워 유저                  |
-| 알림   | `GET`                    | `/api/notifications`                  | 알림 목록 조회               |
-| 알림   | `PATCH`                  | `/api/notifications/{notificationId}` | 알림 하나 읽음               |
-| 알림   | `PATCH`                  | `/api/notifications/read-all`         | 전체 읽음                  |
-
-커서 페이지네이션 응답에는 `content`, `nextCursor`, `nextAfter`, `size`, `totalElements`, `hasNext` 가 포함됩니다. 다음 페이지는 응답의
-`nextCursor` 와 `nextAfter` 를 요청의 `cursor`, `after` 로 전달하고, 필터와 정렬 조건을 유지해 조회합니다.
-
-## 주요 구현
+## ⚙️ 주요 구현
 
 ### 헥사고날 아키텍처 (포트 & 어댑터)
 
@@ -429,7 +454,7 @@ docker compose -f docker-compose-logging-pipeline.yml --profile full up -d --bui
 - JaCoCo 라인 커버리지 80% 를 기준으로 하고, 커버리지 결과를 PR 코멘트로 남깁니다.
 - 커밋 메시지 · 이슈 연결 · PR 대상 브랜치를 워크플로우로 검사하고, PR 이 열리면 Claude 가 한국어로 자동 리뷰합니다.
 
-## 개발 규칙
+## 📏 개발 규칙
 
 ### 코드 스타일
 
@@ -510,7 +535,7 @@ Spring App (Logback, MDC) ─▶ Logstash (grok) ─▶ Elasticsearch ─▶ Kib
 - 테스트 커버리지: 라인 80% 이상 목표 ([JaCoCo 가이드](docs/test/JECOCO_GUIDE.md))
 - `open-in-view: false` — 지연 로딩은 서비스 계층 트랜잭션 안에서 처리
 
-## 관련 문서
+## 🔗 관련 문서
 
 - [환경변수 예시](.env.example)
 - [애플리케이션 설정](src/main/resources/application.yml)
