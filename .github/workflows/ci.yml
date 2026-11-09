@@ -45,6 +45,12 @@ jobs:
       - name: 빌드 + 테스트
         run: ./gradlew build              # 테스트 중 Spring이 compose로 postgres를 자동 기동
 
+      - name: Codecov 업로드
+        uses: codecov/codecov-action@v5
+        with:
+          files: ${{ github.workspace }}/build/reports/jacoco/test/jacocoTestReport.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: 커버리지 PR 코멘트 추가
         id: jacoco                        # 이 step의 출력값을 뒤 step에서 쓰기 위한 이름표
         if: github.event_name == 'pull_request'
